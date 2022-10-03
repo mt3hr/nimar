@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+option go_package = "github.com/mt3hr/nimar";
+
+service NimaR {
+	rpc ListRooms(google.protobuf.Empty) returns (Rooms);
+	rpc CreateRoom(CreateRoomRequest) returns (Room);
+	rpc GameTableStream(JoinRoomRequest) returns (stream GameTable);
+	rpc GetPlayerID(google.protobuf.Empty) returns(PlayerID);
+	rpc OperatorsStream(JoinRoomRequest) returns (stream Operators);
+	rpc Operate(Operator) returns (google.protobuf.Empty);
+}
+
+message CreateRoomRequest {
+	string roomName = 1;
+}
+
+message Room {
+	string roomID = 1;
+	string roomName = 2;
+	repeated string playerNames = 3;
+}
+
+message Rooms {
+	repeated Room rooms = 1;
+}
+
+message JoinRoomRequest {
+	string playerID = 1;
+	string playerName = 2;
+	string roomID = 3;
+}
+
+message GameTable {
+	Tsumo tsumo = 1;
+	Player player1 = 2;
+	Player player2 = 3;
+}
+
+message Tsumo {
+	Tiles tiles = 1;
+}
+
+message Tiles {
+	repeated Tile tiles = 1;
+}
+
+enum Suit {
+	NONE = 0;
+	MANZU = 1;
+	SOZU = 2;
+	PINZU = 3;
+}
+
+message Tile {
+	string id = 1;
+	int64 num = 2;
+	Suit suit = 3;
+	bool dora = 4;
+	bool akadora = 5;
+}
+
+message Player {
+	string id = 1;
+	string name = 2;
+	Tiles hand = 3;
+	Tile tsumoriTile = 4;
+	OpenedTiles openedTile1 = 5;
+	OpenedTiles openedTile2 = 6;
+	OpenedTiles openedTile3 = 7;
+	OpenedTiles openedTile4 = 8;
+	Tiles kawa = 9;
+}
+
+enum OpenType {
+	OPEN_PON = 0;
+	OPEN_CHI = 1;
+	OPEN_ANKAN = 2;
+	OPEN_DAIMINKAN = 3;
+	OPEN_KAKAN = 4;
+	OPEN_PE = 5;
+}
+
+message OpenedTiles {
+	OpenType openType = 1;
+	Tiles tiles = 2;
+}
+
+message PlayerID {
+	string playerid = 1;
+}
+
+message Operators {
+	repeated Operator operators = 2;
+}
+
+enum OperatorType {
+	OPERATOR_START_GAME = 0;
+	OPERATOR_SKIP = 1;
+	OPERATOR_DRAW = 2;
+	OPERATOR_DAHAI = 3;
+	OPERATOR_RON = 4;
+	OPERATOR_PON = 5;
+	OPERATOR_CHI = 6;
+	OPERATOR_DAIMINKAN = 7;
+
+	OPERATOR_TSUMO = 8;
+	OPERATOR_ANKAN = 9;
+	OPERATOR_KAKAN = 10;
+
+	OPERATOR_PE = 11;
+}
+
+message Operator {
+	string roomID = 1;
+	string playerID = 2;
+	OperatorType operatorType = 3;
+	Tiles targetTiles = 4;
+}
+

@@ -1,0 +1,129 @@
+// ˅
+package nimar
+
+// ˄
+
+type MTable struct {
+	// ˅
+
+	// ˄
+
+	id string
+
+	name string
+
+	tsumo *MTsumo
+
+	player2 *MPlayer
+
+	player1 *MPlayer
+
+	gameManager *MGameManager
+
+	// ˅
+
+	// ˄
+}
+
+func (m *MTable) GetID() string {
+	// ˅
+	return m.id
+	// ˄
+}
+
+func (m *MTable) GetName() string {
+	// ˅
+	return m.name
+	// ˄
+}
+
+func (m *MTable) GetTsumo() *MTsumo {
+	// ˅
+	return m.tsumo
+	// ˄
+}
+
+func (m *MTable) GetPlayerByID(playerID string) *MPlayer {
+	// ˅
+	if m.GetPlayer1().GetID() == playerID {
+		return m.player1
+	} else if m.GetPlayer2().GetID() == playerID {
+		return m.player2
+	}
+	return nil
+	// ˄
+}
+
+func (m *MTable) GetOpponentByID(playerID string) *MPlayer {
+	// ˅
+	if m.GetPlayer1().GetID() == playerID {
+		return m.player2
+	} else if m.GetPlayer2().GetID() == playerID {
+		return m.player1
+	}
+	return nil
+	// ˄
+}
+
+func (m *MTable) GetPlayer1() *MPlayer {
+	// ˅
+	return m.player1
+	// ˄
+}
+
+func (m *MTable) SetPlayer1(player1 *MPlayer) {
+	// ˅
+	m.player1 = player1
+	// ˄
+}
+
+func (m *MTable) GetPlayer2() *MPlayer {
+	// ˅
+	return m.player2
+	// ˄
+}
+
+func (m *MTable) SetPlayer2(player2 *MPlayer) {
+	// ˅
+	m.player2 = player2
+	// ˄
+}
+
+func (m *MTable) GetGameManager() *MGameManager {
+	// ˅
+	return m.gameManager
+	// ˄
+}
+
+func (m *MTable) UpdateView() {
+	// ˅
+	t := &Tsumo{}
+	for _, tile := range m.GetTsumo().tiles {
+		t.Tiles.Tiles = append(t.Tiles.Tiles, tile.ToTile())
+	}
+	p1 := m.player1.ToPlayer()
+	p2 := m.player2.ToPlayer()
+
+	gameTable := &GameTable{
+		Tsumo:   t,
+		Player1: p1,
+		Player2: p2,
+	}
+
+	(*m.GetPlayer1().GetNimaRTableStreamServer()).Send(gameTable)
+	(*m.GetPlayer2().GetNimaRTableStreamServer()).Send(gameTable)
+	// ˄
+}
+
+// ˅
+func NewTable(roomID string, roomName string) *MTable {
+	table := &MTable{
+		id:   roomID,
+		name: roomName,
+	}
+	manager := newGameManager(table)
+	table.gameManager = manager
+	return table
+}
+
+// ˄
