@@ -1,12 +1,10 @@
 // ˅
-package yaku
-
-import "github.com/mt3hr/nimar"
+package nimar
 
 // ˄
 
 type Yaku interface {
-	IsMatch(player *nimar.MPlayer) bool
+	IsMatch(player *MPlayer) bool
 
 	GetName() string
 
