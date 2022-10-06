@@ -30,6 +30,8 @@ type MPlayer struct {
 
 	kawa []*MTile
 
+	pe []*MTile
+
 	// ˅
 
 	// ˄
@@ -74,6 +76,18 @@ func (m *MPlayer) GetHand() []*MTile {
 func (m *MPlayer) SetHand(hand []*MTile) {
 	// ˅
 	m.hand = hand
+	// ˄
+}
+
+func (m *MPlayer) GetPe() []*MTile {
+	// ˅
+	return m.pe
+	// ˄
+}
+
+func (m *MPlayer) SetPe(pe []*MTile) {
+	// ˅
+	m.pe = pe
 	// ˄
 }
 
