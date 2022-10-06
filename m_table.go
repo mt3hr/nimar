@@ -110,16 +110,21 @@ func (m *MTable) UpdateView() {
 		Player2: p2,
 	}
 
-	(*m.GetPlayer1().GetNimaRTableStreamServer()).Send(gameTable)
-	(*m.GetPlayer2().GetNimaRTableStreamServer()).Send(gameTable)
+	if m.GetPlayer1().GetNimaRTableStreamServer() != nil {
+		(*m.GetPlayer1().GetNimaRTableStreamServer()).Send(gameTable)
+	}
+	if m.GetPlayer2().GetNimaRTableStreamServer() != nil {
+		(*m.GetPlayer2().GetNimaRTableStreamServer()).Send(gameTable)
+	}
 	// ˄
 }
 
 // ˅
 func NewTable(roomID string, roomName string) *MTable {
 	table := &MTable{
-		id:   roomID,
-		name: roomName,
+		id:    roomID,
+		name:  roomName,
+		tsumo: &MTsumo{},
 	}
 	manager := newGameManager(table)
 	table.gameManager = manager

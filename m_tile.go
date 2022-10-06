@@ -58,7 +58,7 @@ func (m *MTile) ToTile() *Tile {
 	return &Tile{
 		Id:      m.GetID(),
 		Num:     int64(m.GetNum()),
-		Suit:    Suit(m.GetSuit()),
+		Suit:    m.GetSuit(),
 		Dora:    m.IsDora(),
 		Akadora: m.IsAkadora(),
 	}

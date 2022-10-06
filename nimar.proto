@@ -51,6 +51,13 @@ enum Suit {
 	MANZU = 1;
 	SOZU = 2;
 	PINZU = 3;
+	TON = 4;
+	NAN = 5;
+	SHA = 6;
+	PE = 7;
+	HAKU = 8;
+	HATSU = 9;
+	CHUN = 10;
 }
 
 message Tile {

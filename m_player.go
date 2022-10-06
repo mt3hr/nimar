@@ -154,6 +154,7 @@ func NewPlayer(playerName string, playerID string, nimarGameTableStreaqmServer *
 		name:                       playerName,
 		id:                         playerID,
 		nimarGameTableStreamServer: nimarGameTableStreaqmServer,
+		hand:                       []*MTile{},
 	}
 }
 
