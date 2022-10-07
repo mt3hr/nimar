@@ -1,6 +1,8 @@
 // ˅
 package nimar
 
+import "sort"
+
 // ˄
 
 type MPlayer struct {
@@ -112,6 +114,14 @@ func (m *MPlayer) GetTsumoriTile() *MTile {
 func (m *MPlayer) SetTsumoriTile(tile *MTile) {
 	// ˅
 	m.tsumoriTile = tile
+	// ˄
+}
+
+func (m *MPlayer) Rihai() {
+	// ˅
+	sort.Slice(m.hand, func(i, j int) bool {
+		return m.hand[j].ThisIsBig(m.hand[i])
+	})
 	// ˄
 }
 

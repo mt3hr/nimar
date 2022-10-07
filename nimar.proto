@@ -61,11 +61,12 @@ enum Suit {
 }
 
 message Tile {
-	string id = 1;
-	int64 num = 2;
-	Suit suit = 3;
-	bool dora = 4;
-	bool akadora = 5;
+	int64 id = 1;
+	string name = 2;
+	int64 num = 3;
+	Suit suit = 4;
+	bool dora = 5;
+	bool akadora = 6;
 }
 
 message Player {

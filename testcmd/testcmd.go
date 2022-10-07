@@ -15,7 +15,9 @@ func main() {
 	table.SetPlayer2(player2)
 	table.GetGameManager().StartGame()
 
+	player1.Rihai()
+
 	for _, tile := range player1.GetHand() {
-		fmt.Printf("[%s]", tile.GetID())
+		fmt.Printf("[%s]", tile.GetName())
 	}
 }

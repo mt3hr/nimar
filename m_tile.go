@@ -8,7 +8,9 @@ type MTile struct {
 
 	// ˄
 
-	id string
+	id int
+
+	name string
 
 	num int
 
@@ -23,9 +25,15 @@ type MTile struct {
 	// ˄
 }
 
-func (m *MTile) GetID() string {
+func (m *MTile) GetID() int {
 	// ˅
 	return m.id
+	// ˄
+}
+
+func (m *MTile) GetName() string {
+	// ˅
+	return m.name
 	// ˄
 }
 
@@ -56,12 +64,22 @@ func (m *MTile) IsAkadora() bool {
 func (m *MTile) ToTile() *Tile {
 	// ˅
 	return &Tile{
-		Id:      m.GetID(),
+		Name:    m.GetName(),
+		Id:      int64(m.GetID()),
 		Num:     int64(m.GetNum()),
 		Suit:    m.GetSuit(),
 		Dora:    m.IsDora(),
 		Akadora: m.IsAkadora(),
 	}
+	// ˄
+}
+
+func (m *MTile) ThisIsBig(tile *MTile) bool {
+	// ˅
+	if m.GetSuit() == tile.GetSuit() {
+		return m.GetNum() > tile.GetNum()
+	}
+	return m.GetSuit() > tile.GetSuit()
 	// ˄
 }
 
