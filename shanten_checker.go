@@ -86,6 +86,8 @@ func (s *ShantenChecker) checkKanzenShuntsu() int {
 
 func (s *ShantenChecker) checkKanzenKoritsu() int {
 	// ˅
+	//TODO
+	panic("not implements")
 
 	// ˄
 }

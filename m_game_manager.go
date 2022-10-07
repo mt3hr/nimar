@@ -161,29 +161,6 @@ func (m *MGameManager) generateTiles() []*MTile {
 	tiles := []*MTile{}
 
 	for i := 1; i <= 4; i++ {
-		// 索子
-		for j := 1; j <= 9; j++ {
-			name := ""
-			num := j
-			dora := false
-			suit := Suit_SOZU
-			akadora := false
-
-			name = fmt.Sprintf("%d%s%d", num, suit.ToString(), i)
-			if i == 1 && j == 5 {
-				akadora = true
-				name += "赤ドラ"
-			}
-
-			//TODO id
-			tiles = append(tiles, &MTile{
-				name:    name,
-				num:     num,
-				dora:    dora,
-				suit:    &suit,
-				akadora: akadora,
-			})
-		}
 		// 萬子
 		for j := 0; j < 2; j++ {
 			name := ""
@@ -205,6 +182,7 @@ func (m *MGameManager) generateTiles() []*MTile {
 			}
 
 			tiles = append(tiles, &MTile{
+				id:      j,
 				name:    name,
 				num:     num,
 				dora:    dora,
@@ -212,6 +190,29 @@ func (m *MGameManager) generateTiles() []*MTile {
 				akadora: akadora,
 			})
 
+		}
+		// 索子
+		for j := 1; j <= 9; j++ {
+			name := ""
+			num := j
+			dora := false
+			suit := Suit_SOZU
+			akadora := false
+
+			name = fmt.Sprintf("%d%s%d", num, suit.ToString(), i)
+			if i == 1 && j == 5 {
+				akadora = true
+				name += "赤ドラ"
+			}
+
+			tiles = append(tiles, &MTile{
+				id:      j + 10,
+				name:    name,
+				num:     num,
+				dora:    dora,
+				suit:    &suit,
+				akadora: akadora,
+			})
 		}
 		// 筒子
 		for j := 0; j < 2; j++ {
@@ -234,6 +235,7 @@ func (m *MGameManager) generateTiles() []*MTile {
 			}
 
 			tiles = append(tiles, &MTile{
+				id:      j + 20,
 				name:    name,
 				num:     num,
 				dora:    dora,
@@ -261,6 +263,7 @@ func (m *MGameManager) generateTiles() []*MTile {
 		suit = Suit_NAN
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
 		tiles = append(tiles, &MTile{
+			id:      31,
 			name:    name,
 			num:     num,
 			dora:    dora,
@@ -271,6 +274,7 @@ func (m *MGameManager) generateTiles() []*MTile {
 		suit = Suit_SHA
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
 		tiles = append(tiles, &MTile{
+			id:      32,
 			name:    name,
 			num:     num,
 			dora:    dora,
@@ -281,6 +285,7 @@ func (m *MGameManager) generateTiles() []*MTile {
 		suit = Suit_PE
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
 		tiles = append(tiles, &MTile{
+			id:      33,
 			name:    name,
 			num:     num,
 			dora:    dora,
@@ -291,6 +296,7 @@ func (m *MGameManager) generateTiles() []*MTile {
 		suit = Suit_HAKU
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
 		tiles = append(tiles, &MTile{
+			id:      34,
 			name:    name,
 			num:     num,
 			dora:    dora,
@@ -301,6 +307,7 @@ func (m *MGameManager) generateTiles() []*MTile {
 		suit = Suit_HATSU
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
 		tiles = append(tiles, &MTile{
+			id:      35,
 			name:    name,
 			num:     num,
 			dora:    dora,
@@ -311,6 +318,7 @@ func (m *MGameManager) generateTiles() []*MTile {
 		suit = Suit_CHUN
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
 		tiles = append(tiles, &MTile{
+			id:      36,
 			name:    name,
 			num:     num,
 			dora:    dora,
