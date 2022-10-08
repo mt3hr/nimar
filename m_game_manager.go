@@ -20,6 +20,8 @@ type MGameManager struct {
 
 	table *MTable
 
+	shantenChecker *ShantenChecker
+
 	// ˅
 
 	// ˄
@@ -112,6 +114,12 @@ func (m *MGameManager) StartGame() {
 	// ˄
 }
 
+func (m *MGameManager) GetShantenChecker() *ShantenChecker {
+	// ˅
+	return m.shantenChecker
+	// ˄
+}
+
 func (m *MGameManager) preparateGame() {
 	// ˅
 	m.determinateDealer()
@@ -182,7 +190,7 @@ func (m *MGameManager) generateTiles() []*MTile {
 			}
 
 			tiles = append(tiles, &MTile{
-				id:      j,
+				id:      num,
 				name:    name,
 				num:     num,
 				dora:    dora,
@@ -235,7 +243,7 @@ func (m *MGameManager) generateTiles() []*MTile {
 			}
 
 			tiles = append(tiles, &MTile{
-				id:      j + 20,
+				id:      num + 20,
 				name:    name,
 				num:     num,
 				dora:    dora,
@@ -252,7 +260,9 @@ func (m *MGameManager) generateTiles() []*MTile {
 
 		suit = Suit_TON
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
+		num = 31
 		tiles = append(tiles, &MTile{
+			id:      num,
 			name:    name,
 			num:     num,
 			dora:    dora,
@@ -262,8 +272,9 @@ func (m *MGameManager) generateTiles() []*MTile {
 
 		suit = Suit_NAN
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
+		num = 32
 		tiles = append(tiles, &MTile{
-			id:      31,
+			id:      num,
 			name:    name,
 			num:     num,
 			dora:    dora,
@@ -273,8 +284,9 @@ func (m *MGameManager) generateTiles() []*MTile {
 
 		suit = Suit_SHA
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
+		num = 33
 		tiles = append(tiles, &MTile{
-			id:      32,
+			id:      num,
 			name:    name,
 			num:     num,
 			dora:    dora,
@@ -284,8 +296,9 @@ func (m *MGameManager) generateTiles() []*MTile {
 
 		suit = Suit_PE
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
+		num = 34
 		tiles = append(tiles, &MTile{
-			id:      33,
+			id:      num,
 			name:    name,
 			num:     num,
 			dora:    dora,
@@ -295,8 +308,9 @@ func (m *MGameManager) generateTiles() []*MTile {
 
 		suit = Suit_HAKU
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
+		num = 35
 		tiles = append(tiles, &MTile{
-			id:      34,
+			id:      num,
 			name:    name,
 			num:     num,
 			dora:    dora,
@@ -306,8 +320,9 @@ func (m *MGameManager) generateTiles() []*MTile {
 
 		suit = Suit_HATSU
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
+		num = 36
 		tiles = append(tiles, &MTile{
-			id:      35,
+			id:      num,
 			name:    name,
 			num:     num,
 			dora:    dora,
@@ -317,8 +332,9 @@ func (m *MGameManager) generateTiles() []*MTile {
 
 		suit = Suit_CHUN
 		name = fmt.Sprintf("%s%d", suit.ToString(), i)
+		num = 37
 		tiles = append(tiles, &MTile{
-			id:      36,
+			id:      num,
 			name:    name,
 			num:     num,
 			dora:    dora,
@@ -377,7 +393,8 @@ func (m *MGameManager) distributeTiles() {
 // ˅
 func newGameManager(table *MTable) *MGameManager {
 	return &MGameManager{
-		table: table,
+		table:          table,
+		shantenChecker: &ShantenChecker{},
 	}
 }
 

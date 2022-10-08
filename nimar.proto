@@ -83,11 +83,12 @@ message Player {
 }
 
 enum OpenType {
-	OPEN_PON = 0;
-	OPEN_CHI = 1;
-	OPEN_ANKAN = 2;
-	OPEN_DAIMINKAN = 3;
-	OPEN_KAKAN = 4;
+	OPEN_NULL = 0;
+	OPEN_PON = 1;
+	OPEN_CHI = 2;
+	OPEN_ANKAN = 3;
+	OPEN_DAIMINKAN = 4;
+	OPEN_KAKAN = 5;
 }
 
 message OpenedTiles {

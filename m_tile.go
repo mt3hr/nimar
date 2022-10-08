@@ -63,6 +63,9 @@ func (m *MTile) IsAkadora() bool {
 
 func (m *MTile) ToTile() *Tile {
 	// ˅
+	if m == nil {
+		return nil
+	}
 	return &Tile{
 		Name:    m.GetName(),
 		Id:      int64(m.GetID()),

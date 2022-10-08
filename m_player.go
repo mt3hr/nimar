@@ -139,34 +139,10 @@ func (m *MPlayer) ToPlayer() *Player {
 
 	p.TsumoriTile = m.GetTsumoriTile().ToTile()
 
-	p.OpenedTile1 = &OpenedTiles{
-		OpenType: *m.openedTile1.openType,
-	}
-	for _, tile := range m.openedTile1.tiles {
-		p.OpenedTile1.Tiles.Tiles = append(p.OpenedTile1.Tiles.Tiles, tile.ToTile())
-	}
-	p.OpenedTile2 = &OpenedTiles{
-		OpenType: *m.openedTile2.openType,
-	}
-	for _, tile := range m.openedTile2.tiles {
-		p.OpenedTile2.Tiles.Tiles = append(p.OpenedTile2.Tiles.Tiles, tile.ToTile())
-	}
-	p.OpenedTile3 = &OpenedTiles{
-		OpenType: *m.openedTile3.openType,
-	}
-	for _, tile := range m.openedTile3.tiles {
-		p.OpenedTile3.Tiles.Tiles = append(p.OpenedTile3.Tiles.Tiles, tile.ToTile())
-	}
-	p.OpenedTile4 = &OpenedTiles{
-		OpenType: *m.openedTile4.openType,
-	}
-	for _, tile := range m.openedTile4.tiles {
-		p.OpenedTile4.Tiles.Tiles = append(p.OpenedTile4.Tiles.Tiles, tile.ToTile())
-	}
-
-	for _, tile := range m.GetKawa() {
-		p.Kawa.Tiles = append(p.Kawa.Tiles, tile.ToTile())
-	}
+	p.OpenedTile1 = m.openedTile1.ToOpenedTiles()
+	p.OpenedTile2 = m.openedTile2.ToOpenedTiles()
+	p.OpenedTile3 = m.openedTile3.ToOpenedTiles()
+	p.OpenedTile4 = m.openedTile4.ToOpenedTiles()
 
 	return p
 	// ˄
@@ -174,11 +150,17 @@ func (m *MPlayer) ToPlayer() *Player {
 
 // ˅
 func NewPlayer(playerName string, playerID string, nimarGameTableStreaqmServer *NimaR_GameTableStreamServer) *MPlayer {
+	openTypeNull := OpenType_OPEN_NULL
 	return &MPlayer{
 		name:                       playerName,
 		id:                         playerID,
 		nimarGameTableStreamServer: nimarGameTableStreaqmServer,
 		hand:                       []*MTile{},
+		tsumoriTile:                nil,
+		openedTile1:                &MOpenedTiles{openType: &openTypeNull},
+		openedTile2:                &MOpenedTiles{openType: &openTypeNull},
+		openedTile3:                &MOpenedTiles{openType: &openTypeNull},
+		openedTile4:                &MOpenedTiles{openType: &openTypeNull},
 	}
 }
 

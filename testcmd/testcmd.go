@@ -20,4 +20,6 @@ func main() {
 	for _, tile := range player1.GetHand() {
 		fmt.Printf("[%s]", tile.GetName())
 	}
+	fmt.Printf("\n")
+	fmt.Printf("%vしゃんてん\n", table.GetGameManager().GetShantenChecker().CheckCountOfShanten(player1))
 }
