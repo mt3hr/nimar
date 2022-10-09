@@ -39,7 +39,7 @@ type ShantenChecker struct {
 	// ˄
 }
 
-func (s *ShantenChecker) CheckCountOfShanten(player *MPlayer) int {
+func (s *ShantenChecker) CheckCountOfShanten(player *MPlayer) *CountOfShantenAndAgarikei {
 	// ˅
 	s.machihai = map[int]interface{}{}
 	shanten := 8
@@ -60,12 +60,17 @@ func (s *ShantenChecker) CheckCountOfShanten(player *MPlayer) int {
 		shanten = shantenTemp
 	}
 
-	return shanten
-
+	shantenAndAgarikei := &CountOfShantenAndAgarikei{
+		Shanten: shanten,
+	}
+	if shanten == 0 {
+		shantenAndAgarikei.Agarikei.MachiHai = s.calcMachihai()
+	}
+	return shantenAndAgarikei
 	// ˄
 }
 
-func (s *ShantenChecker) CheckMachihai(player *MPlayer) map[int]interface{} {
+func (s *ShantenChecker) checkMachihai(player *MPlayer) map[int]interface{} {
 	// ˅
 
 	h := 0
@@ -1155,6 +1160,7 @@ func (s *ShantenChecker) undoMentsu() {
 func (s *ShantenChecker) preparation(player *MPlayer) {
 	// 直接はいじらないようにしよう
 	p := player.ToPlayer()
+	s.menzenTileIDs = TileIDs{}
 	s.tempMenzenTileIDs = TileIDs{}
 
 	s.agarikei = Agarikei{}

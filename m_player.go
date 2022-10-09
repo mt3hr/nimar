@@ -34,6 +34,8 @@ type MPlayer struct {
 
 	pe []*MTile
 
+	status *MPlayerStatus
+
 	// ˅
 
 	// ˄
@@ -125,6 +127,30 @@ func (m *MPlayer) Rihai() {
 	// ˄
 }
 
+func (m *MPlayer) IsMenzen() bool {
+	// ˅
+	for _, openedTile := range []*MOpenedTiles{
+		m.openedTile1,
+		m.openedTile2,
+		m.openedTile3,
+		m.openedTile4,
+	} {
+		if openedTile.IsNil() {
+			continue
+		}
+		switch *openedTile.openType {
+		case OpenType_OPEN_CHI:
+			fallthrough
+		case OpenType_OPEN_KAKAN:
+			fallthrough
+		case OpenType_OPEN_PON:
+			return false
+		}
+	}
+	return true
+	// ˄
+}
+
 func (m *MPlayer) ToPlayer() *Player {
 	// ˅
 	p := &Player{}
@@ -161,6 +187,7 @@ func NewPlayer(playerName string, playerID string, nimarGameTableStreaqmServer *
 		openedTile2:                &MOpenedTiles{openType: &openTypeNull},
 		openedTile3:                &MOpenedTiles{openType: &openTypeNull},
 		openedTile4:                &MOpenedTiles{openType: &openTypeNull},
+		status:                     &MPlayerStatus{},
 	}
 }
 
