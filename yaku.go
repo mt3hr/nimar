@@ -1830,7 +1830,7 @@ func (n *Nagashimangan) NumberOfHanWhenNaki() int {
 }
 
 func (t *Tenho) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
-	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze == Kaze_KAZE_TON && player.GetTsumoriTile() != nil && len(player.GetPe()) == 0 {
+	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze == Kaze_KAZE_TON && player.GetTsumoriTile() != nil && len(player.openedPe.tiles) == 0 {
 		return true
 	}
 	return false
@@ -1849,7 +1849,7 @@ func (t *Tenho) NumberOfHanWhenNaki() int {
 }
 
 func (c *Chiho) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
-	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze != Kaze_KAZE_TON && player.GetTsumoriTile() != nil && len(player.GetPe()) == 0 {
+	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze != Kaze_KAZE_TON && player.GetTsumoriTile() != nil && len(player.openedPe.tiles) == 0 {
 		return true
 	}
 	return false
@@ -1868,7 +1868,7 @@ func (c *Chiho) NumberOfHanWhenNaki() int {
 }
 
 func (r *Renho) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
-	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze != Kaze_KAZE_TON && player.GetRonTile() != nil && len(player.GetPe()) == 0 {
+	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze != Kaze_KAZE_TON && player.GetRonTile() != nil && len(player.openedPe.tiles) == 0 {
 		return true
 	}
 	return false

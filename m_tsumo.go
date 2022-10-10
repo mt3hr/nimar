@@ -47,6 +47,20 @@ func (m *MTsumo) Pop() *MTile {
 	// ˄
 }
 
+func (m *MTsumo) OpenNextKandora() bool {
+	// ˅
+	//TODO
+	return false
+	// ˄
+}
+
+func (m *MTsumo) PopFromWanpai() *MTile {
+	// ˅
+	//TODO
+	return nil
+	// ˄
+}
+
 // ˅
 
 // ˄

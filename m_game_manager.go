@@ -83,21 +83,206 @@ func (m *MGameManager) ExecuteOperator(operator *Operator) error {
 	case OperatorType_OPERATOR_SKIP:
 		//TODO
 	case OperatorType_OPERATOR_RON:
+		player.SetRonTile(opponentPlayer.GetKawa()[len(opponentPlayer.GetKawa())-1])
+		opponentPlayer.SetKawa(opponentPlayer.GetKawa()[:len(opponentPlayer.GetKawa())-1])
 		//TODO
 	case OperatorType_OPERATOR_PON:
-		//TODO
+		pon := OpenType_OPEN_PON
+		openedTile := &MOpenedTiles{
+			openType: &pon,
+		}
+
+		for i, targetTile := range operator.TargetTiles.GetTiles() {
+			if i == 0 {
+				if opponentPlayer.GetKawa()[len(opponentPlayer.GetKawa())-1].GetName() == targetTile.GetName() {
+					opponentPlayer.SetKawa(opponentPlayer.GetKawa()[:len(opponentPlayer.GetKawa())-1])
+					openedTile.tiles = append(openedTile.tiles, targetTile.ToMTile())
+					continue
+				} else {
+					return fmt.Errorf("ポンできません。相手の捨てた最後の牌:%s ポンしたい牌:%s", opponentPlayer.GetKawa()[len(opponentPlayer.GetKawa())-1].GetName(), targetTile.GetName())
+				}
+			} else {
+				tileIndex := 0
+				for i, tile := range player.GetHand() {
+					if tile.GetName() == targetTile.GetName() {
+						tileIndex = i
+						break
+					}
+				}
+				hand := player.GetHand()
+				hand = append(hand[:tileIndex], hand[tileIndex+1:]...)
+				player.SetHand(hand)
+				openedTile.tiles = append(openedTile.tiles, targetTile.ToMTile())
+			}
+		}
+		if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile1 = openedTile
+		} else if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile2 = openedTile
+		} else if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile3 = openedTile
+		} else if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile4 = openedTile
+		} else {
+			return fmt.Errorf("ポンの完了に失敗しました。すでに4つ牌を開いています？")
+		}
 	case OperatorType_OPERATOR_CHI:
-		//TODO
+		chi := OpenType_OPEN_CHI
+		openedTile := &MOpenedTiles{
+			openType: &chi,
+		}
+
+		for i, targetTile := range operator.TargetTiles.GetTiles() {
+			if i == 0 {
+				if opponentPlayer.GetKawa()[len(opponentPlayer.GetKawa())-1].GetName() == targetTile.GetName() {
+					opponentPlayer.SetKawa(opponentPlayer.GetKawa()[:len(opponentPlayer.GetKawa())-1])
+					openedTile.tiles = append(openedTile.tiles, targetTile.ToMTile())
+					continue
+				} else {
+					return fmt.Errorf("チーできません。相手の捨てた最後の牌:%s チーしたい牌:%s", opponentPlayer.GetKawa()[len(opponentPlayer.GetKawa())-1].GetName(), targetTile.GetName())
+				}
+			} else {
+				tileIndex := 0
+				for i, tile := range player.GetHand() {
+					if tile.GetName() == targetTile.GetName() {
+						tileIndex = i
+						break
+					}
+				}
+				hand := player.GetHand()
+				hand = append(hand[:tileIndex], hand[tileIndex+1:]...)
+				player.SetHand(hand)
+				openedTile.tiles = append(openedTile.tiles, targetTile.ToMTile())
+			}
+		}
+		if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile1 = openedTile
+		} else if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile2 = openedTile
+		} else if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile3 = openedTile
+		} else if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile4 = openedTile
+		} else {
+			return fmt.Errorf("チーの完了に失敗しました。すでに4つ牌を開いています？")
+		}
 	case OperatorType_OPERATOR_DAIMINKAN:
-		//TODO
+		daiminkan := OpenType_OPEN_DAIMINKAN
+		openedTile := &MOpenedTiles{
+			openType: &daiminkan,
+		}
+
+		for i, targetTile := range operator.TargetTiles.GetTiles() {
+			if i == 0 {
+				if opponentPlayer.GetKawa()[len(opponentPlayer.GetKawa())-1].GetName() == targetTile.GetName() {
+					opponentPlayer.SetKawa(opponentPlayer.GetKawa()[:len(opponentPlayer.GetKawa())-1])
+					openedTile.tiles = append(openedTile.tiles, targetTile.ToMTile())
+					continue
+				} else {
+					return fmt.Errorf("カンできません。相手の捨てた最後の牌:%s カンしたい牌:%s", opponentPlayer.GetKawa()[len(opponentPlayer.GetKawa())-1].GetName(), targetTile.GetName())
+				}
+			} else {
+				tileIndex := 0
+				for i, tile := range player.GetHand() {
+					if tile.GetName() == targetTile.GetName() {
+						tileIndex = i
+						break
+					}
+				}
+				hand := player.GetHand()
+				hand = append(hand[:tileIndex], hand[tileIndex+1:]...)
+				player.SetHand(hand)
+				openedTile.tiles = append(openedTile.tiles, targetTile.ToMTile())
+			}
+		}
+		if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile1 = openedTile
+		} else if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile2 = openedTile
+		} else if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile3 = openedTile
+		} else if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile4 = openedTile
+		} else {
+			return fmt.Errorf("カンの完了に失敗しました。すでに4つ牌を開いています？")
+		}
+
+		player.SetTsumoriTile(m.table.tsumo.PopFromWanpai())
+		if !m.table.GetTsumo().OpenNextKandora() {
+			m.table.GetStatus().Sukaikan = true
+		}
+
 	case OperatorType_OPERATOR_TSUMO:
 		//TODO
 	case OperatorType_OPERATOR_ANKAN:
-		//TODO
+		ankan := OpenType_OPEN_ANKAN
+		openedTile := &MOpenedTiles{
+			openType: &ankan,
+		}
+
+		for _, targetTile := range operator.TargetTiles.GetTiles() {
+			if player.GetTsumoriTile().GetName() == targetTile.GetName() {
+				openedTile.tiles = append(openedTile.tiles, player.GetTsumoriTile())
+				player.SetTsumoriTile(nil)
+				continue
+			}
+
+			tileIndex := 0
+			for i, tile := range player.GetHand() {
+				if tile.GetName() == targetTile.GetName() {
+					tileIndex = i
+					break
+				}
+			}
+			hand := player.GetHand()
+			hand = append(hand[:tileIndex], hand[tileIndex+1:]...)
+			player.SetHand(hand)
+			openedTile.tiles = append(openedTile.tiles, targetTile.ToMTile())
+		}
+		if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile1 = openedTile
+		} else if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile2 = openedTile
+		} else if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile3 = openedTile
+		} else if *player.openedTile1.openType.Enum() == OpenType_OPEN_NULL {
+			player.openedTile4 = openedTile
+		} else {
+			return fmt.Errorf("カンの完了に失敗しました。すでに4つ牌を開いています？")
+		}
+
+		player.SetTsumoriTile(m.table.tsumo.PopFromWanpai())
+		if !m.table.GetTsumo().OpenNextKandora() {
+			m.table.GetStatus().Sukaikan = true
+		}
 	case OperatorType_OPERATOR_KAKAN:
 		//TODO
 	case OperatorType_OPERATOR_PE:
-		//TODO
+		pe := OpenType_OPEN_PE
+		openedTile := player.openedPe
+		openedTile.openType = &pe
+		for _, targetTile := range operator.TargetTiles.GetTiles() {
+			if player.GetTsumoriTile().GetName() == targetTile.GetName() {
+				openedTile.tiles = append(openedTile.tiles, player.GetTsumoriTile())
+				player.SetTsumoriTile(nil)
+				continue
+			}
+
+			tileIndex := 0
+			for i, tile := range player.GetHand() {
+				if tile.GetName() == targetTile.GetName() {
+					tileIndex = i
+					break
+				}
+			}
+			hand := player.GetHand()
+			hand = append(hand[:tileIndex], hand[tileIndex+1:]...)
+			player.SetHand(hand)
+			openedTile.tiles = append(openedTile.tiles, targetTile.ToMTile())
+		}
+		player.openedPe = openedTile
+
+		player.SetTsumoriTile(m.table.tsumo.PopFromWanpai())
 	default:
 		return fmt.Errorf("変なオペレータが渡されました。オペレータタイプ:%d", operator.OperatorType)
 	}
@@ -365,9 +550,10 @@ func (m *MGameManager) shuffleTiles(tiles []*MTile) {
 	temp := &MTile{}
 	randomIndex := 1
 	for i := 0; i < len(tiles); i++ {
-		temp = tiles[i]
 		rand.Seed(time.Now().Unix())
 		randomIndex = rand.Intn(len(tiles))
+
+		temp = tiles[i]
 		tiles[i] = tiles[randomIndex]
 		tiles[randomIndex] = temp
 	}

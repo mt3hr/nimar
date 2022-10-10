@@ -89,9 +89,8 @@ message Player {
 	OpenedTiles openedTile2 = 6;
 	OpenedTiles openedTile3 = 7;
 	OpenedTiles openedTile4 = 8;
-	Tiles pes = 9;
-	Tiles kawa = 10;
-	Kaze kaze = 11;
+	Tiles kawa = 9;
+	Kaze kaze = 10;
 }
 
 enum OpenType {
@@ -101,6 +100,7 @@ enum OpenType {
 	OPEN_ANKAN = 3;
 	OPEN_DAIMINKAN = 4;
 	OPEN_KAKAN = 5;
+	OPEN_PE = 6;
 }
 
 message OpenedTiles {
