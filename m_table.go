@@ -20,6 +20,8 @@ type MTable struct {
 
 	gameManager *MGameManager
 
+	tableStatus *MTableStatus
+
 	// ˅
 
 	// ˄
@@ -92,6 +94,18 @@ func (m *MTable) SetPlayer2(player2 *MPlayer) {
 func (m *MTable) GetGameManager() *MGameManager {
 	// ˅
 	return m.gameManager
+	// ˄
+}
+
+func (m *MTable) GetStatus() *MTableStatus {
+	// ˅
+	return m.tableStatus
+	// ˄
+}
+
+func (m *MTable) SetStatus(status *MTableStatus) {
+	// ˅
+	m.tableStatus = status
 	// ˄
 }
 

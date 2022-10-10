@@ -36,6 +36,8 @@ type MPlayer struct {
 
 	status *MPlayerStatus
 
+	ronTile *MTile
+
 	// ˅
 
 	// ˄
@@ -116,6 +118,18 @@ func (m *MPlayer) GetTsumoriTile() *MTile {
 func (m *MPlayer) SetTsumoriTile(tile *MTile) {
 	// ˅
 	m.tsumoriTile = tile
+	// ˄
+}
+
+func (m *MPlayer) GetRonTile() *MTile {
+	// ˅
+	return m.ronTile
+	// ˄
+}
+
+func (m *MPlayer) SetRonTile(tile *MTile) {
+	// ˅
+	m.ronTile = tile
 	// ˄
 }
 

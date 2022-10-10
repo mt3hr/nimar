@@ -32,6 +32,10 @@ message JoinRoomRequest {
 	string roomID = 3;
 }
 
+message TableStatus {
+	Kaze kaze = 1;
+}
+
 message GameTable {
 	Tsumo tsumo = 1;
 	Player player1 = 2;
@@ -69,6 +73,13 @@ message Tile {
 	bool akadora = 6;
 }
 
+enum Kaze {
+	KAZE_TON = 0;
+	KAZE_NAN = 2;
+	KAZE_SHA = 3;
+	KAZE_PE = 4;
+}
+
 message Player {
 	string id = 1;
 	string name = 2;
@@ -80,6 +91,7 @@ message Player {
 	OpenedTiles openedTile4 = 8;
 	Tiles pes = 9;
 	Tiles kawa = 10;
+	Kaze kaze = 11;
 }
 
 enum OpenType {
