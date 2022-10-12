@@ -21,5 +21,5 @@ func main() {
 		fmt.Printf("[%s]", tile.GetName())
 	}
 	fmt.Printf("\n")
-	fmt.Printf("%vしゃんてん\n", table.GetGameManager().GetShantenChecker().CheckCountOfShanten(player1))
+	fmt.Printf("%vしゃんてん\n", table.GetGameManager().GetShantenChecker().CheckCountOfShanten(player1).Shanten)
 }

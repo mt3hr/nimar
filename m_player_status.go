@@ -12,6 +12,22 @@ type MPlayerStatus struct {
 
 	Ippatsu bool
 
+	Chankan bool
+
+	Rinshan bool
+
+	Haitei bool
+
+	Hotei bool
+
+	DoubleReach bool
+
+	Nakare bool
+
+	NakareWhenAround bool
+
+	Kaze *Kaze
+
 	// ˅
 
 	// ˄

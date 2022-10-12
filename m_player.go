@@ -32,9 +32,11 @@ type MPlayer struct {
 
 	kawa []*MTile
 
-	pe []*MTile
-
 	status *MPlayerStatus
+
+	ronTile *MTile
+
+	openedPe *MOpenedTiles
 
 	// ˅
 
@@ -83,18 +85,6 @@ func (m *MPlayer) SetHand(hand []*MTile) {
 	// ˄
 }
 
-func (m *MPlayer) GetPe() []*MTile {
-	// ˅
-	return m.pe
-	// ˄
-}
-
-func (m *MPlayer) SetPe(pe []*MTile) {
-	// ˅
-	m.pe = pe
-	// ˄
-}
-
 func (m *MPlayer) GetKawa() []*MTile {
 	// ˅
 	return m.kawa
@@ -116,6 +106,18 @@ func (m *MPlayer) GetTsumoriTile() *MTile {
 func (m *MPlayer) SetTsumoriTile(tile *MTile) {
 	// ˅
 	m.tsumoriTile = tile
+	// ˄
+}
+
+func (m *MPlayer) GetRonTile() *MTile {
+	// ˅
+	return m.ronTile
+	// ˄
+}
+
+func (m *MPlayer) SetRonTile(tile *MTile) {
+	// ˅
+	m.ronTile = tile
 	// ˄
 }
 

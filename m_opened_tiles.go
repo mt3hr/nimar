@@ -8,7 +8,7 @@ type MOpenedTiles struct {
 
 	// ˄
 
-	tiles [4]*MTile
+	tiles []*MTile
 
 	openType *OpenType
 

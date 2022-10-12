@@ -88,4 +88,18 @@ func (m *MTile) ThisIsBig(tile *MTile) bool {
 
 // ˅
 
+func (t *Tile) ToMTile() *MTile {
+	if t == nil {
+		return nil
+	}
+	return &MTile{
+		name:    t.GetName(),
+		id:      int(t.GetId()),
+		num:     int(t.GetNum()),
+		suit:    t.GetSuit().Enum(),
+		dora:    t.GetDora(),
+		akadora: t.Akadora,
+	}
+}
+
 // ˄

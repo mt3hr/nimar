@@ -4,7 +4,7 @@ package nimar
 // ˄
 
 type Yaku interface {
-	IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool
+	IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool
 
 	GetName() string
 
@@ -26,6 +26,9 @@ func handAndTsumoriTile(player *MPlayer) TileIDs {
 	}
 	if player.tsumoriTile != nil {
 		tileIDs[player.GetTsumoriTile().GetID()]++
+	}
+	if player.ronTile != nil {
+		tileIDs[player.GetRonTile().GetID()]++
 	}
 	return tileIDs
 }
@@ -243,7 +246,7 @@ type Renho struct {
 	nakihan int
 }
 
-func (t *Tanyao) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
+func (t *Tanyao) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
 	tiles := handAndTsumoriTile(player)
 
 	for i := range tiles {
@@ -266,7 +269,7 @@ func (t *Tanyao) NumberOfHanWhenNaki() int {
 	return t.nakihan
 }
 
-func (r *Reach) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
+func (r *Reach) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
 	return player.status.Reach
 }
 
@@ -282,7 +285,7 @@ func (r *Reach) NumberOfHanWhenNaki() int {
 	return r.nakihan
 }
 
-func (i *Ippatsu) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
+func (i *Ippatsu) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
 	return player.status.Ippatsu && player.IsMenzen()
 }
 
@@ -298,7 +301,7 @@ func (i *Ippatsu) NumberOfHanWhenNaki() int {
 	return i.nakihan
 }
 
-func (m *MenzenTsumo) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
+func (m *MenzenTsumo) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
 	return player.status.Ippatsu && player.IsMenzen()
 }
 
@@ -314,8 +317,8 @@ func (m *MenzenTsumo) NumberOfHanWhenNaki() int {
 	return m.nakihan
 }
 
-func (c *Chankan) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (c *Chankan) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	return player.status.Chankan
 }
 
 func (c *Chankan) GetName() string {
@@ -330,8 +333,8 @@ func (c *Chankan) NumberOfHanWhenNaki() int {
 	return c.nakihan
 }
 
-func (r *Rinshan) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (r *Rinshan) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	return player.status.Rinshan
 }
 
 func (r *Rinshan) GetName() string {
@@ -346,8 +349,8 @@ func (r *Rinshan) NumberOfHanWhenNaki() int {
 	return r.nakihan
 }
 
-func (h *Haitei) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (h *Haitei) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	return player.status.Haitei
 }
 
 func (h *Haitei) GetName() string {
@@ -362,8 +365,8 @@ func (h *Haitei) NumberOfHanWhenNaki() int {
 	return h.nakihan
 }
 
-func (h *Houtei) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (h *Houtei) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	return player.status.Hotei
 }
 
 func (h *Houtei) GetName() string {
@@ -378,8 +381,8 @@ func (h *Houtei) NumberOfHanWhenNaki() int {
 	return h.nakihan
 }
 
-func (d *DoubleReach) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (d *DoubleReach) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	return player.status.DoubleReach
 }
 
 func (d *DoubleReach) GetName() string {
@@ -394,8 +397,8 @@ func (d *DoubleReach) NumberOfHanWhenNaki() int {
 	return d.nakihan
 }
 
-func (c *Chitoitsu) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (c *Chitoitsu) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	return table.GetGameManager().shantenChecker.checkChitoitsu(player) == -1
 }
 
 func (c *Chitoitsu) GetName() string {
@@ -410,8 +413,22 @@ func (c *Chitoitsu) NumberOfHanWhenNaki() int {
 	return c.nakihan
 }
 
-func (d *DabuTon) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (d *DabuTon) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+
+		if mentsu.IsEmpty() {
+			continue
+		}
+		if *player.status.Kaze == Kaze_KAZE_TON && *table.GetStatus().Kaze == Kaze_KAZE_TON && mentsu[31] >= 3 {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *DabuTon) GetName() string {
@@ -426,8 +443,22 @@ func (d *DabuTon) NumberOfHanWhenNaki() int {
 	return d.nakihan
 }
 
-func (d *DabuNan) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (d *DabuNan) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+
+		if mentsu.IsEmpty() {
+			continue
+		}
+		if *player.status.Kaze == Kaze_KAZE_NAN && *table.GetStatus().Kaze == Kaze_KAZE_NAN && mentsu[32] >= 3 {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *DabuNan) GetName() string {
@@ -442,8 +473,22 @@ func (d *DabuNan) NumberOfHanWhenNaki() int {
 	return d.nakihan
 }
 
-func (d *DabuSha) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (d *DabuSha) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+
+		if mentsu.IsEmpty() {
+			continue
+		}
+		if *player.status.Kaze == Kaze_KAZE_SHA && *table.GetStatus().Kaze == Kaze_KAZE_SHA && mentsu[33] >= 3 {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *DabuSha) GetName() string {
@@ -458,8 +503,22 @@ func (d *DabuSha) NumberOfHanWhenNaki() int {
 	return d.nakihan
 }
 
-func (d *DabuPe) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (d *DabuPe) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+
+		if mentsu.IsEmpty() {
+			continue
+		}
+		if *player.status.Kaze == Kaze_KAZE_PE && *table.GetStatus().Kaze == Kaze_KAZE_PE && mentsu[34] >= 3 {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *DabuPe) GetName() string {
@@ -474,8 +533,21 @@ func (d *DabuPe) NumberOfHanWhenNaki() int {
 	return d.nakihan
 }
 
-func (s *SanAnko) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (s *SanAnko) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	ankoCount := 0
+	for _, mentsuType := range []MentsuType{
+		agarikei.Agarikei.Mentsu1Type,
+		agarikei.Agarikei.Mentsu2Type,
+		agarikei.Agarikei.Mentsu3Type,
+		agarikei.Agarikei.Mentsu4Type,
+	} {
+		switch mentsuType {
+		case Ankan:
+		case Anko:
+			ankoCount++
+		}
+	}
+	return ankoCount >= 3
 }
 
 func (s *SanAnko) GetName() string {
@@ -490,12 +562,24 @@ func (s *SanAnko) NumberOfHanWhenNaki() int {
 	return s.nakihan
 }
 
-func (s *SanKantsu) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (s *SanKantsu) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	kantsuCount := 0
+	for _, mentsuType := range []MentsuType{
+		agarikei.Agarikei.Mentsu1Type,
+		agarikei.Agarikei.Mentsu2Type,
+		agarikei.Agarikei.Mentsu3Type,
+		agarikei.Agarikei.Mentsu4Type,
+	} {
+		switch mentsuType {
+		case Ankan:
+		case Minkan:
+			kantsuCount++
+		}
+	}
+	return kantsuCount >= 3
 }
 
 func (s *SanKantsu) GetName() string {
-	panic("not implemented") // TODO: Implement
 	return "三槓子"
 }
 
@@ -507,8 +591,31 @@ func (s *SanKantsu) NumberOfHanWhenNaki() int {
 	return s.nakihan
 }
 
-func (s *SuankoTanki) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (s *SuankoTanki) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	if agarikei.Agarikei.Janto.IsEmpty() {
+		return false
+	}
+	if player.GetTsumoriTile() != nil && agarikei.Agarikei.Janto[player.GetTsumoriTile().GetID()] != 2 {
+		return false
+	}
+	if player.GetRonTile() != nil && agarikei.Agarikei.Janto[player.GetRonTile().GetID()] != 2 {
+		return false
+	}
+
+	ankoCount := 0
+	for _, mentsuType := range []MentsuType{
+		agarikei.Agarikei.Mentsu1Type,
+		agarikei.Agarikei.Mentsu2Type,
+		agarikei.Agarikei.Mentsu3Type,
+		agarikei.Agarikei.Mentsu4Type,
+	} {
+		switch mentsuType {
+		case Ankan:
+		case Anko:
+			ankoCount++
+		}
+	}
+	return ankoCount >= 4
 }
 
 func (s *SuankoTanki) GetName() string {
@@ -523,8 +630,29 @@ func (s *SuankoTanki) NumberOfHanWhenNaki() int {
 	return s.nakihan
 }
 
-func (j *JunseiChuren) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (j *JunseiChuren) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	isJunseiTyuuren := false
+	tileIDs := handAndTsumoriTile(player)
+	if player.GetTsumoriTile() != nil {
+		tileIDs[player.GetTsumoriTile().GetID()]--
+	}
+	if player.GetRonTile() != nil {
+		tileIDs[player.GetRonTile().GetID()]--
+	}
+
+	for i := 0; i < 3; i++ {
+		if tileIDs[i*10+1] == 3 && tileIDs[i*10+2] == 1 && tileIDs[i*10+3] == 1 && tileIDs[i*10+4] == 1 && tileIDs[i*10+5] == 1 && tileIDs[i*10+6] == 1 && tileIDs[i*10+7] == 1 && tileIDs[i*10+8] == 1 && tileIDs[i*10+9] == 3 {
+			isJunseiTyuuren = true
+		}
+	}
+
+	if player.GetTsumoriTile() != nil {
+		tileIDs[player.GetTsumoriTile().GetID()]++
+	}
+	if player.GetRonTile() != nil {
+		tileIDs[player.GetRonTile().GetID()]++
+	}
+	return isJunseiTyuuren
 }
 
 func (j *JunseiChuren) GetName() string {
@@ -539,8 +667,28 @@ func (j *JunseiChuren) NumberOfHanWhenNaki() int {
 	return j.nakihan
 }
 
-func (k *Kokushi13) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (k *Kokushi13) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	isKokusi13 := false
+	tileIDs := handAndTsumoriTile(player)
+	if player.GetTsumoriTile() != nil {
+		tileIDs[player.GetTsumoriTile().GetID()]--
+	}
+	if player.GetRonTile() != nil {
+		tileIDs[player.GetRonTile().GetID()]--
+	}
+
+	if tileIDs[1] == 1 && tileIDs[9] == 1 && tileIDs[11] == 1 && tileIDs[19] == 1 && tileIDs[21] == 1 && tileIDs[29] == 1 && tileIDs[31] == 1 && tileIDs[32] == 1 && tileIDs[33] == 1 && tileIDs[34] == 1 && tileIDs[35] == 1 && tileIDs[36] == 1 && tileIDs[37] == 1 {
+		isKokusi13 = true
+	}
+
+	if player.GetTsumoriTile() != nil {
+		tileIDs[player.GetTsumoriTile().GetID()]++
+	}
+	if player.GetRonTile() != nil {
+		tileIDs[player.GetRonTile().GetID()]++
+	}
+
+	return isKokusi13
 }
 
 func (k *Kokushi13) GetName() string {
@@ -555,8 +703,99 @@ func (k *Kokushi13) NumberOfHanWhenNaki() int {
 	return k.nakihan
 }
 
-func (p *Pinhu) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (p *Pinhu) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	tileIDs := handAndTsumoriTile(player)
+	if tileIDs[35] != 0 {
+		return false
+	}
+	if tileIDs[36] != 0 {
+		return false
+	}
+	if tileIDs[37] != 0 {
+		return false
+	}
+	switch *player.status.Kaze {
+	case Kaze_KAZE_TON:
+		if tileIDs[31] != 0 {
+			return false
+		}
+		break
+	case Kaze_KAZE_NAN:
+		if tileIDs[32] != 0 {
+			return false
+		}
+		break
+	case Kaze_KAZE_SHA:
+		if tileIDs[33] != 0 {
+			return false
+		}
+		break
+	case Kaze_KAZE_PE:
+		if tileIDs[34] != 0 {
+			return false
+		}
+		break
+	}
+	switch *table.GetStatus().Kaze {
+	case Kaze_KAZE_TON:
+		if tileIDs[31] != 0 {
+			return false
+		}
+		break
+	case Kaze_KAZE_NAN:
+		if tileIDs[32] != 0 {
+			return false
+		}
+		break
+	case Kaze_KAZE_SHA:
+		if tileIDs[33] != 0 {
+			return false
+		}
+		break
+	case Kaze_KAZE_PE:
+		if tileIDs[34] != 0 {
+			return false
+		}
+		break
+	}
+	for _, mentsuType := range []MentsuType{
+		agarikei.Agarikei.Mentsu1Type,
+		agarikei.Agarikei.Mentsu2Type,
+		agarikei.Agarikei.Mentsu3Type,
+		agarikei.Agarikei.Mentsu4Type,
+	} {
+		if mentsuType != MenzenShuntsu {
+			return false
+		}
+	}
+
+	// 両面待ち
+	playerTemp := *player
+	agariTileID := 0
+	playerTemp.SetTsumoriTile(nil)
+	playerTemp.SetRonTile(nil)
+
+	tileIDs[agariTileID] -= 1
+	matihai := table.GetGameManager().shantenChecker.CheckCountOfShanten(&playerTemp).Machihai
+	tileIDs[agariTileID] += 1
+	for i := 0; i <= 2; i++ {
+		for j := 1; j <= 6; j++ {
+			var small = false
+			var big = false
+			for mati := range matihai {
+				if mati == i*10+j {
+					small = true
+				}
+				if mati == i*10+j+3 {
+					big = true
+				}
+			}
+			if big && small {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (p *Pinhu) GetName() string {
@@ -571,8 +810,21 @@ func (p *Pinhu) NumberOfHanWhenNaki() int {
 	return p.nakihan
 }
 
-func (h *Haku) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (h *Haku) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if mentsu.IsEmpty() {
+			return false
+		}
+		if mentsu[35] >= 3 {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *Haku) GetName() string {
@@ -587,8 +839,21 @@ func (h *Haku) NumberOfHanWhenNaki() int {
 	return h.nakihan
 }
 
-func (h *Hatsu) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (h *Hatsu) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if mentsu.IsEmpty() {
+			return false
+		}
+		if mentsu[36] >= 3 {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *Hatsu) GetName() string {
@@ -603,8 +868,21 @@ func (h *Hatsu) NumberOfHanWhenNaki() int {
 	return h.nakihan
 }
 
-func (c *Chun) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (c *Chun) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if mentsu.IsEmpty() {
+			return false
+		}
+		if mentsu[37] >= 3 {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Chun) GetName() string {
@@ -619,8 +897,21 @@ func (c *Chun) NumberOfHanWhenNaki() int {
 	return c.nakihan
 }
 
-func (t *Ton) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (t *Ton) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if mentsu.IsEmpty() {
+			return false
+		}
+		if *table.tableStatus.Kaze == Kaze_KAZE_TON || *player.status.Kaze == Kaze_KAZE_TON {
+			return mentsu[31] >= 3
+		}
+	}
+	return false
 }
 
 func (t *Ton) GetName() string {
@@ -635,8 +926,21 @@ func (t *Ton) NumberOfHanWhenNaki() int {
 	return t.nakihan
 }
 
-func (n *Nan) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (n *Nan) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if mentsu.IsEmpty() {
+			return false
+		}
+		if *table.tableStatus.Kaze == Kaze_KAZE_NAN || *player.status.Kaze == Kaze_KAZE_NAN {
+			return mentsu[32] >= 3
+		}
+	}
+	return false
 }
 
 func (n *Nan) GetName() string {
@@ -651,8 +955,21 @@ func (n *Nan) NumberOfHanWhenNaki() int {
 	return n.nakihan
 }
 
-func (s *Sha) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (s *Sha) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if mentsu.IsEmpty() {
+			return false
+		}
+		if *table.tableStatus.Kaze == Kaze_KAZE_SHA || *player.status.Kaze == Kaze_KAZE_SHA {
+			return mentsu[33] >= 3
+		}
+	}
+	return false
 }
 
 func (s *Sha) GetName() string {
@@ -667,8 +984,21 @@ func (s *Sha) NumberOfHanWhenNaki() int {
 	return s.nakihan
 }
 
-func (p *Pe) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (p *Pe) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if mentsu.IsEmpty() {
+			return false
+		}
+		if *table.tableStatus.Kaze == Kaze_KAZE_PE || *player.status.Kaze == Kaze_KAZE_PE {
+			return mentsu[34] >= 3
+		}
+	}
+	return false
 }
 
 func (p *Pe) GetName() string {
@@ -683,8 +1013,23 @@ func (p *Pe) NumberOfHanWhenNaki() int {
 	return p.nakihan
 }
 
-func (t *Toitoi) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (t *Toitoi) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsuType := range []MentsuType{
+		agarikei.Agarikei.Mentsu1Type,
+		agarikei.Agarikei.Mentsu2Type,
+		agarikei.Agarikei.Mentsu3Type,
+		agarikei.Agarikei.Mentsu4Type,
+	} {
+		switch mentsuType {
+		case Anko:
+			fallthrough
+		case Ankan:
+			continue
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func (t *Toitoi) GetName() string {
@@ -699,8 +1044,14 @@ func (t *Toitoi) NumberOfHanWhenNaki() int {
 	return t.nakihan
 }
 
-func (s *SanshokuDoukou) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (s *SanshokuDoukou) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	tileIDs := handAndTsumoriTile(player)
+	for i := 1; i <= 9; i++ {
+		if tileIDs[i] > 3 && tileIDs[i+10] > 3 && tileIDs[i+20] > 3 {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *SanshokuDoukou) GetName() string {
@@ -715,8 +1066,27 @@ func (s *SanshokuDoukou) NumberOfHanWhenNaki() int {
 	return s.nakihan
 }
 
-func (s *SanshokuDoujun) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (s *SanshokuDoujun) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	tileIDs := handAndTsumoriTile(player)
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if mentsu.IsEmpty() {
+			return false
+		}
+		//TODO 索子しか使われないから使われません。このまんまでいいや
+		for j := 1; j <= 7; j++ {
+			if tileIDs[j] > 1 && tileIDs[j+1] > 1 && tileIDs[j+2] > 1 &&
+				tileIDs[j+10] > 1 && tileIDs[j+11] > 1 && tileIDs[j+12] > 1 &&
+				tileIDs[j+20] > 1 && tileIDs[j+21] > 1 && tileIDs[j+22] > 1 {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (s *SanshokuDoujun) GetName() string {
@@ -731,8 +1101,24 @@ func (s *SanshokuDoujun) NumberOfHanWhenNaki() int {
 	return s.nakihan
 }
 
-func (h *Honroto) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (h *Honroto) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	tileIDs := handAndTsumoriTile(player)
+	for i := 2; i <= 8; i++ {
+		if tileIDs[i] != 0 {
+			return false
+		}
+	}
+	for i := 12; i <= 18; i++ {
+		if tileIDs[i] != 0 {
+			return false
+		}
+	}
+	for i := 22; i <= 28; i++ {
+		if tileIDs[i] != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func (h *Honroto) GetName() string {
@@ -747,8 +1133,30 @@ func (h *Honroto) NumberOfHanWhenNaki() int {
 	return h.nakihan
 }
 
-func (i *Ikkitsuukan) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (i *Ikkitsuukan) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for i := 0; i < 3; i++ {
+		m123 := false
+		m456 := false
+		m789 := false
+
+		for _, mentsu := range []TileIDs{
+			agarikei.Agarikei.Mentsu1,
+			agarikei.Agarikei.Mentsu2,
+			agarikei.Agarikei.Mentsu3,
+			agarikei.Agarikei.Mentsu4,
+		} {
+			if mentsu.IsEmpty() {
+				return false
+			}
+			m123 = m123 || mentsu[i*10+1] == 1 && mentsu[i*10+2] == 1 && mentsu[i*10+3] == 1
+			m456 = m456 || mentsu[i*10+4] == 1 && mentsu[i*10+5] == 1 && mentsu[i*10+6] == 1
+			m789 = m789 || mentsu[i*10+7] == 1 && mentsu[i*10+8] == 1 && mentsu[i*10+9] == 1
+		}
+		if m123 && m456 && m789 {
+			return true
+		}
+	}
+	return false
 }
 
 func (i *Ikkitsuukan) GetName() string {
@@ -763,8 +1171,28 @@ func (i *Ikkitsuukan) NumberOfHanWhenNaki() int {
 	return i.nakihan
 }
 
-func (c *Chanta) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (c *Chanta) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		var hasYaochu = false
+		if mentsu.IsEmpty() {
+			return false
+		}
+		for j := 0; j < len(mentsu); j++ {
+			if (j == 1 || j == 9 || j == 11 || j == 19 || j == 21 || j == 29 || j == 31 || j == 32 || j == 33 || j == 34 || j == 35 || j == 36 || j == 37) && mentsu[j] != 0 {
+				hasYaochu = true
+				break
+			}
+		}
+		if !hasYaochu {
+			return false
+		}
+	}
+	return true
 }
 
 func (c *Chanta) GetName() string {
@@ -779,8 +1207,18 @@ func (c *Chanta) NumberOfHanWhenNaki() int {
 	return c.nakihan
 }
 
-func (s *Shousangen) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (s *Shousangen) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	tileIDs := handAndTsumoriTile(player)
+	if tileIDs[35] >= 2 && tileIDs[36] >= 3 && tileIDs[37] >= 3 {
+		return true
+	}
+	if tileIDs[35] >= 3 && tileIDs[36] >= 2 && tileIDs[37] >= 3 {
+		return true
+	}
+	if tileIDs[35] >= 3 && tileIDs[36] >= 3 && tileIDs[37] >= 2 {
+		return true
+	}
+	return false
 }
 
 func (s *Shousangen) GetName() string {
@@ -795,8 +1233,21 @@ func (s *Shousangen) NumberOfHanWhenNaki() int {
 	return s.nakihan
 }
 
-func (h *Honitsu) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (h *Honitsu) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	var man = false
+	var pin = false
+	var sou = false
+
+	tileIDs := handAndTsumoriTile(player)
+
+	for i := 0; i < len(tileIDs); i++ {
+		for j := 1; j <= 9; j++ {
+			man = man || tileIDs[j] > 0
+			pin = pin || tileIDs[j+10] > 0
+			sou = sou || tileIDs[j+20] > 0
+		}
+	}
+	return (man && !pin && !sou) || (!man && pin && !sou) || (!man && !pin && sou)
 }
 
 func (h *Honitsu) GetName() string {
@@ -811,8 +1262,28 @@ func (h *Honitsu) NumberOfHanWhenNaki() int {
 	return h.nakihan
 }
 
-func (j *Junchan) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (j *Junchan) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	for _, mentsu := range []TileIDs{
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		has19 := false
+		if mentsu.IsEmpty() {
+			return false
+		}
+		for j := 0; j < len(mentsu); j++ {
+			if (j == 1 || j == 9 || j == 11 || j == 19 || j == 21 || j == 29) && mentsu[j] != 0 {
+				has19 = true
+				break
+			}
+		}
+		if !has19 {
+			return false
+		}
+	}
+	return true
 }
 
 func (j *Junchan) GetName() string {
@@ -827,8 +1298,26 @@ func (j *Junchan) NumberOfHanWhenNaki() int {
 	return j.nakihan
 }
 
-func (c *Chinitsu) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (c *Chinitsu) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	tileIDs := handAndTsumoriTile(player)
+	var man = false
+	var pin = false
+	var sou = false
+	for i := 0; i < len(tileIDs); i++ {
+		for j := 31; j <= 37; j++ {
+			if tileIDs[j] != 0 {
+				return false
+			}
+		}
+
+		for j := 1; j <= 9; j++ {
+			man = man || tileIDs[j] != 0
+			pin = pin || tileIDs[j+10] != 0
+			sou = sou || tileIDs[j+20] != 0
+		}
+
+	}
+	return (man && !pin && !sou) || (!man && pin && !sou) || (!man && !pin && sou)
 }
 
 func (c *Chinitsu) GetName() string {
@@ -843,8 +1332,18 @@ func (c *Chinitsu) NumberOfHanWhenNaki() int {
 	return c.nakihan
 }
 
-func (r *Ryuiso) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (r *Ryuiso) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	tileIDs := handAndTsumoriTile(player)
+	var hasHatsu = false
+	for j := 0; j < len(tileIDs); j++ {
+		if ((j >= 1 && j <= 20) || (j >= 31 && j <= 35) || (j == 37) || (j == 21 || j == 25 || j == 27 || j == 29)) || tileIDs[j] != 0 {
+			return false
+		}
+		if j == 36 && tileIDs[36] != 0 {
+			hasHatsu = true
+		}
+	}
+	return hasHatsu
 }
 
 func (r *Ryuiso) GetName() string {
@@ -859,8 +1358,9 @@ func (r *Ryuiso) NumberOfHanWhenNaki() int {
 	return r.nakihan
 }
 
-func (d *Daisangen) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (d *Daisangen) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	tileIDs := handAndTsumoriTile(player)
+	return tileIDs[35] >= 3 && tileIDs[36] >= 3 && tileIDs[37] >= 3
 }
 
 func (d *Daisangen) GetName() string {
@@ -875,8 +1375,22 @@ func (d *Daisangen) NumberOfHanWhenNaki() int {
 	return d.nakihan
 }
 
-func (s *Shosushi) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (s *Shosushi) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	tileIDs := handAndTsumoriTile(player)
+
+	if tileIDs[31] >= 2 && tileIDs[32] >= 3 && tileIDs[33] >= 3 && tileIDs[34] >= 3 {
+		return true
+	}
+	if tileIDs[31] >= 3 && tileIDs[32] >= 2 && tileIDs[33] >= 3 && tileIDs[34] >= 3 {
+		return true
+	}
+	if tileIDs[31] >= 3 && tileIDs[32] >= 3 && tileIDs[33] >= 2 && tileIDs[34] >= 3 {
+		return true
+	}
+	if tileIDs[31] >= 3 && tileIDs[32] >= 3 && tileIDs[33] >= 3 && tileIDs[34] >= 2 {
+		return true
+	}
+	return false
 }
 
 func (s *Shosushi) GetName() string {
@@ -891,8 +1405,14 @@ func (s *Shosushi) NumberOfHanWhenNaki() int {
 	return s.nakihan
 }
 
-func (t *Tsuiso) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (t *Tsuiso) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	tileIDs := handAndTsumoriTile(player)
+	for j := 0; j < len(tileIDs); j++ {
+		if !(j == 31 || j == 32 || j == 33 || j == 34 || j == 35 || j == 36 || j == 37) && tileIDs[j] != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func (t *Tsuiso) GetName() string {
@@ -907,8 +1427,8 @@ func (t *Tsuiso) NumberOfHanWhenNaki() int {
 	return t.nakihan
 }
 
-func (k *Kokushi) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (k *Kokushi) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	return table.GetGameManager().shantenChecker.checkKokushi(player) == -1
 }
 
 func (k *Kokushi) GetName() string {
@@ -923,8 +1443,21 @@ func (k *Kokushi) NumberOfHanWhenNaki() int {
 	return k.nakihan
 }
 
-func (s *Suanko) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (s *Suanko) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	ankoCount := 0
+	for _, mentsuType := range []MentsuType{
+		agarikei.Agarikei.Mentsu1Type,
+		agarikei.Agarikei.Mentsu2Type,
+		agarikei.Agarikei.Mentsu3Type,
+		agarikei.Agarikei.Mentsu4Type,
+	} {
+		switch mentsuType {
+		case Ankan:
+		case Anko:
+			ankoCount++
+		}
+	}
+	return ankoCount >= 4
 }
 
 func (s *Suanko) GetName() string {
@@ -939,8 +1472,29 @@ func (s *Suanko) NumberOfHanWhenNaki() int {
 	return s.nakihan
 }
 
-func (c *Chinroto) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (c *Chinroto) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	tileIDs := handAndTsumoriTile(player)
+	for i := 2; i <= 8; i++ {
+		if tileIDs[i] > 0 {
+			return false
+		}
+	}
+	for i := 12; i <= 18; i++ {
+		if tileIDs[i] > 0 {
+			return false
+		}
+	}
+	for i := 22; i <= 28; i++ {
+		if tileIDs[i] > 0 {
+			return false
+		}
+	}
+	for i := 31; i <= 37; i++ {
+		if tileIDs[i] > 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func (c *Chinroto) GetName() string {
@@ -955,12 +1509,24 @@ func (c *Chinroto) NumberOfHanWhenNaki() int {
 	return c.nakihan
 }
 
-func (s *Sukantsu) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (s *Sukantsu) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	kantsuCount := 0
+	for _, mentsuType := range []MentsuType{
+		agarikei.Agarikei.Mentsu1Type,
+		agarikei.Agarikei.Mentsu2Type,
+		agarikei.Agarikei.Mentsu3Type,
+		agarikei.Agarikei.Mentsu4Type,
+	} {
+		switch mentsuType {
+		case Ankan:
+		case Minkan:
+			kantsuCount++
+		}
+	}
+	return kantsuCount >= 4
 }
 
 func (s *Sukantsu) GetName() string {
-	panic("not implemented") // TODO: Implement
 	return "四槓子"
 }
 
@@ -972,8 +1538,9 @@ func (s *Sukantsu) NumberOfHanWhenNaki() int {
 	return s.nakihan
 }
 
-func (d *Daisushi) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (d *Daisushi) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	tileIDs := handAndTsumoriTile(player)
+	return tileIDs[31] >= 3 && tileIDs[32] >= 3 && tileIDs[33] >= 3 && tileIDs[34] >= 3
 }
 
 func (d *Daisushi) GetName() string {
@@ -988,8 +1555,38 @@ func (d *Daisushi) NumberOfHanWhenNaki() int {
 	return d.nakihan
 }
 
-func (c *Churenpoto) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (c *Churenpoto) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	isChuren := false
+	tileIDs := handAndTsumoriTile(player)
+
+	for i := 0; i < 3; i++ {
+		if tileIDs[i*10+1] >= 3 && tileIDs[i*10+2] >= 1 && tileIDs[i*10+3] >= 1 && tileIDs[i*10+4] >= 1 && tileIDs[i*10+5] >= 1 && tileIDs[i*10+6] >= 1 && tileIDs[i*10+7] >= 1 && tileIDs[i*10+8] >= 1 && tileIDs[i*10+9] >= 3 {
+			tileIDs[i*10+1] -= 3
+			tileIDs[i*10+2] -= 1
+			tileIDs[i*10+3] -= 1
+			tileIDs[i*10+4] -= 1
+			tileIDs[i*10+5] -= 1
+			tileIDs[i*10+6] -= 1
+			tileIDs[i*10+7] -= 1
+			tileIDs[i*10+8] -= 1
+			tileIDs[i*10+9] -= 3
+
+			if tileIDs[i*10+1] == 1 && tileIDs[i*10+2] == 1 && tileIDs[i*10+3] == 1 && tileIDs[i*10+4] == 1 && tileIDs[i*10+5] == 1 && tileIDs[i*10+6] == 1 && tileIDs[i*10+7] == 1 && tileIDs[i*10+8] == 1 && tileIDs[i*10+9] == 1 {
+				isChuren = true
+			}
+
+			tileIDs[i*10+1] += 3
+			tileIDs[i*10+2] += 1
+			tileIDs[i*10+3] += 1
+			tileIDs[i*10+4] += 1
+			tileIDs[i*10+5] += 1
+			tileIDs[i*10+6] += 1
+			tileIDs[i*10+7] += 1
+			tileIDs[i*10+8] += 1
+			tileIDs[i*10+9] += 3
+		}
+	}
+	return isChuren
 }
 
 func (c *Churenpoto) GetName() string {
@@ -1004,8 +1601,88 @@ func (c *Churenpoto) NumberOfHanWhenNaki() int {
 	return c.nakihan
 }
 
-func (r *Ryanpeko) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (r *Ryanpeko) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	if !player.IsMenzen() {
+		return false
+	}
+	peko := 0
+
+	// 1つ目の面子と同じ面子があるかどうか。234
+	for _, hikakuTaisyou := range []TileIDs{
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if agarikei.Agarikei.Mentsu1.IsEmpty() {
+			return false
+		}
+		mentsu := agarikei.Agarikei.Mentsu1
+		for j := 1; j <= 7; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+		for j := 11; j <= 17; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+		for j := 21; j <= 27; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+	}
+	// 2つ目の面子と同じ面子があるかどうか。34
+	for _, hikakuTaisyou := range []TileIDs{
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if agarikei.Agarikei.Mentsu2.IsEmpty() {
+			return false
+		}
+		mentsu := agarikei.Agarikei.Mentsu2
+		for j := 1; j <= 7; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+		for j := 11; j <= 17; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+		for j := 21; j <= 27; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+	}
+	// 3つ目の面子と同じ面子があるかどうか。4。
+	for _, hikakuTaisyou := range []TileIDs{
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if agarikei.Agarikei.Mentsu3.IsEmpty() {
+			return false
+		}
+		mentsu := agarikei.Agarikei.Mentsu3
+		for j := 1; j <= 7; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+		for j := 11; j <= 17; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+		for j := 21; j <= 27; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+	}
+	return peko >= 2
 }
 
 func (r *Ryanpeko) GetName() string {
@@ -1020,8 +1697,88 @@ func (r *Ryanpeko) NumberOfHanWhenNaki() int {
 	return r.nakihan
 }
 
-func (i *Ipeko) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (i *Ipeko) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	if !player.IsMenzen() {
+		return false
+	}
+	peko := 0
+
+	// 1つ目の面子と同じ面子があるかどうか。234
+	for _, hikakuTaisyou := range []TileIDs{
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if agarikei.Agarikei.Mentsu1.IsEmpty() {
+			return false
+		}
+		mentsu := agarikei.Agarikei.Mentsu1
+		for j := 1; j <= 7; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+		for j := 11; j <= 17; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+		for j := 21; j <= 27; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+	}
+	// 2つ目の面子と同じ面子があるかどうか。34
+	for _, hikakuTaisyou := range []TileIDs{
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if agarikei.Agarikei.Mentsu2.IsEmpty() {
+			return false
+		}
+		mentsu := agarikei.Agarikei.Mentsu2
+		for j := 1; j <= 7; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+		for j := 11; j <= 17; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+		for j := 21; j <= 27; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+	}
+	// 3つ目の面子と同じ面子があるかどうか。4。
+	for _, hikakuTaisyou := range []TileIDs{
+		agarikei.Agarikei.Mentsu4,
+	} {
+		if agarikei.Agarikei.Mentsu3.IsEmpty() {
+			return false
+		}
+		mentsu := agarikei.Agarikei.Mentsu3
+		for j := 1; j <= 7; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+		for j := 11; j <= 17; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+		for j := 21; j <= 27; j++ {
+			if mentsu[j] == 1 && hikakuTaisyou[j] == 1 && mentsu[j+1] == 1 && hikakuTaisyou[j+1] == 1 && mentsu[j+2] == 1 && hikakuTaisyou[j+2] == 1 {
+				peko++
+			}
+		}
+	}
+	return peko >= 1
 }
 
 func (i *Ipeko) GetName() string {
@@ -1036,8 +1793,28 @@ func (i *Ipeko) NumberOfHanWhenNaki() int {
 	return i.nakihan
 }
 
-func (n *Nagashimangan) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (n *Nagashimangan) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	if player.status.Nakare {
+		return false
+	}
+	for i := 0; i < len(player.GetKawa()); i++ {
+		for j := 2; j <= 8; j++ {
+			if player.GetKawa()[i].GetID() == j {
+				return false
+			}
+		}
+		for j := 12; j <= 18; j++ {
+			if player.GetKawa()[i].GetID() == j {
+				return false
+			}
+		}
+		for j := 22; j <= 28; j++ {
+			if player.GetKawa()[i].GetID() == j {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (n *Nagashimangan) GetName() string {
@@ -1052,8 +1829,11 @@ func (n *Nagashimangan) NumberOfHanWhenNaki() int {
 	return n.nakihan
 }
 
-func (t *Tenho) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (t *Tenho) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze == Kaze_KAZE_TON && player.GetTsumoriTile() != nil && len(player.openedPe.tiles) == 0 {
+		return true
+	}
+	return false
 }
 
 func (t *Tenho) GetName() string {
@@ -1068,8 +1848,11 @@ func (t *Tenho) NumberOfHanWhenNaki() int {
 	return t.nakihan
 }
 
-func (c *Chiho) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (c *Chiho) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze != Kaze_KAZE_TON && player.GetTsumoriTile() != nil && len(player.openedPe.tiles) == 0 {
+		return true
+	}
+	return false
 }
 
 func (c *Chiho) GetName() string {
@@ -1084,8 +1867,11 @@ func (c *Chiho) NumberOfHanWhenNaki() int {
 	return c.nakihan
 }
 
-func (r *Renho) IsMatch(player *MPlayer, agarikei *CountOfShantenAndAgarikei) bool {
-	panic("not implemented") // TODO: Implement
+func (r *Renho) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze != Kaze_KAZE_TON && player.GetRonTile() != nil && len(player.openedPe.tiles) == 0 {
+		return true
+	}
+	return false
 }
 
 func (r *Renho) GetName() string {
