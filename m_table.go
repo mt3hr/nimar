@@ -135,10 +135,17 @@ func (m *MTable) UpdateView() {
 
 // ˅
 func NewTable(roomID string, roomName string) *MTable {
+	ton := Kaze_KAZE_TON
 	table := &MTable{
 		id:    roomID,
 		name:  roomName,
 		tsumo: &MTsumo{},
+		tableStatus: &MTableStatus{
+			Sukaikan:      false,
+			Kaze:          &ton,
+			NumberOfKyoku: 1,
+			NumberOfHonba: 0,
+		},
 	}
 	manager := newGameManager(table)
 	table.gameManager = manager

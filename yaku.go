@@ -245,6 +245,10 @@ type Renho struct {
 	han     int
 	nakihan int
 }
+type KyushuKyuhai struct {
+	han     int
+	nakihan int
+}
 
 func (t *Tanyao) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
 	tiles := handAndTsumoriTile(player)
@@ -1886,6 +1890,67 @@ func (r *Renho) NumberOfHanWhenNaki() int {
 	return r.nakihan
 }
 
+func (r *KyushuKyuhai) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	if !(len(player.openedPe.tiles) == 0 && len(player.GetKawa()) == 0) {
+		return false
+	}
+	hasMan := 0
+	hasPin := 0
+	hasSou := 0
+	hasTon := 0
+	hasNan := 0
+	hasSya := 0
+	hasPe := 0
+	hasHaku := 0
+	hasHatsu := 0
+	hasChun := 0
+	for _, tileNum := range handAndTsumoriTile(player) {
+		if tileNum >= 0 && tileNum <= 9 {
+			hasMan = 1
+		}
+		if tileNum >= 10 && tileNum <= 19 {
+			hasPin = 1
+		}
+		if tileNum >= 20 && tileNum <= 29 {
+			hasSou = 1
+		}
+		if tileNum == 31 {
+			hasTon = 1
+		}
+		if tileNum == 32 {
+			hasNan = 1
+		}
+		if tileNum == 33 {
+			hasSya = 1
+		}
+		if tileNum == 34 {
+			hasPe = 1
+		}
+		if tileNum == 35 {
+			hasHaku = 1
+		}
+		if tileNum == 36 {
+			hasHatsu = 1
+		}
+		if tileNum == 37 {
+			hasChun = 1
+		}
+	}
+	return 9 <= hasMan+hasPin+hasSou+hasTon+hasNan+hasSya+hasPe+hasHaku+hasHatsu+hasChun
+}
+
+func (r *KyushuKyuhai) GetName() string {
+	return "九種九牌"
+}
+
+func (r *KyushuKyuhai) NumberOfHan() int {
+	return r.han
+}
+
+func (r *KyushuKyuhai) NumberOfHanWhenNaki() int {
+	return r.nakihan
+}
+
 func NewTanyao(han, nakihan int) *Tanyao {
 	return &Tanyao{
 		han:     han,
@@ -2204,13 +2269,126 @@ func NewRenho(han, nakihan int) *Renho {
 		nakihan: nakihan,
 	}
 }
-
-func GenerateYakusDefault() []Yaku {
-	//TODO
-	panic("notImplemented")
+func NewKyushuKyuhai() *KyushuKyuhai {
+	return &KyushuKyuhai{
+		han:     0,
+		nakihan: 0,
+	}
 }
 
-func GenerateYakusNimar() []Yaku {
+func GenerateYakusDefault() map[string]Yaku {
+	yakus := map[string]Yaku{}
+	var yaku Yaku
+	yaku = NewTanyao(1, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewReach(1, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewIppatsu(1, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewMenzenTsumo(1, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewChankan(1, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewRinshan(1, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewHaitei(1, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewHoutei(1, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewDoubleReach(2, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewChitoitsu(2, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewDabuTon(2, 2)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewDabuNan(2, 2)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewDabuSha(2, 2)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewDabuPe(2, 2)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewSanAnko(2, 2)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewSanKantsu(2, 2)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewSuankoTanki(26, 26)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewJunseiChuren(26, 26)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewKokushi13(26, 26)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewPinhu(1, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewHaku(1, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewHatsu(1, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewChun(1, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewTon(1, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewNan(1, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewSha(1, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewPe(1, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewToitoi(2, 2)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewSanshokuDoukou(2, 2)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewSanshokuDoujun(2, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewHonroto(13, 13)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewIkkitsuukan(2, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewChanta(2, 1)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewShousangen(2, 2)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewHonitsu(3, 2)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewJunchan(3, 2)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewRyuiso(13, 13)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewDaisangen(13, 13)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewShosushi(13, 13)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewTsuiso(13, 13)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewKokushi(13, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewSuanko(13, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewChinroto(13, 13)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewSukantsu(13, 13)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewDaisushi(13, 13)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewChurenpoto(13, 13)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewRyanpeko(3, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewIpeko(1, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewNagashimangan(4, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewTenho(13, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewChiho(13, 0)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewRenho(13, 13)
+	yakus[yaku.GetName()] = yaku
+	yaku = NewKyushuKyuhai()
+	yakus[yaku.GetName()] = yaku
+	return yakus
+}
+
+func GenerateYakusNimar() map[string]Yaku {
 	//TODO
 	panic("notImplemented")
 }

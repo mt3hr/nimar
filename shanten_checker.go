@@ -8,6 +8,8 @@ type ShantenChecker struct {
 
 	// ˄
 
+	yakuList map[string]Yaku
+
 	// ˅
 	countOfToitsu        int // トイツ数
 	countOfKotsu         int // コーツ数
@@ -67,6 +69,18 @@ func (s *ShantenChecker) CheckCountOfShanten(player *MPlayer) *CountOfShantenAnd
 		shantenAndAgarikei.Agarikei.MachiHai = s.calcMachihai()
 	}
 	return shantenAndAgarikei
+	// ˄
+}
+
+func (s *ShantenChecker) GetYakuList() map[string]Yaku {
+	// ˅
+	return s.yakuList
+	// ˄
+}
+
+func (s *ShantenChecker) SetYakuList(yakuList map[string]Yaku) {
+	// ˅
+	s.yakuList = yakuList
 	// ˄
 }
 
@@ -1313,6 +1327,12 @@ func (s *ShantenChecker) calcMachihai() map[int]interface{} {
 		}
 	}
 	return set
+}
+
+func NewShantenChecker() *ShantenChecker {
+	return &ShantenChecker{
+		yakuList: GenerateYakusDefault(),
+	}
 }
 
 // ˄

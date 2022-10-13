@@ -20,11 +20,19 @@ type MPlayerStatus struct {
 
 	Hotei bool
 
+	Tenho bool
+
+	Chiho bool
+
+	Renho bool
+
 	DoubleReach bool
 
 	Nakare bool
 
 	NakareWhenAround bool
+
+	KyushuKyuhai bool
 
 	Kaze *Kaze
 

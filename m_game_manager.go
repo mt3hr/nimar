@@ -296,6 +296,40 @@ func (m *MGameManager) StartGame() {
 	// ˅
 	m.preparateGame()
 	m.initializeGame()
+	tsumo := m.table.GetTsumo()
+
+	player := m.table.tableStatus.PlayerWithTurn
+	opponentPlayer := m.table.tableStatus.PlayerWithNotTurn
+
+	player.SetTsumoriTile(tsumo.Pop())
+	if m.shantenChecker.GetYakuList()["九種九牌"].IsMatch(player, m.table, nil) {
+		player.status.KyushuKyuhai = true
+	} else {
+		player.status.KyushuKyuhai = false
+	}
+
+	if m.shantenChecker.GetYakuList()["天和"].IsMatch(player, m.table, nil) {
+		player.status.Tenho = true
+	} else {
+		player.status.Tenho = false
+	}
+
+	if m.shantenChecker.GetYakuList()["地和"].IsMatch(player, m.table, nil) {
+		player.status.Chiho = true
+	} else {
+		player.status.Chiho = false
+	}
+
+	if m.table.tsumo.RemainTilesCount() <= 18 {
+		player.status.Haitei = true
+		opponentPlayer.status.Hotei = true
+	} else {
+		player.status.Haitei = false
+		opponentPlayer.status.Hotei = false
+	}
+
+	//TODO
+
 	// ˄
 }
 
@@ -339,6 +373,9 @@ func (m *MGameManager) initializeGame() {
 	m.table.tsumo.tiles = m.generateTiles()
 	m.shuffleTiles(m.table.tsumo.tiles)
 	m.distributeTiles()
+	m.table.tableStatus.ChichaPlayer = m.dealerPlayer
+	m.table.tableStatus.PlayerWithTurn = m.dealerPlayer
+	m.table.tableStatus.PlayerWithNotTurn = m.notDealerPlayer
 	//TODO
 	// ˄
 }
@@ -572,7 +609,6 @@ func (m *MGameManager) distributeTiles() {
 	}
 	m.dealerPlayer.hand = append(m.dealerPlayer.hand, m.table.tsumo.Pop())
 	m.notDealerPlayer.hand = append(m.notDealerPlayer.hand, m.table.tsumo.Pop())
-	m.dealerPlayer.hand = append(m.dealerPlayer.hand, m.table.tsumo.Pop())
 	// ˄
 }
 
@@ -580,7 +616,7 @@ func (m *MGameManager) distributeTiles() {
 func newGameManager(table *MTable) *MGameManager {
 	return &MGameManager{
 		table:          table,
-		shantenChecker: &ShantenChecker{},
+		shantenChecker: NewShantenChecker(),
 	}
 }
 
