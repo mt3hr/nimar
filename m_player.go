@@ -184,6 +184,7 @@ func NewPlayer(playerName string, playerID string, nimarGameTableStreaqmServer *
 		id:                         playerID,
 		nimarGameTableStreamServer: nimarGameTableStreaqmServer,
 		hand:                       []*MTile{},
+		kawa:                       []*MTile{},
 		tsumoriTile:                nil,
 		openedTile1:                &MOpenedTiles{openType: &openTypeNull},
 		openedTile2:                &MOpenedTiles{openType: &openTypeNull},

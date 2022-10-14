@@ -1834,7 +1834,7 @@ func (n *Nagashimangan) NumberOfHanWhenNaki() int {
 }
 
 func (t *Tenho) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
-	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze == Kaze_KAZE_TON && player.GetTsumoriTile() != nil && len(player.openedPe.tiles) == 0 {
+	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze == Kaze_KAZE_TON && player.GetTsumoriTile() != nil && player.openedPe.IsNil() {
 		return true
 	}
 	return false
@@ -1853,7 +1853,7 @@ func (t *Tenho) NumberOfHanWhenNaki() int {
 }
 
 func (c *Chiho) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
-	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze != Kaze_KAZE_TON && player.GetTsumoriTile() != nil && len(player.openedPe.tiles) == 0 {
+	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze != Kaze_KAZE_TON && player.GetTsumoriTile() != nil && player.openedPe.IsNil() {
 		return true
 	}
 	return false
@@ -1872,7 +1872,7 @@ func (c *Chiho) NumberOfHanWhenNaki() int {
 }
 
 func (r *Renho) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
-	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze != Kaze_KAZE_TON && player.GetRonTile() != nil && len(player.openedPe.tiles) == 0 {
+	if len(player.GetKawa()) == 0 && !player.status.Nakare && !player.status.NakareWhenAround && *player.status.Kaze != Kaze_KAZE_TON && player.GetRonTile() != nil && player.openedPe.IsNil() {
 		return true
 	}
 	return false
@@ -1891,7 +1891,7 @@ func (r *Renho) NumberOfHanWhenNaki() int {
 }
 
 func (r *KyushuKyuhai) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
-	if !(len(player.openedPe.tiles) == 0 && len(player.GetKawa()) == 0) {
+	if !player.openedPe.IsNil() && len(player.GetKawa()) == 0 {
 		return false
 	}
 	hasMan := 0

@@ -375,7 +375,9 @@ func (m *MGameManager) initializeGame() {
 	m.distributeTiles()
 	m.table.tableStatus.ChichaPlayer = m.dealerPlayer
 	m.table.tableStatus.PlayerWithTurn = m.dealerPlayer
+	m.dealerPlayer.status.Kaze = Kaze_KAZE_TON.Enum()
 	m.table.tableStatus.PlayerWithNotTurn = m.notDealerPlayer
+	m.notDealerPlayer.status.Kaze = Kaze_KAZE_NAN.Enum()
 	//TODO
 	// ˄
 }
@@ -575,7 +577,7 @@ func (m *MGameManager) determinateDealer() {
 	if random == 0 {
 		m.dealerPlayer = m.table.player1
 		m.notDealerPlayer = m.table.player2
-	} else if random == 1 {
+	} else {
 		m.dealerPlayer = m.table.player2
 		m.notDealerPlayer = m.table.player1
 	}
