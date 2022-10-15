@@ -4,6 +4,7 @@ package nimar
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -22,13 +23,19 @@ type MGameManager struct {
 
 	shantenChecker *ShantenChecker
 
+	pointCalcrator *MPointCalcrator
+
 	// ˅
+
+	receivedOperator *Operator
+	wg               *sync.WaitGroup
 
 	// ˄
 }
 
 func (m *MGameManager) ExecuteOperator(operator *Operator) error {
 	// ˅
+	defer m.wg.Done()
 	var player *MPlayer
 	var opponentPlayer *MPlayer
 
@@ -44,7 +51,74 @@ func (m *MGameManager) ExecuteOperator(operator *Operator) error {
 		return fmt.Errorf("部屋に対局相手がいません。プレイヤーID:%s", operator.PlayerID)
 	}
 
+	m.receivedOperator = operator
+	return nil
+	// ˄
+}
+
+func (m *MGameManager) StartGame() error {
+	// ˅
+	m.preparateGame()
+	m.initializeGame()
+	tsumo := m.table.GetTsumo()
+
+	player := m.table.tableStatus.PlayerWithTurn
+	opponentPlayer := m.table.tableStatus.PlayerWithNotTurn
+
+	player.SetTsumoriTile(tsumo.Pop())
+	if m.shantenChecker.GetYakuList()["九種九牌"].IsMatch(player, m.table, nil) {
+		player.status.KyushuKyuhai = true
+	} else {
+		player.status.KyushuKyuhai = false
+	}
+
+	if m.shantenChecker.GetYakuList()["天和"].IsMatch(player, m.table, nil) {
+		player.status.Tenho = true
+	} else {
+		player.status.Tenho = false
+	}
+
+	if m.shantenChecker.GetYakuList()["地和"].IsMatch(player, m.table, nil) {
+		player.status.Chiho = true
+	} else {
+		player.status.Chiho = false
+	}
+
+	if m.table.tsumo.RemainTilesCount() <= 18 {
+		player.status.Haitei = true
+		opponentPlayer.status.Hotei = true
+	} else {
+		player.status.Haitei = false
+		opponentPlayer.status.Hotei = false
+	}
+
+	playerOperators := []*Operator{}
+	playerOperators = m.appendKyushuKyuhaiOperators(player, playerOperators)
+	playerOperators = m.appendAnkanOperators(player, playerOperators)
+	playerOperators = m.appendKakanOperators(player, playerOperators)
+	playerOperators = m.appendPeOperators(player, playerOperators)
+	playerOperators = m.appendTsumoAgariOperators(player, playerOperators)
+	playerOperators = m.appendReachOperators(player, playerOperators)
+	playerOperators = m.appendDahaiOperators(player, playerOperators)
+
+	m.wg.Add(1)
+	if player.GetNimaROperatorsStreamServer() != nil {
+		(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
+			Operators: playerOperators,
+		})
+	} else {
+		//TODOけして
+		fmt.Printf("playerOperators = %+v\n", playerOperators)
+		m.wg.Done()
+		return nil
+		//TODO けして
+	}
+	m.wg.Wait()
+
+	operator := m.receivedOperator
 	switch operator.OperatorType {
+	case OperatorType_OPERATOR_OK:
+		m.wg.Done()
 	case OperatorType_OPERATOR_DRAW:
 		if player.GetTsumoriTile() != nil {
 			return fmt.Errorf("すでに引いているのに更にひこうとしています。プレイヤーID:%s", operator.PlayerID)
@@ -55,6 +129,70 @@ func (m *MGameManager) ExecuteOperator(operator *Operator) error {
 			return fmt.Errorf("ツモが18枚を下回ったので引けません。プレイヤーID:%s", operator.PlayerID)
 		}
 		player.SetTsumoriTile(tsumo.Pop())
+	case OperatorType_OPERATOR_KYUSHUKYUHAI:
+		//TODO
+	case OperatorType_OPERATOR_TSUMO:
+		//TODO
+		message := m.generateAgariMessage(player)
+
+		m.wg.Add(2)
+
+		(*player.GetNimaRMessageStreamServer()).Send(message)
+		(*opponentPlayer.GetNimaRMessageStreamServer()).Send(message)
+		(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
+			Operators: []*Operator{
+				&Operator{
+					RoomID:       m.table.GetID(),
+					PlayerID:     player.GetID(),
+					OperatorType: OperatorType_OPERATOR_OK,
+				},
+			},
+		})
+		(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
+			Operators: []*Operator{
+				&Operator{
+					RoomID:       m.table.GetID(),
+					PlayerID:     opponentPlayer.GetID(),
+					OperatorType: OperatorType_OPERATOR_OK,
+				},
+			},
+		})
+		m.wg.Wait()
+		//TODO 次の局にすすむ
+
+	case OperatorType_OPERATOR_RON:
+		player.SetRonTile(opponentPlayer.GetKawa()[len(opponentPlayer.GetKawa())-1])
+		opponentPlayer.SetKawa(opponentPlayer.GetKawa()[:len(opponentPlayer.GetKawa())-1])
+
+		message := m.generateAgariMessage(player)
+
+		m.wg.Add(2)
+
+		(*player.GetNimaRMessageStreamServer()).Send(message)
+		(*opponentPlayer.GetNimaRMessageStreamServer()).Send(message)
+		(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
+			Operators: []*Operator{
+				&Operator{
+					RoomID:       m.table.GetID(),
+					PlayerID:     player.GetID(),
+					OperatorType: OperatorType_OPERATOR_OK,
+				},
+			},
+		})
+		(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
+			Operators: []*Operator{
+				&Operator{
+					RoomID:       m.table.GetID(),
+					PlayerID:     opponentPlayer.GetID(),
+					OperatorType: OperatorType_OPERATOR_OK,
+				},
+			},
+		})
+		m.wg.Wait()
+		//TODO 次の局にすすむ
+
+	case OperatorType_OPERATOR_KAKAN:
+		//TODO
 	case OperatorType_OPERATOR_DAHAI:
 		hand := player.GetHand()
 		kawa := player.GetKawa()
@@ -81,10 +219,6 @@ func (m *MGameManager) ExecuteOperator(operator *Operator) error {
 	case OperatorType_OPERATOR_START_GAME:
 		//TODO
 	case OperatorType_OPERATOR_SKIP:
-		//TODO
-	case OperatorType_OPERATOR_RON:
-		player.SetRonTile(opponentPlayer.GetKawa()[len(opponentPlayer.GetKawa())-1])
-		opponentPlayer.SetKawa(opponentPlayer.GetKawa()[:len(opponentPlayer.GetKawa())-1])
 		//TODO
 	case OperatorType_OPERATOR_PON:
 		pon := OpenType_OPEN_PON
@@ -212,8 +346,6 @@ func (m *MGameManager) ExecuteOperator(operator *Operator) error {
 			m.table.GetStatus().Sukaikan = true
 		}
 
-	case OperatorType_OPERATOR_TSUMO:
-		//TODO
 	case OperatorType_OPERATOR_ANKAN:
 		ankan := OpenType_OPEN_ANKAN
 		openedTile := &MOpenedTiles{
@@ -255,8 +387,6 @@ func (m *MGameManager) ExecuteOperator(operator *Operator) error {
 		if !m.table.GetTsumo().OpenNextKandora() {
 			m.table.GetStatus().Sukaikan = true
 		}
-	case OperatorType_OPERATOR_KAKAN:
-		//TODO
 	case OperatorType_OPERATOR_PE:
 		pe := OpenType_OPEN_PE
 		openedTile := player.openedPe
@@ -286,50 +416,10 @@ func (m *MGameManager) ExecuteOperator(operator *Operator) error {
 	default:
 		return fmt.Errorf("変なオペレータが渡されました。オペレータタイプ:%d", operator.OperatorType)
 	}
-
 	m.table.UpdateView()
-	return nil
-	// ˄
-}
-
-func (m *MGameManager) StartGame() {
-	// ˅
-	m.preparateGame()
-	m.initializeGame()
-	tsumo := m.table.GetTsumo()
-
-	player := m.table.tableStatus.PlayerWithTurn
-	opponentPlayer := m.table.tableStatus.PlayerWithNotTurn
-
-	player.SetTsumoriTile(tsumo.Pop())
-	if m.shantenChecker.GetYakuList()["九種九牌"].IsMatch(player, m.table, nil) {
-		player.status.KyushuKyuhai = true
-	} else {
-		player.status.KyushuKyuhai = false
-	}
-
-	if m.shantenChecker.GetYakuList()["天和"].IsMatch(player, m.table, nil) {
-		player.status.Tenho = true
-	} else {
-		player.status.Tenho = false
-	}
-
-	if m.shantenChecker.GetYakuList()["地和"].IsMatch(player, m.table, nil) {
-		player.status.Chiho = true
-	} else {
-		player.status.Chiho = false
-	}
-
-	if m.table.tsumo.RemainTilesCount() <= 18 {
-		player.status.Haitei = true
-		opponentPlayer.status.Hotei = true
-	} else {
-		player.status.Haitei = false
-		opponentPlayer.status.Hotei = false
-	}
 
 	//TODO
-
+	return nil
 	// ˄
 }
 
@@ -586,13 +676,11 @@ func (m *MGameManager) determinateDealer() {
 
 func (m *MGameManager) shuffleTiles(tiles []*MTile) {
 	// ˅
-	temp := &MTile{}
-	randomIndex := 1
 	for i := 0; i < len(tiles); i++ {
-		rand.Seed(time.Now().Unix())
-		randomIndex = rand.Intn(len(tiles))
+		rand.Seed(time.Now().UnixNano())
+		randomIndex := rand.Intn(len(tiles))
 
-		temp = tiles[i]
+		temp := tiles[i]
 		tiles[i] = tiles[randomIndex]
 		tiles[randomIndex] = temp
 	}
@@ -614,11 +702,266 @@ func (m *MGameManager) distributeTiles() {
 	// ˄
 }
 
+func (m *MGameManager) appendKyushuKyuhaiOperators(player *MPlayer, operators []*Operator) []*Operator {
+	// ˅
+	if player.status.KyushuKyuhai {
+		operators = append(operators, &Operator{
+			RoomID:       m.table.GetID(),
+			PlayerID:     player.GetID(),
+			OperatorType: OperatorType_OPERATOR_KYUSHUKYUHAI,
+		})
+	}
+	return operators
+	// ˄
+}
+
+func (m *MGameManager) appendAnkanOperators(player *MPlayer, operators []*Operator) []*Operator {
+	// ˅
+	tileIDs := handAndTsumoriTile(player)
+	for _, tileID := range tileIDs {
+		if tileIDs[tileID] == 4 {
+			ankanTiles := []*Tile{}
+			for _, tile := range player.GetHand() {
+				if tile.GetID() == tileID {
+					ankanTiles = append(ankanTiles, tile.ToTile())
+				}
+			}
+			operators = append(operators, &Operator{
+				RoomID:       m.table.GetID(),
+				PlayerID:     player.GetID(),
+				OperatorType: OperatorType_OPERATOR_ANKAN,
+				TargetTiles: &Tiles{
+					Tiles: ankanTiles,
+				},
+			})
+		}
+	}
+	return operators
+	// ˄
+}
+
+func (m *MGameManager) appendKakanOperators(player *MPlayer, operators []*Operator) []*Operator {
+	// ˅
+	for _, openedTiles := range []*MOpenedTiles{
+		player.openedTile1,
+		player.openedTile2,
+		player.openedTile3,
+		player.openedTile4,
+	} {
+		if !openedTiles.IsNil() &&
+			*openedTiles.openType.Enum() == OpenType_OPEN_PON {
+			for _, tile := range append(player.hand, player.GetTsumoriTile()) {
+				if tile.GetID() == openedTiles.tiles[0].GetID() {
+					operators = append(operators, &Operator{
+						RoomID:       m.table.GetID(),
+						PlayerID:     player.GetID(),
+						OperatorType: OperatorType_OPERATOR_KAKAN,
+						TargetTiles: &Tiles{
+							Tiles: []*Tile{
+								tile.ToTile(),
+							},
+						},
+					})
+				}
+			}
+		}
+	}
+	return operators
+	// ˄
+}
+
+func (m *MGameManager) appendPeOperators(player *MPlayer, operators []*Operator) []*Operator {
+	// ˅
+	for _, tile := range append(player.hand, player.GetTsumoriTile()) {
+		if tile.GetID() == 34 {
+			operators = append(operators, &Operator{
+				RoomID:       m.table.GetID(),
+				PlayerID:     player.GetID(),
+				OperatorType: OperatorType_OPERATOR_PE,
+				TargetTiles: &Tiles{
+					Tiles: []*Tile{
+						tile.ToTile(),
+					},
+				},
+			})
+		}
+	}
+	return operators
+	// ˄
+}
+
+func (m *MGameManager) appendTsumoAgariOperators(player *MPlayer, operators []*Operator) []*Operator {
+	// ˅
+	if m.GetShantenChecker().CheckCountOfShanten(player).Shanten == -1 {
+		operators = append(operators, &Operator{
+			RoomID:       m.table.GetID(),
+			PlayerID:     player.GetID(),
+			OperatorType: OperatorType_OPERATOR_TSUMO,
+			TargetTiles: &Tiles{
+				Tiles: []*Tile{
+					player.GetTsumoriTile().ToTile(),
+				},
+			},
+		})
+	}
+	return operators
+	// ˄
+}
+
+func (m *MGameManager) appendReachOperators(player *MPlayer, operators []*Operator) []*Operator {
+	// ˅
+	canReach := true
+	for _, openedTiles := range []MOpenedTiles{
+		*player.openedTile1,
+		*player.openedTile2,
+		*player.openedTile3,
+		*player.openedTile4,
+	} {
+		if openedTiles.IsNil() {
+			continue
+		}
+		if *openedTiles.openType.Enum() == OpenType_OPEN_PON ||
+			*openedTiles.openType.Enum() == OpenType_OPEN_CHI ||
+			*openedTiles.openType.Enum() == OpenType_OPEN_DAIMINKAN ||
+			*openedTiles.openType.Enum() == OpenType_OPEN_KAKAN {
+			canReach = false
+			break
+		}
+	}
+	if !canReach {
+		return operators
+	}
+
+	var playerTemp MPlayer
+	playerTemp = *player
+	handTemp := playerTemp.hand
+	for i, sutehai := range playerTemp.hand {
+		playerTemp.hand = append(playerTemp.hand[:i], playerTemp.hand[i+1:]...)
+		if m.shantenChecker.CheckCountOfShanten(&playerTemp).Shanten == 0 {
+			operators = append(operators, &Operator{
+				RoomID:       m.table.GetID(),
+				PlayerID:     player.GetID(),
+				OperatorType: OperatorType_OPERATOR_REACH,
+				TargetTiles: &Tiles{
+					Tiles: []*Tile{
+						sutehai.ToTile(),
+					},
+				},
+			})
+		}
+		playerTemp.hand = handTemp
+	}
+
+	playerTemp.GetTsumoriTile()
+	tsumoriTileTemp := playerTemp.GetTsumoriTile()
+	playerTemp.SetTsumoriTile(nil)
+	if m.shantenChecker.CheckCountOfShanten(&playerTemp).Shanten == 0 {
+		operators = append(operators, &Operator{
+			RoomID:       m.table.GetID(),
+			PlayerID:     player.GetID(),
+			OperatorType: OperatorType_OPERATOR_REACH,
+			TargetTiles: &Tiles{
+				Tiles: []*Tile{
+					tsumoriTileTemp.ToTile(),
+				},
+			},
+		})
+	}
+	playerTemp.SetTsumoriTile(tsumoriTileTemp)
+
+	return operators
+	// ˄
+}
+
+func (m *MGameManager) appendDahaiOperators(player *MPlayer, operators []*Operator) []*Operator {
+	// ˅
+	operators = append(operators, &Operator{
+		RoomID:       m.table.GetID(),
+		PlayerID:     player.GetID(),
+		OperatorType: OperatorType_OPERATOR_DAHAI,
+		TargetTiles: &Tiles{
+			Tiles: []*Tile{
+				player.GetTsumoriTile().ToTile(),
+			},
+		},
+	})
+
+	if player.status.Reach {
+		return operators
+	}
+
+	for _, tile := range player.GetHand() {
+		operators = append(operators, &Operator{
+			RoomID:       m.table.GetID(),
+			PlayerID:     player.GetID(),
+			OperatorType: OperatorType_OPERATOR_DAHAI,
+			TargetTiles: &Tiles{
+				Tiles: []*Tile{
+					tile.ToTile(),
+				},
+			},
+		})
+	}
+	return operators
+	// ˄
+}
+
+func (m *MGameManager) generateAgariMessage(player *MPlayer) *Message {
+	// ˅
+	agarikei := m.shantenChecker.CheckCountOfShanten(player)
+	point := m.pointCalcrator.CalcratePoint(player, agarikei, m.table, m.table.gameManager.shantenChecker.yakuList)
+	message := &Message{MessageType: MessageType_MessageAgari}
+	agari := &Agari{
+		Id:   player.GetID(),
+		Name: player.GetName(),
+	}
+	for _, tile := range player.GetHand() {
+		agari.Hand.Tiles = append(agari.Hand.Tiles, tile.ToTile())
+	}
+	if player.GetTsumoriTile != nil {
+		agari.TsumoriTile = player.GetTsumoriTile().ToTile()
+	}
+	if player.GetRonTile() != nil {
+		agari.RonTile = player.GetRonTile().ToTile()
+	}
+	agariOpenedTiles := []*OpenedTiles{
+		agari.OpenedTile1,
+		agari.OpenedTile1,
+		agari.OpenedTile1,
+		agari.OpenedTile1,
+		agari.Pe,
+	}
+	for i, openedTiles := range []*MOpenedTiles{
+		player.openedTile1,
+		player.openedTile2,
+		player.openedTile3,
+		player.openedTile4,
+		player.openedPe,
+	} {
+		(*agariOpenedTiles[i]) = (*openedTiles.ToOpenedTiles())
+	}
+	agari.Point = &Point{}
+	agari.Point.TotalHu = int64(point.Hu)
+	agari.Point.TotalHan = int64(point.Han)
+	agari.Point.TotalPoint = int64(point.Point)
+	for _, yaku := range point.MatchYakus {
+		agari.Point.MatchYakus = append(agari.Point.MatchYakus, &Yaku{
+			Name: yaku.GetName(),
+			Han:  int64(yaku.NumberOfHan()),
+		})
+	}
+	message.Agari = agari
+	return message
+	// ˄
+}
+
 // ˅
 func newGameManager(table *MTable) *MGameManager {
 	return &MGameManager{
 		table:          table,
+		wg:             &sync.WaitGroup{},
 		shantenChecker: NewShantenChecker(),
+		pointCalcrator: &MPointCalcrator{},
 	}
 }
 

@@ -1,9 +1,11 @@
 // ˅
 package nimar
 
+import "sort"
+
 // ˄
 
-type Yaku interface {
+type MYaku interface {
 	IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool
 
 	GetName() string
@@ -248,6 +250,85 @@ type Renho struct {
 type KyushuKyuhai struct {
 	han     int
 	nakihan int
+}
+type Dora struct {
+	han     int
+	nakihan int
+}
+
+func (d *Dora) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	d.han = d.doraCount(player)
+	d.nakihan = d.doraCount(player)
+	return d.doraCount(player) != 0
+}
+
+func (d *Dora) doraCount(player *MPlayer) int {
+	dora := 0
+	for _, tile := range player.hand {
+		if tile.IsDora() {
+			dora++
+		}
+		if tile.IsAkadora() {
+			dora++
+		}
+	}
+	for _, tiles := range [][]*MTile{
+		player.openedTile1.tiles,
+		player.openedTile2.tiles,
+		player.openedTile3.tiles,
+		player.openedTile4.tiles,
+		player.openedPe.tiles,
+	} {
+		for _, tile := range tiles {
+			if tile.IsDora() {
+				dora++
+			}
+			if tile.IsAkadora() {
+				dora++
+			}
+		}
+	}
+	return dora
+}
+
+func (d *Dora) GetName() string {
+	return "ドラ"
+}
+
+func (d *Dora) NumberOfHan() int {
+	return d.han
+}
+
+func (d *Dora) NumberOfHanWhenNaki() int {
+	return d.nakihan
+}
+
+type PeNuki struct {
+	han     int
+	nakihan int
+}
+
+func (p *PeNuki) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
+	if player.openedPe.IsNil() || len(player.openedPe.tiles) == 0 {
+		p.han = 0
+		p.nakihan = 0
+		return false
+	}
+	p.han = len(player.openedPe.tiles)
+	p.nakihan = len(player.openedPe.tiles)
+	return true
+}
+
+func (p *PeNuki) GetName() string {
+	return "抜きドラ"
+}
+
+func (p *PeNuki) NumberOfHan() int {
+	return p.han
+}
+
+func (p *PeNuki) NumberOfHanWhenNaki() int {
+	return p.nakihan
 }
 
 func (t *Tanyao) IsMatch(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) bool {
@@ -2276,9 +2357,11 @@ func NewKyushuKyuhai() *KyushuKyuhai {
 	}
 }
 
-func GenerateYakusDefault() map[string]Yaku {
-	yakus := map[string]Yaku{}
-	var yaku Yaku
+type MYakus map[string]MYaku
+
+func GenerateYakusDefault() MYakus {
+	yakus := MYakus{}
+	var yaku MYaku
 	yaku = NewTanyao(1, 1)
 	yakus[yaku.GetName()] = yaku
 	yaku = NewReach(1, 0)
@@ -2388,9 +2471,17 @@ func GenerateYakusDefault() map[string]Yaku {
 	return yakus
 }
 
-func GenerateYakusNimar() map[string]Yaku {
-	//TODO
-	panic("notImplemented")
+func (y MYakus) MatchYakus(player *MPlayer, table *MTable, agarikei *CountOfShantenAndAgarikei) []MYaku {
+	yakus := []MYaku{}
+	for _, yaku := range y {
+		if yaku.IsMatch(player, table, agarikei) {
+			yakus = append(yakus, yaku)
+		}
+	}
+	sort.Slice(yakus, func(i, j int) bool {
+		return yakus[i].GetName() < yakus[j].GetName()
+	})
+	return yakus
 }
 
 // ˄

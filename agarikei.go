@@ -28,6 +28,8 @@ type Agarikei struct {
 
 	MachiHai map[int]interface{}
 
+	Machi *Machi
+
 	// ˅
 
 	// ˄

@@ -8,7 +8,7 @@ type ShantenChecker struct {
 
 	// ˄
 
-	yakuList map[string]Yaku
+	yakuList map[string]MYaku
 
 	// ˅
 	countOfToitsu        int // トイツ数
@@ -68,17 +68,20 @@ func (s *ShantenChecker) CheckCountOfShanten(player *MPlayer) *CountOfShantenAnd
 	if shanten == 0 {
 		shantenAndAgarikei.Agarikei.MachiHai = s.calcMachihai()
 	}
+	if shanten == -1 {
+		(*shantenAndAgarikei.Agarikei.Machi) = s.checkMachi(player)
+	}
 	return shantenAndAgarikei
 	// ˄
 }
 
-func (s *ShantenChecker) GetYakuList() map[string]Yaku {
+func (s *ShantenChecker) GetYakuList() MYakus {
 	// ˅
 	return s.yakuList
 	// ˄
 }
 
-func (s *ShantenChecker) SetYakuList(yakuList map[string]Yaku) {
+func (s *ShantenChecker) SetYakuList(yakuList map[string]MYaku) {
 	// ˅
 	s.yakuList = yakuList
 	// ˄
@@ -463,6 +466,83 @@ func (s *ShantenChecker) checkChitoitsu(player *MPlayer) int {
 
 	return shantenChitoitsu
 
+	// ˄
+}
+
+func (s *ShantenChecker) checkMachi(player *MPlayer) Machi {
+	// ˅
+	i := 0
+	agarikei := s.CheckCountOfShanten(player)
+	agarihaiID := 0
+
+	deletedAgarihai := false
+	for _, tileIDs := range []TileIDs{
+		agarikei.Agarikei.Janto,
+		agarikei.Agarikei.Mentsu1,
+		agarikei.Agarikei.Mentsu2,
+		agarikei.Agarikei.Mentsu3,
+		agarikei.Agarikei.Mentsu4,
+	} {
+		for tileID, tileCount := range tileIDs {
+			if !deletedAgarihai && (player.GetTsumoriTile() != nil && player.GetTsumoriTile().GetID() == tileID && tileCount > 1) {
+				tileIDs[tileID]--
+				agarihaiID = tileID
+				deletedAgarihai = true
+			}
+
+			if !deletedAgarihai && (player.GetRonTile() != nil && player.GetRonTile().GetID() == tileID && tileCount > 1) {
+				tileIDs[tileID]--
+				agarihaiID = tileID
+				deletedAgarihai = true
+			}
+		}
+		if deletedAgarihai {
+			// 単騎待ち
+			for i = 1; i < 38; i++ {
+				if tileIDs[i] == 2 {
+					if i == agarihaiID {
+						return TANKI
+					}
+				}
+			}
+
+			// 辺張待ち
+			for i = 0; i <= 2; i++ {
+				if tileIDs[i*10+1] == 1 && tileIDs[i*10+2] == 1 {
+					if i == agarihaiID {
+						return PENCHAN
+					}
+				}
+				if tileIDs[i*10+8] == 1 && tileIDs[i*10+9] == 1 {
+					if i == agarihaiID {
+						return PENCHAN
+					}
+				}
+			}
+			// 両面待ち
+			for i = 0; i <= 29; i++ {
+				if !((i >= 2 && i <= 7) || (i >= 12 && i <= 17) || (i >= 22 && i <= 27)) {
+					continue
+				}
+				if tileIDs[i] == 1 && tileIDs[i+1] == 1 {
+					if i-1 == agarihaiID || i+2 == agarihaiID {
+						return RYANMEN
+					}
+				}
+			}
+			// 嵌張待ち
+			for i = 0; i <= 29; i++ {
+				if !((i >= 2 && i <= 7) || (i >= 12 && i <= 17) || (i >= 22 && i <= 27)) {
+					continue
+				}
+				if tileIDs[i] == 1 && tileIDs[i+2] == 1 {
+					return KANCHAN
+				}
+			}
+			break
+		}
+	}
+	return TANKI
 	// ˄
 }
 
