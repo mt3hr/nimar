@@ -11,7 +11,10 @@ import (
 )
 
 func NewNimeRServer() (NimaRServer, error) {
-	serverImpl := &ServerImpl{}
+	serverImpl := &ServerImpl{
+		tables:  map[string]*MTable{},
+		players: map[string]string{},
+	}
 	go func() {
 		for _ = 0; true; time.Sleep(time.Second * 10) {
 			for roomID, table := range serverImpl.tables {
