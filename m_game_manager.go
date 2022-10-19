@@ -589,7 +589,7 @@ func (m *MGameManager) shuffleTiles(tiles []*MTile) {
 	temp := &MTile{}
 	randomIndex := 1
 	for i := 0; i < len(tiles); i++ {
-		rand.Seed(time.Now().Unix())
+		rand.Seed(time.Now().UnixNano())
 		randomIndex = rand.Intn(len(tiles))
 
 		temp = tiles[i]

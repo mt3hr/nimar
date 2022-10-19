@@ -14,6 +14,7 @@ func main() {
 	table.SetPlayer1(player1)
 	table.SetPlayer2(player2)
 	table.GetGameManager().StartGame()
+	table.GetPlayer1().SetTsumoriTile(table.GetTsumo().Pop())
 
 	player1.Rihai()
 
