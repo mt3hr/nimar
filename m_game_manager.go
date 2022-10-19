@@ -28,14 +28,16 @@ type MGameManager struct {
 	// ˅
 
 	receivedOperator *Operator
-	wg               *sync.WaitGroup
+
+	receiveOperatorWG *sync.WaitGroup
+	okWG              *sync.WaitGroup
 
 	// ˄
 }
 
 func (m *MGameManager) ExecuteOperator(operator *Operator) error {
 	// ˅
-	defer m.wg.Done()
+	defer m.receiveOperatorWG.Done()
 	var player *MPlayer
 	var opponentPlayer *MPlayer
 
@@ -60,12 +62,11 @@ func (m *MGameManager) StartGame() error {
 	// ˅
 	m.preparateGame()
 	m.initializeGame()
-	tsumo := m.table.GetTsumo()
 
 	player := m.table.tableStatus.PlayerWithTurn
 	opponentPlayer := m.table.tableStatus.PlayerWithNotTurn
 
-	player.SetTsumoriTile(tsumo.Pop())
+	player.SetTsumoriTile(m.table.GetTsumo().Pop())
 	if m.shantenChecker.GetYakuList()["九種九牌"].IsMatch(player, m.table, nil) {
 		player.status.KyushuKyuhai = true
 	} else {
@@ -101,24 +102,25 @@ func (m *MGameManager) StartGame() error {
 	playerOperators = m.appendReachOperators(player, playerOperators)
 	playerOperators = m.appendDahaiOperators(player, playerOperators)
 
-	m.wg.Add(1)
+	m.receiveOperatorWG.Add(1)
 	if player.GetNimaROperatorsStreamServer() != nil {
 		(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
 			Operators: playerOperators,
 		})
 	} else {
-		//TODOけして
-		fmt.Printf("playerOperators = %+v\n", playerOperators)
-		m.wg.Done()
-		return nil
+		//TODO けして
+		m.receiveOperatorWG.Done()
 		//TODO けして
 	}
-	m.wg.Wait()
+	m.receiveOperatorWG.Wait()
 
 	operator := m.receivedOperator
+	if operator == nil {
+		return nil
+	}
 	switch operator.OperatorType {
 	case OperatorType_OPERATOR_OK:
-		m.wg.Done()
+		m.okWG.Done()
 	case OperatorType_OPERATOR_DRAW:
 		if player.GetTsumoriTile() != nil {
 			return fmt.Errorf("すでに引いているのに更にひこうとしています。プレイヤーID:%s", operator.PlayerID)
@@ -135,7 +137,7 @@ func (m *MGameManager) StartGame() error {
 		//TODO
 		message := m.generateAgariMessage(player)
 
-		m.wg.Add(2)
+		m.okWG.Add(2)
 
 		(*player.GetNimaRMessageStreamServer()).Send(message)
 		(*opponentPlayer.GetNimaRMessageStreamServer()).Send(message)
@@ -148,7 +150,7 @@ func (m *MGameManager) StartGame() error {
 				},
 			},
 		})
-		(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
+		(*opponentPlayer.GetNimaROperatorsStreamServer()).Send(&Operators{
 			Operators: []*Operator{
 				&Operator{
 					RoomID:       m.table.GetID(),
@@ -157,7 +159,7 @@ func (m *MGameManager) StartGame() error {
 				},
 			},
 		})
-		m.wg.Wait()
+		m.okWG.Wait()
 		//TODO 次の局にすすむ
 
 	case OperatorType_OPERATOR_RON:
@@ -166,7 +168,7 @@ func (m *MGameManager) StartGame() error {
 
 		message := m.generateAgariMessage(player)
 
-		m.wg.Add(2)
+		m.okWG.Add(2)
 
 		(*player.GetNimaRMessageStreamServer()).Send(message)
 		(*opponentPlayer.GetNimaRMessageStreamServer()).Send(message)
@@ -179,7 +181,7 @@ func (m *MGameManager) StartGame() error {
 				},
 			},
 		})
-		(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
+		(*opponentPlayer.GetNimaROperatorsStreamServer()).Send(&Operators{
 			Operators: []*Operator{
 				&Operator{
 					RoomID:       m.table.GetID(),
@@ -188,7 +190,7 @@ func (m *MGameManager) StartGame() error {
 				},
 			},
 		})
-		m.wg.Wait()
+		m.okWG.Wait()
 		//TODO 次の局にすすむ
 
 	case OperatorType_OPERATOR_KAKAN:
@@ -452,8 +454,6 @@ func (m *MGameManager) resetGame() {
 	m.table.player2.openedTile2 = &MOpenedTiles{}
 	m.table.player2.openedTile3 = &MOpenedTiles{}
 	m.table.player2.openedTile4 = &MOpenedTiles{}
-
-	m.table.tsumo.tiles = []*MTile{}
 	// ˄
 }
 
@@ -462,12 +462,12 @@ func (m *MGameManager) initializeGame() {
 	m.resetGame()
 	m.table.tsumo.tiles = m.generateTiles()
 	m.shuffleTiles(m.table.tsumo.tiles)
-	m.distributeTiles()
 	m.table.tableStatus.ChichaPlayer = m.dealerPlayer
 	m.table.tableStatus.PlayerWithTurn = m.dealerPlayer
 	m.dealerPlayer.status.Kaze = Kaze_KAZE_TON.Enum()
 	m.table.tableStatus.PlayerWithNotTurn = m.notDealerPlayer
 	m.notDealerPlayer.status.Kaze = Kaze_KAZE_NAN.Enum()
+	m.distributeTiles()
 	//TODO
 	// ˄
 }
@@ -662,9 +662,9 @@ func (m *MGameManager) generateTiles() []*MTile {
 
 func (m *MGameManager) determinateDealer() {
 	// ˅
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 	random := rand.Intn(2)
-	if random == 0 {
+	if random == 1 {
 		m.dealerPlayer = m.table.player1
 		m.notDealerPlayer = m.table.player2
 	} else {
@@ -676,10 +676,9 @@ func (m *MGameManager) determinateDealer() {
 
 func (m *MGameManager) shuffleTiles(tiles []*MTile) {
 	// ˅
+	rand.Seed(time.Now().UnixNano())
 	for i := 0; i < len(tiles); i++ {
-		rand.Seed(time.Now().UnixNano())
 		randomIndex := rand.Intn(len(tiles))
-
 		temp := tiles[i]
 		tiles[i] = tiles[randomIndex]
 		tiles[randomIndex] = temp
@@ -689,16 +688,34 @@ func (m *MGameManager) shuffleTiles(tiles []*MTile) {
 
 func (m *MGameManager) distributeTiles() {
 	// ˅
+	var hand []*MTile
+	var tile *MTile
+	tsumo := m.table.GetTsumo()
 	for i := 0; i < 3; i++ {
+		hand = m.dealerPlayer.GetHand()
 		for j := 0; j < 4; j++ {
-			m.dealerPlayer.hand = append(m.dealerPlayer.hand, m.table.tsumo.Pop())
+			tile = tsumo.Pop()
+			hand = append(hand, tile)
 		}
+		m.dealerPlayer.SetHand(hand)
+
+		hand = m.notDealerPlayer.GetHand()
 		for j := 0; j < 4; j++ {
-			m.notDealerPlayer.hand = append(m.notDealerPlayer.hand, m.table.tsumo.Pop())
+			tile = tsumo.Pop()
+			hand = append(hand, tile)
 		}
+		m.notDealerPlayer.SetHand(hand)
 	}
-	m.dealerPlayer.hand = append(m.dealerPlayer.hand, m.table.tsumo.Pop())
-	m.notDealerPlayer.hand = append(m.notDealerPlayer.hand, m.table.tsumo.Pop())
+
+	hand = m.dealerPlayer.GetHand()
+	tile = tsumo.Pop()
+	hand = append(hand, tile)
+	m.dealerPlayer.SetHand(hand)
+
+	hand = m.notDealerPlayer.GetHand()
+	tile = tsumo.Pop()
+	hand = append(hand, tile)
+	m.notDealerPlayer.SetHand(hand)
 	// ˄
 }
 
@@ -834,7 +851,11 @@ func (m *MGameManager) appendReachOperators(player *MPlayer, operators []*Operat
 
 	var playerTemp MPlayer
 	playerTemp = *player
-	handTemp := playerTemp.hand
+	handTemp := []*MTile{}
+	for _, tile := range playerTemp.hand {
+		handTemp = append(handTemp, tile)
+	}
+
 	for i, sutehai := range playerTemp.hand {
 		playerTemp.hand = append(playerTemp.hand[:i], playerTemp.hand[i+1:]...)
 		if m.shantenChecker.CheckCountOfShanten(&playerTemp).Shanten == 0 {
@@ -958,10 +979,11 @@ func (m *MGameManager) generateAgariMessage(player *MPlayer) *Message {
 // ˅
 func newGameManager(table *MTable) *MGameManager {
 	return &MGameManager{
-		table:          table,
-		wg:             &sync.WaitGroup{},
-		shantenChecker: NewShantenChecker(),
-		pointCalcrator: &MPointCalcrator{},
+		table:             table,
+		receiveOperatorWG: &sync.WaitGroup{},
+		okWG:              &sync.WaitGroup{},
+		shantenChecker:    NewShantenChecker(),
+		pointCalcrator:    &MPointCalcrator{},
 	}
 }
 

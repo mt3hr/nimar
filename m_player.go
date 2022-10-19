@@ -1,7 +1,9 @@
 // ˅
 package nimar
 
-import "sort"
+import (
+	"sort"
+)
 
 // ˄
 
@@ -89,13 +91,13 @@ func (m *MPlayer) SetNimaRMessageStreamServer(nimaRMessageStreamServer *NimaR_Me
 
 func (m *MPlayer) GetHand() []*MTile {
 	// ˅
-	return m.hand
+	return m.hand[:]
 	// ˄
 }
 
 func (m *MPlayer) SetHand(hand []*MTile) {
 	// ˅
-	m.hand = hand
+	m.hand = hand[:]
 	// ˄
 }
 

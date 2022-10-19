@@ -41,9 +41,11 @@ func (m *MTsumo) CanPop() bool {
 
 func (m *MTsumo) Pop() *MTile {
 	// ˅
-	tile := m.tiles[0]
-	m.tiles = m.tiles[1:]
-	return tile
+	if m.CanPop() {
+		defer func() { m.tiles = m.tiles[1:] }()
+		return m.tiles[0]
+	}
+	return nil
 	// ˄
 }
 

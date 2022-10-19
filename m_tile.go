@@ -79,10 +79,10 @@ func (m *MTile) ToTile() *Tile {
 
 func (m *MTile) ThisIsBig(tile *MTile) bool {
 	// ˅
-	if m.GetSuit() == tile.GetSuit() {
+	if int(m.GetSuit()) == int(tile.GetSuit()) {
 		return m.GetNum() > tile.GetNum()
 	}
-	return m.GetSuit() > tile.GetSuit()
+	return int(m.GetSuit()) > int(tile.GetSuit())
 	// ˄
 }
 
