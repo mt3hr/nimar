@@ -11,7 +11,10 @@ import (
 )
 
 func NewNimeRServer() (NimaRServer, error) {
-	serverImpl := &ServerImpl{}
+	serverImpl := &ServerImpl{
+		tables:  map[string]*MTable{},
+		players: map[string]string{},
+	}
 	go func() {
 		for _ = 0; true; time.Sleep(time.Second * 10) {
 			for roomID, table := range serverImpl.tables {
@@ -26,6 +29,11 @@ func NewNimeRServer() (NimaRServer, error) {
 type ServerImpl struct {
 	tables  map[string]*MTable
 	players map[string]string
+}
+
+func (s *ServerImpl) MessageStream(req *JoinRoomRequest, ss NimaR_MessageStreamServer) error {
+	s.tables[s.players[req.PlayerID]].GetPlayerByID(req.PlayerID).SetNimaRMessageStreamServer(&ss)
+	return nil
 }
 
 func (s *ServerImpl) ListRooms(_ context.Context, _ *emptypb.Empty) (*Rooms, error) {

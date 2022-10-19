@@ -27,6 +27,7 @@ type NimaRClient interface {
 	CreateRoom(ctx context.Context, in *CreateRoomRequest, opts ...grpc.CallOption) (*Room, error)
 	GameTableStream(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (NimaR_GameTableStreamClient, error)
 	GetPlayerID(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PlayerID, error)
+	MessageStream(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (NimaR_MessageStreamClient, error)
 	OperatorsStream(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (NimaR_OperatorsStreamClient, error)
 	Operate(ctx context.Context, in *Operator, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -98,8 +99,40 @@ func (c *nimaRClient) GetPlayerID(ctx context.Context, in *emptypb.Empty, opts .
 	return out, nil
 }
 
+func (c *nimaRClient) MessageStream(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (NimaR_MessageStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &NimaR_ServiceDesc.Streams[1], "/NimaR/MessageStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &nimaRMessageStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type NimaR_MessageStreamClient interface {
+	Recv() (*Message, error)
+	grpc.ClientStream
+}
+
+type nimaRMessageStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *nimaRMessageStreamClient) Recv() (*Message, error) {
+	m := new(Message)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *nimaRClient) OperatorsStream(ctx context.Context, in *JoinRoomRequest, opts ...grpc.CallOption) (NimaR_OperatorsStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &NimaR_ServiceDesc.Streams[1], "/NimaR/OperatorsStream", opts...)
+	stream, err := c.cc.NewStream(ctx, &NimaR_ServiceDesc.Streams[2], "/NimaR/OperatorsStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -147,6 +180,7 @@ type NimaRServer interface {
 	CreateRoom(context.Context, *CreateRoomRequest) (*Room, error)
 	GameTableStream(*JoinRoomRequest, NimaR_GameTableStreamServer) error
 	GetPlayerID(context.Context, *emptypb.Empty) (*PlayerID, error)
+	MessageStream(*JoinRoomRequest, NimaR_MessageStreamServer) error
 	OperatorsStream(*JoinRoomRequest, NimaR_OperatorsStreamServer) error
 	Operate(context.Context, *Operator) (*emptypb.Empty, error)
 	mustEmbedUnimplementedNimaRServer()
@@ -167,6 +201,9 @@ func (UnimplementedNimaRServer) GameTableStream(*JoinRoomRequest, NimaR_GameTabl
 }
 func (UnimplementedNimaRServer) GetPlayerID(context.Context, *emptypb.Empty) (*PlayerID, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPlayerID not implemented")
+}
+func (UnimplementedNimaRServer) MessageStream(*JoinRoomRequest, NimaR_MessageStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method MessageStream not implemented")
 }
 func (UnimplementedNimaRServer) OperatorsStream(*JoinRoomRequest, NimaR_OperatorsStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method OperatorsStream not implemented")
@@ -262,6 +299,27 @@ func _NimaR_GetPlayerID_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NimaR_MessageStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(JoinRoomRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(NimaRServer).MessageStream(m, &nimaRMessageStreamServer{stream})
+}
+
+type NimaR_MessageStreamServer interface {
+	Send(*Message) error
+	grpc.ServerStream
+}
+
+type nimaRMessageStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *nimaRMessageStreamServer) Send(m *Message) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _NimaR_OperatorsStream_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(JoinRoomRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -329,6 +387,11 @@ var NimaR_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "GameTableStream",
 			Handler:       _NimaR_GameTableStream_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "MessageStream",
+			Handler:       _NimaR_MessageStream_Handler,
 			ServerStreams: true,
 		},
 		{

@@ -38,6 +38,8 @@ type MPlayer struct {
 
 	openedPe *MOpenedTiles
 
+	nimarMessageStreamServer *NimaR_MessageStreamServer
+
 	// ˅
 
 	// ˄
@@ -70,6 +72,18 @@ func (m *MPlayer) GetNimaROperatorsStreamServer() *NimaR_OperatorsStreamServer {
 func (m *MPlayer) SetNimaROperatorsStreamServer(operatorStreamServer *NimaR_OperatorsStreamServer) {
 	// ˅
 	m.nimarOperatorStreamServer = m.nimarOperatorStreamServer
+	// ˄
+}
+
+func (m *MPlayer) GetNimaRMessageStreamServer() *NimaR_MessageStreamServer {
+	// ˅
+	return m.nimarMessageStreamServer
+	// ˄
+}
+
+func (m *MPlayer) SetNimaRMessageStreamServer(nimaRMessageStreamServer *NimaR_MessageStreamServer) {
+	// ˅
+	m.nimarMessageStreamServer = nimaRMessageStreamServer
 	// ˄
 }
 
