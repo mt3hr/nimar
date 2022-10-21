@@ -3,26 +3,26 @@ package nimar
 import (
 	context "context"
 	"errors"
-	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/peer"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
-func NewNimeRServer() (NimaRServer, error) {
+func NewNimaRServer() (NimaRServer, error) {
 	serverImpl := &ServerImpl{
 		tables:  map[string]*MTable{},
 		players: map[string]string{},
 	}
-	go func() {
-		for _ = 0; true; time.Sleep(time.Second * 10) {
-			for roomID, table := range serverImpl.tables {
-				table.GetPlayer1().GetName()
-				delete(serverImpl.tables, roomID)
+	/*
+		go func() {
+			for ; true; time.Sleep(time.Minute) {
+				 for roomID, table := range serverImpl.tables {
+				 delete(serverImpl.tables, roomID)
+				 }
 			}
-		}
-	}()
+		}()
+	*/
 	return serverImpl, nil
 }
 

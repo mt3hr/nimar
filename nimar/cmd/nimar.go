@@ -11,6 +11,7 @@ import (
 	"github.com/mt3hr/nimar"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -52,13 +53,14 @@ func init() {
 }
 
 func NimaR(certFileName, keyFileName string) {
-	nimarServer, err := nimar.NewNimeRServer()
+	nimarServer, err := nimar.NewNimaRServer()
 	if err != nil {
 		panic(err)
 	}
 
 	server := grpc.NewServer()
 	nimar.RegisterNimaRServer(server, nimarServer)
+	reflection.Register(server)
 
 	html, err := fs.Sub(htmlFS, "html")
 	if err != nil {
@@ -67,13 +69,15 @@ func NimaR(certFileName, keyFileName string) {
 
 	router := mux.NewRouter()
 
-	router.PathPrefix("/api/").Handler(http.StripPrefix("/api/", http.HandlerFunc(
+	router.PathPrefix("/NimaR/").HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			server.ServeHTTP(w, r)
-		})))
+		})
 	router.PathPrefix("/").Handler(http.FileServer(http.FS(html)))
 
 	err = http.ListenAndServeTLS(":2222", certFileName, keyFileName, router)
+	// _, _ = certFileName, keyFileName
+	///err = http.ListenAndServe(":2222", router)
 	if err != nil {
 		panic(err)
 	}
