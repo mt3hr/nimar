@@ -1,0 +1,46 @@
+// ˅
+package mahjong
+
+// ˄
+
+type OperatorType int
+
+const (
+	OPERATOR_START_GAME OperatorType = iota + 1
+
+	OPERATOR_SKIP
+
+	OPERATOR_DRAW
+
+	OPERATOR_DAHAI
+
+	OPERATOR_RON
+
+	OPERATOR_PON
+
+	OPERATOR_CHI
+
+	OPERATOR_DAIMINKAN
+
+	OPERATOR_TSUMO
+
+	OPERATOR_ANKAN
+
+	OPERATOR_KAKAN
+
+	OPERATOR_PE
+
+	OPERATOR_KYUSHUKYUHAI
+
+	OPERATOR_REACH
+
+	OPERATOR_OK
+
+	// ˅
+
+	// ˄
+)
+
+// ˅
+
+// ˄
