@@ -8,24 +8,12 @@ type Message struct {
 
 	// ˄
 
-	messageType *MessageType
+	MessageType *MessageType
 
-	agari *Agari
+	Agari *Agari
 
 	// ˅
 
-	// ˄
-}
-
-func (m *Message) GetMessageType() *MessageType {
-	// ˅
-	return m.messageType
-	// ˄
-}
-
-func (m *Message) GetAgari() *Agari {
-	// ˅
-	return m.agari
 	// ˄
 }
 

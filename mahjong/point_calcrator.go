@@ -47,9 +47,9 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 	} else {
 		point.Hu = 20
 
-		if player.IsMenzen() && player.GetTsumoriTile() != nil {
+		if player.IsMenzen() && player.TsumoriTile != nil {
 			point.Hu += 2
-		} else if player.IsMenzen() && player.GetRonTile() != nil {
+		} else if player.IsMenzen() && player.RonTile != nil {
 			point.Hu += 10
 		}
 
@@ -76,10 +76,10 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 						if tileID == 34 ||
 							tileID == 35 ||
 							tileID == 36 ||
-							((tileID == 31 && *table.GetStatus().Kaze == KAZE_TON) || (tileID == 31 && *player.status.Kaze == KAZE_TON)) ||
-							((tileID == 31 && *table.GetStatus().Kaze == KAZE_NAN) || (tileID == 31 && *player.status.Kaze == KAZE_NAN)) ||
-							((tileID == 31 && *table.GetStatus().Kaze == KAZE_SHA) || (tileID == 31 && *player.status.Kaze == KAZE_SHA)) ||
-							((tileID == 31 && *table.GetStatus().Kaze == KAZE_PE) || (tileID == 31 && *player.status.Kaze == KAZE_PE)) {
+							((tileID == 31 && *table.Status.Kaze == KAZE_TON) || (tileID == 31 && *player.Status.Kaze == KAZE_TON)) ||
+							((tileID == 31 && *table.Status.Kaze == KAZE_NAN) || (tileID == 31 && *player.Status.Kaze == KAZE_NAN)) ||
+							((tileID == 31 && *table.Status.Kaze == KAZE_SHA) || (tileID == 31 && *player.Status.Kaze == KAZE_SHA)) ||
+							((tileID == 31 && *table.Status.Kaze == KAZE_PE) || (tileID == 31 && *player.Status.Kaze == KAZE_PE)) {
 							point.Hu += 2
 						}
 					}
@@ -207,10 +207,10 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 		case 50:
 		case 60:
 			if point.Han >= 4 {
-				if player.GetID() == table.gameManager.dealerPlayer.GetID() {
-					point.Point = 12000 + table.tableStatus.NumberOfHonba*300
+				if player.ID == table.GameManager.dealerPlayer.ID {
+					point.Point = 12000 + table.Status.NumberOfHonba*300
 				} else {
-					point.Point = 8000 + table.tableStatus.NumberOfHonba*300
+					point.Point = 8000 + table.Status.NumberOfHonba*300
 				}
 			}
 			break
@@ -220,17 +220,17 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 		case 100:
 		case 110:
 			if point.Han >= 3 {
-				if player.GetID() == table.gameManager.dealerPlayer.GetID() {
-					point.Point = 12000 + table.tableStatus.NumberOfHonba*300
+				if player.ID == table.GameManager.dealerPlayer.ID {
+					point.Point = 12000 + table.Status.NumberOfHonba*300
 				} else {
-					point.Point = 8000 + table.tableStatus.NumberOfHonba*300
+					point.Point = 8000 + table.Status.NumberOfHonba*300
 				}
 			}
 			break
 		}
 		kihonten := point.Hu * int(math.Pow(float64(2), float64(point.Han+2)))
 		tensuu := 0
-		if player.GetID() == table.gameManager.dealerPlayer.GetID() {
+		if player.ID == table.GameManager.dealerPlayer.ID {
 			tensuu = kihonten * 6
 		} else {
 			tensuu = kihonten * 4
@@ -241,42 +241,42 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 		if ((int)(tensuu/10))*10 != 0 {
 			fixedTensuu += 100
 		}
-		point.Point = fixedTensuu + table.tableStatus.NumberOfHonba*300
+		point.Point = fixedTensuu + table.Status.NumberOfHonba*300
 	}
 
 	// 満願以上
 	if point.Han == 5 {
-		if player.GetID() == table.gameManager.dealerPlayer.GetID() {
-			point.Point = 12000 + table.tableStatus.NumberOfHonba*300
+		if player.ID == table.GameManager.dealerPlayer.ID {
+			point.Point = 12000 + table.Status.NumberOfHonba*300
 		} else {
-			point.Point = 8000 + table.tableStatus.NumberOfHonba*300
+			point.Point = 8000 + table.Status.NumberOfHonba*300
 		}
 	}
 	if point.Han >= 6 && point.Han <= 7 {
-		if player.GetID() == table.gameManager.dealerPlayer.GetID() {
-			point.Point = 18000 + table.tableStatus.NumberOfHonba*300
+		if player.ID == table.GameManager.dealerPlayer.ID {
+			point.Point = 18000 + table.Status.NumberOfHonba*300
 		} else {
-			point.Point = 12000 + table.tableStatus.NumberOfHonba*300
+			point.Point = 12000 + table.Status.NumberOfHonba*300
 		}
 	}
 	if point.Han >= 8 && point.Han <= 10 {
-		if player.GetID() == table.gameManager.dealerPlayer.GetID() {
-			point.Point = 24000 + table.tableStatus.NumberOfHonba*300
+		if player.ID == table.GameManager.dealerPlayer.ID {
+			point.Point = 24000 + table.Status.NumberOfHonba*300
 		} else {
-			point.Point = 16000 + table.tableStatus.NumberOfHonba*300
+			point.Point = 16000 + table.Status.NumberOfHonba*300
 		}
 	}
 	if point.Han >= 11 && point.Han <= 12 {
-		if player.GetID() == table.gameManager.dealerPlayer.GetID() {
-			point.Point = 36000 + table.tableStatus.NumberOfHonba*300
+		if player.ID == table.GameManager.dealerPlayer.ID {
+			point.Point = 36000 + table.Status.NumberOfHonba*300
 		} else {
-			point.Point = 24000 + table.tableStatus.NumberOfHonba*300
+			point.Point = 24000 + table.Status.NumberOfHonba*300
 		}
 	}
-	if player.GetID() == table.gameManager.dealerPlayer.GetID() {
-		point.Point = point.Han/13*48000 + table.tableStatus.NumberOfHonba*300
+	if player.ID == table.GameManager.dealerPlayer.ID {
+		point.Point = point.Han/13*48000 + table.Status.NumberOfHonba*300
 	} else {
-		point.Point = point.Han/13*32000 + table.tableStatus.NumberOfHonba*300
+		point.Point = point.Han/13*32000 + table.Status.NumberOfHonba*300
 	}
 
 	return point

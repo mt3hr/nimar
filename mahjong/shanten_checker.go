@@ -484,13 +484,13 @@ func (s *ShantenChecker) checkMachi(player *Player) Machi {
 		agarikei.Agarikei.Mentsu4,
 	} {
 		for tileID, tileCount := range tileIDs {
-			if !deletedAgarihai && (player.GetTsumoriTile() != nil && player.GetTsumoriTile().GetID() == tileID && tileCount > 1) {
+			if !deletedAgarihai && (player.TsumoriTile != nil && player.TsumoriTile.ID == tileID && tileCount > 1) {
 				tileIDs[tileID]--
 				agarihaiID = tileID
 				deletedAgarihai = true
 			}
 
-			if !deletedAgarihai && (player.GetRonTile() != nil && player.GetRonTile().GetID() == tileID && tileCount > 1) {
+			if !deletedAgarihai && (player.RonTile != nil && player.RonTile.ID == tileID && tileCount > 1) {
 				tileIDs[tileID]--
 				agarihaiID = tileID
 				deletedAgarihai = true
@@ -1293,32 +1293,32 @@ func (s *ShantenChecker) preparation(player *Player) {
 	s.agarikei.Mentsu4.Reset()
 
 	// 開かれた牌の読み取り（暗槓とかポンとか）
-	for _, openedTiles := range []*OpenedTiles{
-		p.openedTile1,
-		p.openedTile2,
-		p.openedTile3,
-		p.openedTile4,
+	for _, OpenedTiles := range []*OpenedTiles{
+		p.OpenedTile1,
+		p.OpenedTile2,
+		p.OpenedTile3,
+		p.OpenedTile4,
 	} {
-		if openedTiles != nil && len(openedTiles.tiles) != 0 {
-			switch *openedTiles.openType {
+		if OpenedTiles != nil && len(OpenedTiles.Tiles) != 0 {
+			switch *OpenedTiles.OpenType {
 			case OPEN_PON:
 				minko := TileIDs{}
-				for _, tile := range openedTiles.tiles {
-					minko[int(tile.GetID())]++
+				for _, tile := range OpenedTiles.Tiles {
+					minko[int(tile.ID)]++
 				}
 				s.minkoTileIDs = append(s.minkoTileIDs, minko)
 				s.countOfKanzenKotsu++
 			case OPEN_CHI:
 				nakishuntsu := TileIDs{}
-				for _, tile := range openedTiles.tiles {
-					nakishuntsu[int(tile.GetID())]++
+				for _, tile := range OpenedTiles.Tiles {
+					nakishuntsu[int(tile.ID)]++
 				}
 				s.nakishuntsuTileIDs = append(s.nakishuntsuTileIDs, nakishuntsu)
 				s.countOfKanzenShuntsu++
 			case OPEN_ANKAN:
 				ankan := TileIDs{}
-				for _, tile := range openedTiles.tiles {
-					ankan[int(tile.GetID())]++
+				for _, tile := range OpenedTiles.Tiles {
+					ankan[int(tile.ID)]++
 				}
 				s.ankanTileIDs = append(s.ankanTileIDs, ankan)
 				s.countOfAnkan++
@@ -1326,8 +1326,8 @@ func (s *ShantenChecker) preparation(player *Player) {
 				fallthrough
 			case OPEN_KAKAN:
 				minkan := TileIDs{}
-				for _, tile := range openedTiles.tiles {
-					minkan[int(tile.GetID())]++
+				for _, tile := range OpenedTiles.Tiles {
+					minkan[int(tile.ID)]++
 				}
 				s.minkanTileIDs = append(s.minkanTileIDs, minkan)
 				s.countOfMinkan++
@@ -1352,9 +1352,9 @@ func (s *ShantenChecker) preparation(player *Player) {
 	}
 
 	// 開かれていない牌の読み取り
-	for _, tile := range p.hand {
-		s.menzenTileIDs[int(tile.GetID())]++
-		s.tempMenzenTileIDs[int(tile.GetID())]++
+	for _, tile := range p.Hand {
+		s.menzenTileIDs[int(tile.ID)]++
+		s.tempMenzenTileIDs[int(tile.ID)]++
 	}
 }
 

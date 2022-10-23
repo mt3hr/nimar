@@ -12,115 +12,55 @@ type Player struct {
 
 	// ˄
 
-	name string
+	Name string
 
-	id string
+	ID string
 
-	hand []*Tile
+	Hand []*Tile
 
-	tsumoriTile *Tile
+	TsumoriTile *Tile
 
-	openedTile1 *OpenedTiles
+	OpenedTile1 *OpenedTiles
 
-	openedTile2 *OpenedTiles
+	OpenedTile2 *OpenedTiles
 
-	openedTile3 *OpenedTiles
+	OpenedTile3 *OpenedTiles
 
-	openedTile4 *OpenedTiles
+	OpenedTile4 *OpenedTiles
 
-	kawa []*Tile
+	Kawa []*Tile
 
-	status *PlayerStatus
+	Status *PlayerStatus
 
-	ronTile *Tile
+	RonTile *Tile
 
-	openedPe *OpenedTiles
+	OpenedPe *OpenedTiles
 
 	// ˅
 
-	// ˄
-}
-
-func (p *Player) GetName() string {
-	// ˅
-	return p.name
-	// ˄
-}
-
-func (p *Player) GetID() string {
-	// ˅
-	return p.id
-	// ˄
-}
-
-func (p *Player) GetHand() []*Tile {
-	// ˅
-	return p.hand[:]
-	// ˄
-}
-
-func (p *Player) SetHand(hand []*Tile) {
-	// ˅
-	p.hand = hand[:]
-	// ˄
-}
-
-func (p *Player) GetKawa() []*Tile {
-	// ˅
-	return p.kawa
-	// ˄
-}
-
-func (p *Player) SetKawa(kawa []*Tile) {
-	// ˅
-	p.kawa = kawa
-	// ˄
-}
-
-func (p *Player) GetTsumoriTile() *Tile {
-	// ˅
-	return p.tsumoriTile
-	// ˄
-}
-
-func (p *Player) SetTsumoriTile(tile *Tile) {
-	// ˅
-	p.tsumoriTile = tile
-	// ˄
-}
-
-func (p *Player) GetRonTile() *Tile {
-	// ˅
-	return p.ronTile
-	// ˄
-}
-
-func (p *Player) SetRonTile(tile *Tile) {
-	// ˅
-	p.ronTile = tile
 	// ˄
 }
 
 func (p *Player) Rihai() {
 	// ˅
-	sort.Slice(p.hand, func(i, j int) bool {
-		return p.hand[j].ThisIsBig(p.hand[i])
+	sort.Slice(p.Hand, func(i, j int) bool {
+		return p.Hand[j].ThisIsBig(p.Hand[i])
 	})
 	// ˄
 }
 
 func (p *Player) IsMenzen() bool {
 	// ˅
-	for _, openedTile := range []*OpenedTiles{
-		p.openedTile1,
-		p.openedTile2,
-		p.openedTile3,
-		p.openedTile4,
+	for _, OpenedTile := range []*OpenedTiles{
+		p.OpenedTile1,
+		p.OpenedTile2,
+		p.OpenedTile3,
+		p.OpenedTile4,
 	} {
-		if openedTile.IsNil() {
+		if OpenedTile.IsNil() {
 			continue
 		}
-		switch *openedTile.openType {
+		switch *OpenedTile.OpenType {
 		case OPEN_CHI:
 			fallthrough
 		case OPEN_KAKAN:
@@ -135,18 +75,18 @@ func (p *Player) IsMenzen() bool {
 
 // ˅
 func NewPlayer(playerName string, playerID string) *Player {
-	openTypeNull := OPEN_NULL
+	OpenTypeNull := OPEN_NULL
 	return &Player{
-		name:        playerName,
-		id:          playerID,
-		hand:        []*Tile{},
-		kawa:        []*Tile{},
-		tsumoriTile: nil,
-		openedTile1: &OpenedTiles{openType: &openTypeNull},
-		openedTile2: &OpenedTiles{openType: &openTypeNull},
-		openedTile3: &OpenedTiles{openType: &openTypeNull},
-		openedTile4: &OpenedTiles{openType: &openTypeNull},
-		status:      &PlayerStatus{},
+		Name:        playerName,
+		ID:          playerID,
+		Hand:        []*Tile{},
+		Kawa:        []*Tile{},
+		TsumoriTile: nil,
+		OpenedTile1: &OpenedTiles{OpenType: &OpenTypeNull},
+		OpenedTile2: &OpenedTiles{OpenType: &OpenTypeNull},
+		OpenedTile3: &OpenedTiles{OpenType: &OpenTypeNull},
+		OpenedTile4: &OpenedTiles{OpenType: &OpenTypeNull},
+		Status:      &PlayerStatus{},
 	}
 }
 

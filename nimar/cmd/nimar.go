@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"io/fs"
 	"net/http"
-	"path/filepath"
 	"sync"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/mitchellh/go-homedir"
 	"github.com/mt3hr/nimar/mahjong"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/websocket"
@@ -29,32 +27,17 @@ var (
 	serverCmd = &cobra.Command{
 		Use: "server",
 		Run: func(_ *cobra.Command, _ []string) {
-			NimaR(certFileName, keyFileName)
+			NimaR()
 		},
 	}
 )
 
-var (
-	certFileName string
-	keyFileName  string
-)
-
 func init() {
-	homeDir, err := homedir.Dir()
-	if err != nil {
-		panic(err)
-	}
-
-	certFileName = filepath.Join(homeDir, "cert.pem")
-	keyFileName = filepath.Join(homeDir, "key.pem")
-
 	cobra.MousetrapHelpText = ""
 	cmd.AddCommand(serverCmd)
-	cmd.Flags().StringVarP(&certFileName, "cert", "c", certFileName, "")
-	cmd.Flags().StringVarP(&keyFileName, "key", "k", keyFileName, "")
 }
 
-func NimaR(certFileName, keyFileName string) {
+func NimaR() {
 	html, err := fs.Sub(htmlFS, "html")
 	if err != nil {
 		panic(err)
@@ -63,25 +46,9 @@ func NimaR(certFileName, keyFileName string) {
 	server := newServer()
 	router := mux.NewRouter()
 
-	a := func() {
-		tables := []*TableInfo{}
-		for _, table := range server.tables {
-			playerNames := []string{}
-			if table.GetPlayer1() != nil {
-				playerNames = append(playerNames, table.GetPlayer1().GetName())
-			}
-			if table.GetPlayer2() != nil {
-				playerNames = append(playerNames, table.GetPlayer2().GetName())
-			}
-			tables = append(tables, &TableInfo{
-				TableID:     table.GetID(),
-				TableName:   table.GetName(),
-				PlayerNames: playerNames,
-			})
-		}
-
+	updateTablInfos := func() {
 		for _, ws := range server.tableListWs {
-			b, err := json.Marshal(tables)
+			b, err := json.Marshal(server.tables)
 			if err != nil {
 				panic(err)
 			}
@@ -93,36 +60,46 @@ func NimaR(certFileName, keyFileName string) {
 		server.tableListWs = append(server.tableListWs, ws)
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		a()
+		updateTablInfos()
 		wg.Wait()
 	}))
 
 	router.PathPrefix("/nimar/ws_game_table").Handler(websocket.Handler(func(ws *websocket.Conn) {
 		ws.Request().ParseForm()
-		roomID := ws.Request().FormValue("roomid")
-		server.gameTableWs[roomID] = append(server.gameTableWs[roomID], ws)
+		tableID := ws.Request().FormValue("tableid")
+		playerName := ws.Request().FormValue("playername")
+		playerID := ws.Request().FormValue("playerid")
+
+		player := mahjong.NewPlayer(playerName, playerID)
+		if server.tables[tableID].Player1 == nil {
+			server.tables[tableID].Player1 = player
+		} else if server.tables[tableID].Player2 == nil {
+			server.tables[tableID].Player2 = player
+		}
+
+		server.gameTableWs[tableID] = append(server.gameTableWs[tableID], ws)
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		a()
+		updateTablInfos()
 		wg.Wait()
 	}))
 
 	router.PathPrefix("/nimar/create_table").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		r.ParseForm()
-		tableName := r.FormValue("table_name")
-		table := &TableInfo{
-			TableName: tableName,
-			TableID:   uuid.New().String(),
-		}
-		server.tables[table.TableID] = mahjong.NewTable(table.TableID, table.TableName)
+
+		tableName := r.FormValue("tablename")
+		id := uuid.New().String()
+
+		server.tables[id] = mahjong.NewTable(id, tableName)
+		table := server.tables[id]
 
 		b, err := json.Marshal(table)
 		if err != nil {
 			panic(err)
 		}
 		w.Write(b)
-		a()
+		updateTablInfos()
 	})
 
 	router.PathPrefix("/nimar/get_player_id").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -135,15 +112,12 @@ func NimaR(certFileName, keyFileName string) {
 			id = uuid.New().String()
 			server.players[ipAddress] = id
 		}
-		playerID := &PlayerIDInfo{
-			PlayerID: id,
-		}
-		b, err := json.Marshal(playerID)
+		b, err := json.Marshal(id)
 		if err != nil {
 			panic(err)
 		}
 		w.Write(b)
-		a()
+		updateTablInfos()
 	})
 
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -155,16 +129,6 @@ func NimaR(certFileName, keyFileName string) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-type PlayerIDInfo struct {
-	PlayerID string `json:"player_id"`
-}
-
-type TableInfo struct {
-	TableID     string   `json:"table_id"`
-	TableName   string   `json:"table_name"`
-	PlayerNames []string `json:"player_names"`
 }
 
 func Execute() error {

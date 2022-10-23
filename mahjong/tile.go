@@ -8,65 +8,29 @@ type Tile struct {
 
 	// ˄
 
-	id int
+	ID int
 
-	name string
+	Name string
 
-	num int
+	Num int
 
-	dora bool
+	Dora bool
 
-	akadora bool
+	Akadora bool
 
-	suit *Suit
+	Suit *Suit
 
 	// ˅
 
-	// ˄
-}
-
-func (t *Tile) GetID() int {
-	// ˅
-	return t.id
-	// ˄
-}
-
-func (t *Tile) GetName() string {
-	// ˅
-	return t.name
-	// ˄
-}
-
-func (t *Tile) GetSuit() Suit {
-	// ˅
-	return *t.suit
-	// ˄
-}
-
-func (t *Tile) GetNum() int {
-	// ˅
-	return t.num
-	// ˄
-}
-
-func (t *Tile) IsDora() bool {
-	// ˅
-	return t.dora
-	// ˄
-}
-
-func (t *Tile) IsAkadora() bool {
-	// ˅
-	return t.akadora
 	// ˄
 }
 
 func (t *Tile) ThisIsBig(tile *Tile) bool {
 	// ˅
-	if int(t.GetSuit()) == int(tile.GetSuit()) {
-		return t.GetNum() > tile.GetNum()
+	if int(*t.Suit) == int(*tile.Suit) {
+		return t.Num > tile.Num
 	}
-	return int(t.GetSuit()) > int(tile.GetSuit())
+	return int(*t.Suit) > int(*tile.Suit)
 	// ˄
 }
 

@@ -8,40 +8,16 @@ type Operator struct {
 
 	// ˄
 
-	roomID string
+	RoomID string
 
-	playerID string
+	PlayerID string
 
-	targetTiles []*Tile
+	TargetTiles []*Tile
 
-	operatorType *OperatorType
+	OperatorType *OperatorType
 
 	// ˅
 
-	// ˄
-}
-
-func (o *Operator) GetRoomID() string {
-	// ˅
-	return o.roomID
-	// ˄
-}
-
-func (o *Operator) GetPlayerID() string {
-	// ˅
-	return o.playerID
-	// ˄
-}
-
-func (o *Operator) GetOperatorType() *OperatorType {
-	// ˅
-	return o.operatorType
-	// ˄
-}
-
-func (o *Operator) GetTargetTiles() []*Tile {
-	// ˅
-	return o.targetTiles
 	// ˄
 }
 

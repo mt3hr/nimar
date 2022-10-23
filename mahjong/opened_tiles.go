@@ -8,9 +8,9 @@ type OpenedTiles struct {
 
 	// ˄
 
-	tiles []*Tile
+	Tiles []*Tile
 
-	openType *OpenType
+	OpenType *OpenType
 
 	// ˅
 
@@ -20,7 +20,7 @@ type OpenedTiles struct {
 // ˅
 
 func (m *OpenedTiles) IsNil() bool {
-	if m == nil || m.openType == nil {
+	if m == nil || m.OpenType == nil {
 		return true
 	}
 	return false
@@ -30,14 +30,14 @@ func (m *OpenedTiles) ToOpenedTiles() *OpenedTiles {
 	if m.IsNil() {
 		return nil
 	}
-	openedTile := &OpenedTiles{}
-	if *m.openType != OPEN_NULL {
-		openedTile.openType = m.openType
-		for _, tile := range m.tiles {
-			openedTile.tiles = append(openedTile.tiles, tile)
+	OpenedTile := &OpenedTiles{}
+	if *m.OpenType != OPEN_NULL {
+		OpenedTile.OpenType = m.OpenType
+		for _, tile := range m.Tiles {
+			OpenedTile.Tiles = append(OpenedTile.Tiles, tile)
 		}
 	}
-	return openedTile
+	return OpenedTile
 }
 
 // ˄

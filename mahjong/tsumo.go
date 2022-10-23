@@ -8,23 +8,17 @@ type Tsumo struct {
 
 	// ˄
 
-	tiles []*Tile
+	Tiles []*Tile
 
 	// ˅
 
-	// ˄
-}
-
-func (t *Tsumo) InitTiles() {
-	// ˅
-	//TODO
 	// ˄
 }
 
 func (t *Tsumo) RemainTilesCount() int {
 	// ˅
 	cnt := 0
-	for _, tile := range t.tiles {
+	for _, tile := range t.Tiles {
 		if tile != nil {
 			cnt++
 		}
@@ -42,8 +36,8 @@ func (t *Tsumo) CanPop() bool {
 func (t *Tsumo) Pop() *Tile {
 	// ˅
 	if t.CanPop() {
-		defer func() { t.tiles = t.tiles[1:] }()
-		return t.tiles[0]
+		defer func() { t.Tiles = t.Tiles[1:] }()
+		return t.Tiles[0]
 	}
 	return nil
 	// ˄

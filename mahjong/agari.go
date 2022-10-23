@@ -8,27 +8,27 @@ type Agari struct {
 
 	// ˄
 
-	id string
+	ID string
 
-	name string
+	Name string
 
-	hand []*Tile
+	Hand []*Tile
 
-	tsumoriTile *Tile
+	TsumoriTile *Tile
 
-	ronTile *Tile
+	RonTile *Tile
 
-	openedTile1 *OpenedTiles
+	OpenedTile1 *OpenedTiles
 
-	openedTile2 *OpenedTiles
+	OpenedTile2 *OpenedTiles
 
-	openedTile3 *OpenedTiles
+	OpenedTile3 *OpenedTiles
 
-	openedTile4 *OpenedTiles
+	OpenedTile4 *OpenedTiles
 
-	pe *OpenedTiles
+	Pe *OpenedTiles
 
-	point *Point
+	Point *Point
 
 	// ˅
 
