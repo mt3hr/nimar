@@ -71,13 +71,25 @@ func NimaR() {
 		playerID := ws.Request().FormValue("playerid")
 
 		player := mahjong.NewPlayer(playerName, playerID)
+		player.GameTableWs = ws
 		if server.tables[tableID].Player1 == nil {
 			server.tables[tableID].Player1 = player
 		} else if server.tables[tableID].Player2 == nil {
 			server.tables[tableID].Player2 = player
 		}
 
-		server.gameTableWs[tableID] = append(server.gameTableWs[tableID], ws)
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		updateTablInfos()
+		wg.Wait()
+	}))
+
+	router.PathPrefix("/nimar/ws_operators").Handler(websocket.Handler(func(ws *websocket.Conn) {
+		ws.Request().ParseForm()
+		tableID := ws.Request().FormValue("tableid")
+		playerID := ws.Request().FormValue("playerid")
+
+		server.tables[tableID].GetPlayerByID(playerID).OperatorWs = ws
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		updateTablInfos()
@@ -93,6 +105,7 @@ func NimaR() {
 
 		server.tables[id] = mahjong.NewTable(id, tableName)
 		table := server.tables[id]
+		table.GameManager.StartGame()
 
 		b, err := json.Marshal(table)
 		if err != nil {
@@ -120,6 +133,19 @@ func NimaR() {
 		updateTablInfos()
 	})
 
+	router.PathPrefix("/nimar/execute_operator").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		operator := &mahjong.Operator{}
+		err := json.NewDecoder(r.Body).Decode(operator)
+		if err != nil {
+			panic(err)
+		}
+		err = server.tables[operator.RoomID].GameManager.ExecuteOperator(operator)
+		if err != nil {
+			panic(err)
+		}
+	})
+
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		http.FileServer(http.FS(html)).ServeHTTP(w, r)
@@ -139,13 +165,11 @@ type server struct {
 	tables      map[string]*mahjong.Table
 	tableListWs []*websocket.Conn
 	players     map[string]string
-	gameTableWs map[string][]*websocket.Conn
 }
 
 func newServer() *server {
 	return &server{
-		tables:      map[string]*mahjong.Table{},
-		players:     map[string]string{},
-		gameTableWs: map[string][]*websocket.Conn{},
+		tables:  map[string]*mahjong.Table{},
+		players: map[string]string{},
 	}
 }
