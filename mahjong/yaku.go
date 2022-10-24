@@ -279,6 +279,9 @@ func (d *Dora) doraCount(player *Player) int {
 		player.OpenedTile4.Tiles,
 		player.OpenedPe.Tiles,
 	} {
+		if tiles == nil {
+			continue
+		}
 		for _, tile := range tiles {
 			if tile.Dora {
 				dora++

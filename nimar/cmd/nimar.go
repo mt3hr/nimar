@@ -3,6 +3,7 @@ package cmd
 import (
 	"embed"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"sync"
@@ -46,19 +47,9 @@ func NimaR() {
 	server := newServer()
 	router := mux.NewRouter()
 
-	updateTablInfos := func() {
-		for _, ws := range server.tableListWs {
-			b, err := json.Marshal(server.tables)
-			if err != nil {
-				panic(err)
-			}
-			ws.Write(b)
-		}
-	}
-
 	router.PathPrefix("/nimar/ws_list_table").Handler(websocket.Handler(func(ws *websocket.Conn) {
 		server.tableListWs = append(server.tableListWs, ws)
-		updateTablInfos()
+		server.updateTableInfos()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		wg.Wait()
@@ -78,7 +69,7 @@ func NimaR() {
 			server.tables[tableID].Player2 = player
 		}
 
-		updateTablInfos()
+		server.updateTableInfos()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		wg.Wait()
@@ -90,7 +81,6 @@ func NimaR() {
 		playerID := ws.Request().FormValue("playerid")
 
 		server.tables[tableID].GetPlayerByID(playerID).OperatorWs = ws
-		updateTablInfos()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		wg.Wait()
@@ -105,20 +95,22 @@ func NimaR() {
 
 		server.tables[id] = mahjong.NewTable(id, tableName)
 		table := server.tables[id]
-		table.GameManager.StartGame()
 
 		b, err := json.Marshal(table)
 		if err != nil {
 			panic(err)
 		}
 		w.Write(b)
-		updateTablInfos()
+		server.updateTableInfos()
+		go func() {
+			fmt.Println(table.GameManager.StartGame())
+		}()
 	})
 
 	router.PathPrefix("/nimar/get_player_id").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
-		ipAddress := r.Header.Get("X-Forwarded-For")
+		ipAddress := r.RemoteAddr
 		id := ""
 		ok := false
 		if id, ok = server.players[ipAddress]; !ok {
@@ -130,7 +122,6 @@ func NimaR() {
 			panic(err)
 		}
 		w.Write(b)
-		updateTablInfos()
 	})
 
 	router.PathPrefix("/nimar/execute_operator").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -165,6 +156,16 @@ type server struct {
 	tables      map[string]*mahjong.Table
 	tableListWs []*websocket.Conn
 	players     map[string]string
+}
+
+func (s *server) updateTableInfos() {
+	for _, ws := range s.tableListWs {
+		b, err := json.Marshal(s.tables)
+		if err != nil {
+			panic(err)
+		}
+		ws.Write(b)
+	}
 }
 
 func newServer() *server {

@@ -63,7 +63,8 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 	}
 
 	shantenAndAgarikei := &CountOfShantenAndAgarikei{
-		Shanten: shanten,
+		Shanten:  shanten,
+		Agarikei: &Agarikei{},
 	}
 	if shanten == 0 {
 		shantenAndAgarikei.Agarikei.MachiHai = s.calcMachihai()
@@ -1352,7 +1353,10 @@ func (s *ShantenChecker) preparation(player *Player) {
 	}
 
 	// 開かれていない牌の読み取り
-	for _, tile := range p.Hand {
+	for _, tile := range append(p.Hand, p.TsumoriTile) {
+		if tile == nil {
+			continue
+		}
 		s.menzenTileIDs[int(tile.ID)]++
 		s.tempMenzenTileIDs[int(tile.ID)]++
 	}

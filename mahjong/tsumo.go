@@ -36,8 +36,10 @@ func (t *Tsumo) CanPop() bool {
 func (t *Tsumo) Pop() *Tile {
 	// ˅
 	if t.CanPop() {
-		defer func() { t.Tiles = t.Tiles[1:] }()
-		return t.Tiles[0]
+		tile := t.Tiles[0]
+		t.Tiles = t.Tiles[1:]
+		return tile
+
 	}
 	return nil
 	// ˄
