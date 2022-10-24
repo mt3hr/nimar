@@ -1,6 +1,8 @@
 // ˅
 package mahjong
 
+import "encoding/json"
+
 // ˄
 
 type Table struct {
@@ -18,7 +20,7 @@ type Table struct {
 
 	Player1 *Player
 
-	GameManager *GameManager
+	GameManager *GameManager `json:"-"`
 
 	Status *TableStatus
 
@@ -51,20 +53,19 @@ func (t *Table) GetOpponentByID(playerID string) *Player {
 
 func (t *Table) UpdateView() {
 	// ˅
-	Tsumo := &Tsumo{}
-	for _, tile := range t.Tsumo.Tiles {
-		Tsumo.Tiles = append(Tsumo.Tiles, tile)
+	b, err := json.Marshal(t)
+	if err != nil {
+		panic(err)
 	}
-	p1 := t.Player1
-	p2 := t.Player2
+	_, err = t.Player1.GameTableWs.Write(b)
+	if err != nil {
+		panic(err)
+	}
 
-	gameTable := &Table{
-		Tsumo:   Tsumo,
-		Player1: p1,
-		Player2: p2,
+	_, err = t.Player2.GameTableWs.Write(b)
+	if err != nil {
+		panic(err)
 	}
-	_ = gameTable
-	//TODO
 	// ˄
 }
 

@@ -58,9 +58,9 @@ func NimaR() {
 
 	router.PathPrefix("/nimar/ws_list_table").Handler(websocket.Handler(func(ws *websocket.Conn) {
 		server.tableListWs = append(server.tableListWs, ws)
+		updateTablInfos()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		updateTablInfos()
 		wg.Wait()
 	}))
 
@@ -78,9 +78,9 @@ func NimaR() {
 			server.tables[tableID].Player2 = player
 		}
 
+		updateTablInfos()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		updateTablInfos()
 		wg.Wait()
 	}))
 
@@ -90,9 +90,9 @@ func NimaR() {
 		playerID := ws.Request().FormValue("playerid")
 
 		server.tables[tableID].GetPlayerByID(playerID).OperatorWs = ws
+		updateTablInfos()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		updateTablInfos()
 		wg.Wait()
 	}))
 

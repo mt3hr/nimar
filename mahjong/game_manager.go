@@ -2,6 +2,7 @@
 package mahjong
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -31,6 +32,7 @@ type GameManager struct {
 
 	receiveOperatorWG *sync.WaitGroup
 	okWG              *sync.WaitGroup
+	waitStartWg       *sync.WaitGroup
 
 	// ˄
 }
@@ -54,12 +56,24 @@ func (g *GameManager) ExecuteOperator(operator *Operator) error {
 	}
 
 	g.receivedOperator = operator
+
+	switch *operator.OperatorType {
+	case OPERATOR_START_GAME:
+		defer g.waitStartWg.Done()
+		g.receivedOperator = nil
+	}
+
 	return nil
 	// ˄
 }
 
 func (g *GameManager) StartGame() error {
 	// ˅
+	g.waitStartWg.Add(2)
+	g.receiveOperatorWG.Add(2)
+	g.waitStartWg.Wait()
+	g.receiveOperatorWG.Wait()
+
 	g.preparateGame()
 	g.initializeGame()
 
@@ -102,15 +116,18 @@ func (g *GameManager) StartGame() error {
 	playerOperators = g.appendReachOperators(player, playerOperators)
 	playerOperators = g.appendDahaiOperators(player, playerOperators)
 
-	//TODO
-	/*
-		g.receiveOperatorWG.Add(1)
-		if player.GetNimaROperatorsStreamServer() != nil {
-			(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
-				Operators: playerOperators,
-			})
-		}
-	*/
+	g.Table.Player1.Rihai() //TODO
+	g.Table.Player2.Rihai() //TODO
+	g.Table.UpdateView()
+	g.receiveOperatorWG.Add(1)
+	b, err := json.Marshal(playerOperators)
+	if err != nil {
+		panic(err)
+	}
+	_, err = player.OperatorWs.Write(b)
+	if err != nil {
+		panic(err)
+	}
 	g.Table.UpdateView()
 	g.receiveOperatorWG.Wait()
 
@@ -120,7 +137,6 @@ func (g *GameManager) StartGame() error {
 	}
 	switch *(operator.OperatorType) {
 	case OPERATOR_OK:
-		g.okWG.Done()
 	case OPERATOR_DRAW:
 		if player.TsumoriTile != nil {
 			return fmt.Errorf("すでに引いているのに更にひこうとしています。プレイヤーID:%s", operator.PlayerID)
@@ -227,8 +243,6 @@ func (g *GameManager) StartGame() error {
 		player.Kawa = kawa
 		player.TsumoriTile = nil
 
-	case OPERATOR_START_GAME:
-		//TODO
 	case OPERATOR_SKIP:
 		//TODO
 	case OPERATOR_PON:
@@ -581,91 +595,104 @@ func (g *GameManager) generateTiles() []*Tile {
 		num := 0
 		dora := false
 		akadora := false
-		suit := NONE
 
-		suit = TON
-		name = fmt.Sprintf("%s%d", suit.ToString(), i)
-		num = 31
-		tiles = append(tiles, &Tile{
-			ID:      num,
-			Name:    name,
-			Num:     num,
-			Dora:    dora,
-			Suit:    &suit,
-			Akadora: akadora,
-		})
+		{
+			suit := TON
+			name = fmt.Sprintf("%s%d", suit.ToString(), i)
+			num = 31
+			tiles = append(tiles, &Tile{
+				ID:      num,
+				Name:    name,
+				Num:     num,
+				Dora:    dora,
+				Suit:    &suit,
+				Akadora: akadora,
+			})
+		}
 
-		suit = NAN
-		name = fmt.Sprintf("%s%d", suit.ToString(), i)
-		num = 32
-		tiles = append(tiles, &Tile{
-			ID:      num,
-			Name:    name,
-			Num:     num,
-			Dora:    dora,
-			Suit:    &suit,
-			Akadora: akadora,
-		})
+		{
+			suit := NAN
+			name = fmt.Sprintf("%s%d", suit.ToString(), i)
+			num = 32
+			tiles = append(tiles, &Tile{
+				ID:      num,
+				Name:    name,
+				Num:     num,
+				Dora:    dora,
+				Suit:    &suit,
+				Akadora: akadora,
+			})
+		}
 
-		suit = SHA
-		name = fmt.Sprintf("%s%d", suit.ToString(), i)
-		num = 33
-		tiles = append(tiles, &Tile{
-			ID:      num,
-			Name:    name,
-			Num:     num,
-			Dora:    dora,
-			Suit:    &suit,
-			Akadora: akadora,
-		})
+		{
+			suit := SHA
+			name = fmt.Sprintf("%s%d", suit.ToString(), i)
+			num = 33
+			tiles = append(tiles, &Tile{
+				ID:      num,
+				Name:    name,
+				Num:     num,
+				Dora:    dora,
+				Suit:    &suit,
+				Akadora: akadora,
+			})
+		}
 
-		suit = PE
-		name = fmt.Sprintf("%s%d", suit.ToString(), i)
-		num = 34
-		tiles = append(tiles, &Tile{
-			ID:      num,
-			Name:    name,
-			Num:     num,
-			Dora:    dora,
-			Suit:    &suit,
-			Akadora: akadora,
-		})
+		{
+			suit := PE
+			name = fmt.Sprintf("%s%d", suit.ToString(), i)
+			num = 34
+			tiles = append(tiles, &Tile{
+				ID:      num,
+				Name:    name,
+				Num:     num,
+				Dora:    dora,
+				Suit:    &suit,
+				Akadora: akadora,
+			})
+		}
 
-		suit = HAKU
-		name = fmt.Sprintf("%s%d", suit.ToString(), i)
-		num = 35
-		tiles = append(tiles, &Tile{
-			ID:      num,
-			Name:    name,
-			Num:     num,
-			Dora:    dora,
-			Suit:    &suit,
-			Akadora: akadora,
-		})
+		{
+			suit := HAKU
+			name = fmt.Sprintf("%s%d", suit.ToString(), i)
+			num = 35
+			tiles = append(tiles, &Tile{
+				ID:      num,
+				Name:    name,
+				Num:     num,
+				Dora:    dora,
+				Suit:    &suit,
+				Akadora: akadora,
+			})
+		}
 
-		suit = HATSU
-		name = fmt.Sprintf("%s%d", suit.ToString(), i)
-		num = 36
-		tiles = append(tiles, &Tile{
-			ID:      num,
-			Name:    name,
-			Num:     num,
-			Dora:    dora,
-			Suit:    &suit,
-			Akadora: akadora,
-		})
+		{
+			suit := HATSU
+			name = fmt.Sprintf("%s%d", suit.ToString(), i)
+			num = 36
+			tiles = append(tiles, &Tile{
+				ID:      num,
+				Name:    name,
+				Num:     num,
+				Dora:    dora,
+				Suit:    &suit,
+				Akadora: akadora,
+			})
+		}
 
-		suit = CHUN
-		name = fmt.Sprintf("%s%d", suit.ToString(), i)
-		num = 37
-		tiles = append(tiles, &Tile{
-			ID:      num,
-			Name:    name,
-			Num:     num,
-			Dora:    dora,
-			Suit:    &suit,
-			Akadora: akadora,
-		})
+		{
+			suit := CHUN
+			name = fmt.Sprintf("%s%d", suit.ToString(), i)
+			num = 37
+			tiles = append(tiles, &Tile{
+				ID:      num,
+				Name:    name,
+				Num:     num,
+				Dora:    dora,
+				Suit:    &suit,
+				Akadora: akadora,
+			})
+		}
 	}
 	return tiles
 	// ˄
@@ -674,7 +701,7 @@ func (g *GameManager) generateTiles() []*Tile {
 func (g *GameManager) determinateDealer() {
 	// ˅
 	rand.Seed(time.Now().UnixNano())
-	random := rand.Intn(2)
+	random := rand.Intn(1)
 	if random == 1 {
 		g.dealerPlayer = g.Table.Player1
 		g.notDealerPlayer = g.Table.Player2
@@ -921,6 +948,7 @@ func newGameManager(Table *Table) *GameManager {
 		Table:             Table,
 		receiveOperatorWG: &sync.WaitGroup{},
 		okWG:              &sync.WaitGroup{},
+		waitStartWg:       &sync.WaitGroup{},
 		ShantenChecker:    NewShantenChecker(),
 		PointCalcrator:    &PointCalcrator{},
 	}

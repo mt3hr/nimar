@@ -3,6 +3,8 @@ package mahjong
 
 import (
 	"sort"
+
+	"golang.org/x/net/websocket"
 )
 
 // ˄
@@ -37,6 +39,9 @@ type Player struct {
 	OpenedPe *OpenedTiles
 
 	// ˅
+
+	GameTableWs *websocket.Conn
+	OperatorWs  *websocket.Conn
 
 	// ˄
 }
