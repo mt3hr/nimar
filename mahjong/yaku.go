@@ -2438,6 +2438,8 @@ func GenerateYakusDefault() Yakus {
 	yakus[yaku.GetName()] = yaku
 	yaku = NewJunchan(3, 2)
 	yakus[yaku.GetName()] = yaku
+	yaku = NewChinitsu(6, 5)
+	yakus[yaku.GetName()] = yaku
 	yaku = NewRyuiso(13, 13)
 	yakus[yaku.GetName()] = yaku
 	yaku = NewDaisangen(13, 13)
@@ -2462,15 +2464,11 @@ func GenerateYakusDefault() Yakus {
 	yakus[yaku.GetName()] = yaku
 	yaku = NewIpeko(1, 0)
 	yakus[yaku.GetName()] = yaku
-	yaku = NewNagashimangan(4, 0)
-	yakus[yaku.GetName()] = yaku
 	yaku = NewTenho(13, 0)
 	yakus[yaku.GetName()] = yaku
 	yaku = NewChiho(13, 0)
 	yakus[yaku.GetName()] = yaku
 	yaku = NewRenho(13, 13)
-	yakus[yaku.GetName()] = yaku
-	yaku = NewKyushuKyuhai()
 	yakus[yaku.GetName()] = yaku
 	return yakus
 }

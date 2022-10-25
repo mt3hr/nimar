@@ -643,19 +643,19 @@ func (g *GameManager) gameLoop() error {
 	opponentPlayer := g.Table.Status.PlayerWithNotTurn
 
 	player.TsumoriTile = g.Table.Tsumo.Pop()
-	if g.ShantenChecker.GetYakuList()["九種九牌"].IsMatch(player, g.Table, nil) {
+	if NewKyushuKyuhai().IsMatch(player, g.Table, nil) {
 		player.Status.KyushuKyuhai = true
 	} else {
 		player.Status.KyushuKyuhai = false
 	}
 
-	if g.ShantenChecker.GetYakuList()["天和"].IsMatch(player, g.Table, nil) {
+	if NewTenho(0, 0).IsMatch(player, g.Table, nil) {
 		player.Status.Tenho = true
 	} else {
 		player.Status.Tenho = false
 	}
 
-	if g.ShantenChecker.GetYakuList()["地和"].IsMatch(player, g.Table, nil) {
+	if NewChiho(0, 0).IsMatch(player, g.Table, nil) {
 		player.Status.Chiho = true
 	} else {
 		player.Status.Chiho = false

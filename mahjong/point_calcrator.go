@@ -2,7 +2,6 @@
 package mahjong
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -33,12 +32,7 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 		yakus[pe.GetName()] = pe
 	}
 
-	for _, yaku := range yakus {
-		fmt.Printf("yaku = %+v\n", yaku.GetName())
-	}
-
-	for _, yaku := range yakus {
-		fmt.Printf("%+v\n", yaku.GetName())
+	for _, yaku := range point.MatchYakus {
 		if player.IsMenzen() {
 			point.Han += yaku.NumberOfHan()
 		} else {
@@ -217,8 +211,10 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 			if point.Han >= 4 {
 				if player.ID == table.GameManager.dealerPlayer.ID {
 					point.Point = 12000 + table.Status.NumberOfHonba*300
+					return point
 				} else {
 					point.Point = 8000 + table.Status.NumberOfHonba*300
+					return point
 				}
 			}
 			break
@@ -230,8 +226,10 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 			if point.Han >= 3 {
 				if player.ID == table.GameManager.dealerPlayer.ID {
 					point.Point = 12000 + table.Status.NumberOfHonba*300
+					return point
 				} else {
 					point.Point = 8000 + table.Status.NumberOfHonba*300
+					return point
 				}
 			}
 			break
@@ -244,50 +242,60 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 			tensuu = kihonten * 4
 		}
 
-		var fixedTensuu = 0
-		fixedTensuu += ((int)(tensuu / 100)) * 100
+		fixedTensuu := ((int)(tensuu / 100)) * 100
 		if ((int)(tensuu/10))*10 != 0 {
 			fixedTensuu += 100
 		}
 		point.Point = fixedTensuu + table.Status.NumberOfHonba*300
+		return point
 	}
 
 	// 満願以上
 	if point.Han == 5 {
 		if player.ID == table.GameManager.dealerPlayer.ID {
 			point.Point = 12000 + table.Status.NumberOfHonba*300
+			return point
 		} else {
 			point.Point = 8000 + table.Status.NumberOfHonba*300
+			return point
 		}
 	}
 	if point.Han >= 6 && point.Han <= 7 {
 		if player.ID == table.GameManager.dealerPlayer.ID {
 			point.Point = 18000 + table.Status.NumberOfHonba*300
+			return point
 		} else {
 			point.Point = 12000 + table.Status.NumberOfHonba*300
+			return point
 		}
 	}
 	if point.Han >= 8 && point.Han <= 10 {
 		if player.ID == table.GameManager.dealerPlayer.ID {
 			point.Point = 24000 + table.Status.NumberOfHonba*300
+			return point
 		} else {
 			point.Point = 16000 + table.Status.NumberOfHonba*300
+			return point
 		}
 	}
 	if point.Han >= 11 && point.Han <= 12 {
 		if player.ID == table.GameManager.dealerPlayer.ID {
 			point.Point = 36000 + table.Status.NumberOfHonba*300
+			return point
 		} else {
 			point.Point = 24000 + table.Status.NumberOfHonba*300
+			return point
 		}
 	}
 	if player.ID == table.GameManager.dealerPlayer.ID {
 		point.Point = point.Han/13*48000 + table.Status.NumberOfHonba*300
+		return point
 	} else {
 		point.Point = point.Han/13*32000 + table.Status.NumberOfHonba*300
+		return point
 	}
 
-	return point
+	panic("丘People")
 	// ˄
 }
 
