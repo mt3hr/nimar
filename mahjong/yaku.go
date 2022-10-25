@@ -1,7 +1,8 @@
-// ˅
 package mahjong
 
-import "sort"
+import (
+	"sort"
+)
 
 // ˄
 
@@ -864,7 +865,7 @@ func (p *Pinhu) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAn
 	playerTemp.RonTile = nil
 
 	tileIDs[agariTileID] -= 1
-	matihai := Table.GameManager.ShantenChecker.CheckCountOfShanten(&playerTemp).Machihai
+	matihai := agarikei.Machihai
 	tileIDs[agariTileID] += 1
 	for i := 0; i <= 2; i++ {
 		for j := 1; j <= 6; j++ {
@@ -2474,10 +2475,10 @@ func GenerateYakusDefault() Yakus {
 	return yakus
 }
 
-func (y Yakus) MatchYakus(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) []Yaku {
+func (y Yakus) MatchYakus(player *Player, table *Table, agarikei *CountOfShantenAndAgarikei) []Yaku {
 	yakus := []Yaku{}
 	for _, yaku := range y {
-		if yaku.IsMatch(player, Table, agarikei) {
+		if yaku.IsMatch(player, table, agarikei) {
 			yakus = append(yakus, yaku)
 		}
 	}

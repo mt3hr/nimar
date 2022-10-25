@@ -462,6 +462,9 @@ func (g *GameManager) appendPeOperators(player *Player, operators []*Operator) [
 	// ˅
 	pe := OPERATOR_PE
 	for _, tile := range append(player.Hand, player.TsumoriTile) {
+		if tile == nil {
+			continue
+		}
 		if tile.ID == 34 {
 			operators = append(operators, &Operator{
 				RoomID:       g.Table.ID,
@@ -678,11 +681,12 @@ func (g *GameManager) gameLoop() error {
 	g.Table.Player1.Rihai() //TODO
 	g.Table.Player2.Rihai() //TODO
 
+	g.Table.UpdateView()
 	func() {
 		shanten := g.Table.GameManager.ShantenChecker.CheckCountOfShanten(player)
 		fmt.Printf("向聴数 %+v\n", shanten.Shanten)
-		if shanten.Shanten == 0 {
-			point := g.PointCalcrator.CalcratePoint(player, shanten, g.Table, GenerateYakusDefault())
+		if shanten.Shanten == -1 {
+			point := g.PointCalcrator.CalcratePoint(player, shanten, g.Table, g.ShantenChecker.yakuList)
 			for _, yaku := range point.MatchYakus {
 				fmt.Println(yaku.GetName())
 			}

@@ -1,7 +1,10 @@
 // ˅
 package mahjong
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 // ˄
 
@@ -31,6 +34,11 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 	}
 
 	for _, yaku := range yakus {
+		fmt.Printf("yaku = %+v\n", yaku.GetName())
+	}
+
+	for _, yaku := range yakus {
+		fmt.Printf("%+v\n", yaku.GetName())
 		if player.IsMenzen() {
 			point.Han += yaku.NumberOfHan()
 		} else {
