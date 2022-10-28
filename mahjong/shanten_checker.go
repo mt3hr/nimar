@@ -1047,7 +1047,6 @@ func (s *ShantenChecker) addMentsu(mentsu *TileIDs, mentsuType MentsuType) {
 		s.countOfShuntsu++
 	default:
 	}
-	fmt.Printf("s.agarikeiTemp = %+v\n", s.agarikeiTemp.String())
 }
 
 func (s *ShantenChecker) undoJanto() {

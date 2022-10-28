@@ -24,27 +24,27 @@ func (t *TileIDs) IsEmpty() bool {
 	return true
 }
 func (t *TileIDs) String() string {
+	if t == nil {
+		return ""
+	}
+
 	alltiles := NewTable("", "").GameManager.GenerateTiles()
 	tiles := []*Tile{}
 
 	for tileid, count := range t {
+	loop:
 		for _, tile := range alltiles {
 			if tile.ID == tileid {
 				for i := 0; i < count; i++ {
 					tiles = append(tiles, tile)
+					break loop
 				}
 			}
 		}
 	}
-
-	if t == nil {
-		return ""
-	}
 	str := ""
-	for i, cnt := range t {
-		for j := 0; j < cnt; j++ {
-			str += fmt.Sprintf("[%+v]", i)
-		}
+	for _, tile := range tiles {
+		str += fmt.Sprintf("[%+v]", tile.Name)
 	}
 	return str
 }
