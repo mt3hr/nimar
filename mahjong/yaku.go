@@ -1,8 +1,7 @@
+// ˅
 package mahjong
 
-import (
-	"sort"
-)
+import "sort"
 
 // ˄
 
@@ -23,7 +22,7 @@ type Yaku interface {
 // ˅
 
 func handAndTsumoriTile(player *Player) TileIDs {
-	tileIDs := [38]int{}
+	tileIDs := TileIDs{}
 	for _, tile := range player.Hand {
 		tileIDs[tile.ID]++
 	}
@@ -503,7 +502,7 @@ func (c *Chitoitsu) NumberOfHanWhenNaki() int {
 }
 
 func (d *DabuTon) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -533,7 +532,7 @@ func (d *DabuTon) NumberOfHanWhenNaki() int {
 }
 
 func (d *DabuNan) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -563,7 +562,7 @@ func (d *DabuNan) NumberOfHanWhenNaki() int {
 }
 
 func (d *DabuSha) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -593,7 +592,7 @@ func (d *DabuSha) NumberOfHanWhenNaki() int {
 }
 
 func (d *DabuPe) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -900,7 +899,7 @@ func (p *Pinhu) NumberOfHanWhenNaki() int {
 }
 
 func (h *Haku) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -929,7 +928,7 @@ func (h *Haku) NumberOfHanWhenNaki() int {
 }
 
 func (h *Hatsu) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -958,7 +957,7 @@ func (h *Hatsu) NumberOfHanWhenNaki() int {
 }
 
 func (c *Chun) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -987,7 +986,7 @@ func (c *Chun) NumberOfHanWhenNaki() int {
 }
 
 func (t *Ton) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -1016,7 +1015,7 @@ func (t *Ton) NumberOfHanWhenNaki() int {
 }
 
 func (n *Nan) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -1045,7 +1044,7 @@ func (n *Nan) NumberOfHanWhenNaki() int {
 }
 
 func (s *Sha) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -1074,7 +1073,7 @@ func (s *Sha) NumberOfHanWhenNaki() int {
 }
 
 func (p *Pe) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -1157,7 +1156,7 @@ func (s *SanshokuDoukou) NumberOfHanWhenNaki() int {
 
 func (s *SanshokuDoujun) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
 	tileIDs := handAndTsumoriTile(player)
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -1228,7 +1227,7 @@ func (i *Ikkitsuukan) IsMatch(player *Player, Table *Table, agarikei *CountOfSha
 		m456 := false
 		m789 := false
 
-		for _, mentsu := range []TileIDs{
+		for _, mentsu := range []*TileIDs{
 			agarikei.Agarikei.Mentsu1,
 			agarikei.Agarikei.Mentsu2,
 			agarikei.Agarikei.Mentsu3,
@@ -1261,7 +1260,7 @@ func (i *Ikkitsuukan) NumberOfHanWhenNaki() int {
 }
 
 func (c *Chanta) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -1352,7 +1351,7 @@ func (h *Honitsu) NumberOfHanWhenNaki() int {
 }
 
 func (j *Junchan) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	for _, mentsu := range []TileIDs{
+	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
@@ -1697,7 +1696,7 @@ func (r *Ryanpeko) IsMatch(player *Player, Table *Table, agarikei *CountOfShante
 	peko := 0
 
 	// 1つ目の面子と同じ面子があるかどうか。234
-	for _, hikakuTaisyou := range []TileIDs{
+	for _, hikakuTaisyou := range []*TileIDs{
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
 		agarikei.Agarikei.Mentsu4,
@@ -1723,7 +1722,7 @@ func (r *Ryanpeko) IsMatch(player *Player, Table *Table, agarikei *CountOfShante
 		}
 	}
 	// 2つ目の面子と同じ面子があるかどうか。34
-	for _, hikakuTaisyou := range []TileIDs{
+	for _, hikakuTaisyou := range []*TileIDs{
 		agarikei.Agarikei.Mentsu3,
 		agarikei.Agarikei.Mentsu4,
 	} {
@@ -1748,7 +1747,7 @@ func (r *Ryanpeko) IsMatch(player *Player, Table *Table, agarikei *CountOfShante
 		}
 	}
 	// 3つ目の面子と同じ面子があるかどうか。4。
-	for _, hikakuTaisyou := range []TileIDs{
+	for _, hikakuTaisyou := range []*TileIDs{
 		agarikei.Agarikei.Mentsu4,
 	} {
 		if agarikei.Agarikei.Mentsu3.IsEmpty() {
@@ -1793,7 +1792,7 @@ func (i *Ipeko) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAn
 	peko := 0
 
 	// 1つ目の面子と同じ面子があるかどうか。234
-	for _, hikakuTaisyou := range []TileIDs{
+	for _, hikakuTaisyou := range []*TileIDs{
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
 		agarikei.Agarikei.Mentsu4,
@@ -1819,7 +1818,7 @@ func (i *Ipeko) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAn
 		}
 	}
 	// 2つ目の面子と同じ面子があるかどうか。34
-	for _, hikakuTaisyou := range []TileIDs{
+	for _, hikakuTaisyou := range []*TileIDs{
 		agarikei.Agarikei.Mentsu3,
 		agarikei.Agarikei.Mentsu4,
 	} {
@@ -1844,7 +1843,7 @@ func (i *Ipeko) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAn
 		}
 	}
 	// 3つ目の面子と同じ面子があるかどうか。4。
-	for _, hikakuTaisyou := range []TileIDs{
+	for _, hikakuTaisyou := range []*TileIDs{
 		agarikei.Agarikei.Mentsu4,
 	} {
 		if agarikei.Agarikei.Mentsu3.IsEmpty() {
