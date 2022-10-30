@@ -642,6 +642,7 @@ func (g *GameManager) gameLoop() error {
 	player := g.Table.Status.PlayerWithTurn
 	opponentPlayer := g.Table.Status.PlayerWithNotTurn
 
+	// DRAW:
 	player.TsumoriTile = g.Table.Tsumo.Pop()
 	if NewKyushuKyuhai().IsMatch(player, g.Table, nil) {
 		player.Status.KyushuKyuhai = true
@@ -649,6 +650,7 @@ func (g *GameManager) gameLoop() error {
 		player.Status.KyushuKyuhai = false
 	}
 
+CALC_OPERATOR:
 	if NewTenho(0, 0).IsMatch(player, g.Table, nil) {
 		player.Status.Tenho = true
 	} else {
@@ -941,6 +943,7 @@ func (g *GameManager) gameLoop() error {
 		if !g.Table.Tsumo.OpenNextKandora() {
 			g.Table.Status.Sukaikan = true
 		}
+		goto CALC_OPERATOR
 
 	case OPERATOR_ANKAN:
 		ankan := OPEN_ANKAN
@@ -983,6 +986,7 @@ func (g *GameManager) gameLoop() error {
 		if !g.Table.Tsumo.OpenNextKandora() {
 			g.Table.Status.Sukaikan = true
 		}
+		goto CALC_OPERATOR
 	case OPERATOR_PE:
 		pe := OPEN_PE
 		OpenedTile := player.OpenedPe
@@ -1009,6 +1013,7 @@ func (g *GameManager) gameLoop() error {
 		player.OpenedPe = OpenedTile
 
 		player.TsumoriTile = g.Table.Tsumo.PopFromWanpai()
+		goto CALC_OPERATOR
 	default:
 		return fmt.Errorf("変なオペレータが渡されました。オペレータタイプ:%d", operator.OperatorType)
 	}

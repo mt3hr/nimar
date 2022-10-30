@@ -35,13 +35,9 @@ func (t *Tsumo) CanPop() bool {
 
 func (t *Tsumo) Pop() *Tile {
 	// ˅
-	if t.CanPop() {
-		tile := t.Tiles[0]
-		t.Tiles = t.Tiles[1:]
-		return tile
-
-	}
-	return nil
+	tile := t.Tiles[0]
+	t.Tiles = t.Tiles[1:]
+	return tile
 	// ˄
 }
 
@@ -54,7 +50,13 @@ func (t *Tsumo) OpenNextKandora() bool {
 
 func (t *Tsumo) PopFromWanpai() *Tile {
 	// ˅
-	//TODO
+	for i := len(t.Tiles) - 18; i <= len(t.Tiles)-8; i++ {
+		if t.Tiles[i] != nil {
+			tile := t.Tiles[i]
+			t.Tiles[i] = nil
+			return tile
+		}
+	}
 	return nil
 	// ˄
 }
