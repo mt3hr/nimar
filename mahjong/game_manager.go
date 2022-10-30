@@ -20,13 +20,13 @@ type GameManager struct {
 
 	notDealerPlayer *Player
 
-	Table *Table `json:"-"`
-
 	ShantenChecker *ShantenChecker
 
 	PointCalcrator *PointCalcrator
 
 	// ˅
+
+	Table *Table `json:"-"`
 
 	receivedOperator *Operator
 
@@ -80,8 +80,8 @@ func (g *GameManager) StartGame() error {
 			return err
 		}
 	}
-	// ˄
 	return nil
+	// ˄
 }
 
 func (g *GameManager) GetShantenChecker() *ShantenChecker {
@@ -688,6 +688,7 @@ CALC_OPERATOR:
 		shanten := g.Table.GameManager.ShantenChecker.CheckCountOfShanten(player)
 		fmt.Printf("向聴数 %+v\n", shanten.Shanten)
 		if shanten.Shanten == -1 {
+			fmt.Printf("shanten.Agarikei = %+v\n", shanten.Agarikei)
 			point := g.PointCalcrator.CalcratePoint(player, shanten, g.Table, g.ShantenChecker.yakuList)
 			for _, yaku := range point.MatchYakus {
 				fmt.Println(yaku.GetName())
@@ -1025,6 +1026,10 @@ CALC_OPERATOR:
 
 	//TODO
 	return nil
+}
+
+func (g *GameManager) GenerateTiles() []*Tile {
+	return g.generateTiles()
 }
 
 // ˄

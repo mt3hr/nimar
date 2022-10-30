@@ -55,7 +55,7 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 			point.Hu += 10
 		}
 
-		mentsus := []TileIDs{
+		mentsus := []*TileIDs{
 			agarikei.Agarikei.Janto,
 			agarikei.Agarikei.Mentsu1,
 			agarikei.Agarikei.Mentsu2,

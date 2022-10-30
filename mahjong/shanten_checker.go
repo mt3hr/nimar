@@ -1,6 +1,8 @@
 // ˅
 package mahjong
 
+import "fmt"
+
 // ˄
 
 type ShantenChecker struct {
@@ -25,19 +27,20 @@ type ShantenChecker struct {
 	countOfKanzenKoritsu int // 完全孤立牌数
 
 	// 開かれていない牌ここから
-	menzenTileIDs     TileIDs
-	tempMenzenTileIDs TileIDs
-	// kanzenKoritsu     TileIDs
+	menzenTileIDs     *TileIDs
+	tempMenzenTileIDs *TileIDs
+	kanzenKoritsu     *TileIDs
 	// 開かれていない牌ここまで
 	// 開かれている牌ここから
-	ankanTileIDs       []TileIDs
-	minkanTileIDs      []TileIDs
-	minkoTileIDs       []TileIDs
-	nakishuntsuTileIDs []TileIDs
+	ankanTileIDs       []*TileIDs
+	minkanTileIDs      []*TileIDs
+	minkoTileIDs       []*TileIDs
+	nakishuntsuTileIDs []*TileIDs
 	// 開かれている牌ここまで
 
-	agarikei Agarikei
-	machihai map[int]interface{}
+	agarikeiTemp Agarikei
+	agarikei     Agarikei
+	machihai     map[int]interface{}
 	// ˄
 }
 
@@ -55,14 +58,13 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 	shantenTemp = s.checkNormal(player)
 	if shantenTemp < shanten {
 		shanten = shantenTemp
-		shantenAndAgarikei.Shanten = shantenTemp
+		shantenAndAgarikei.Shanten = shanten
 
 		if shanten <= 0 {
+			shantenAndAgarikei.Agarikei = s.agarikei.Clone()
 			shantenAndAgarikei.Agarikei.MachiHai = s.calcMachihai()
-			shantenAndAgarikei.Agarikei = &Agarikei{}
 			if shanten == -1 {
-				machi := s.checkMachi(player, &s.agarikei)
-				shantenAndAgarikei.Agarikei.Machi = &machi
+				shantenAndAgarikei.Agarikei.Machi = s.checkMachi(player, shantenAndAgarikei.Agarikei.Clone())
 			}
 		}
 	}
@@ -70,14 +72,13 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 	shantenTemp = s.checkKokushi(player)
 	if shantenTemp < shanten {
 		shanten = shantenTemp
-		shantenAndAgarikei.Shanten = shantenTemp
+		shantenAndAgarikei.Shanten = shanten
 
 		if shanten <= 0 {
 			shantenAndAgarikei.Agarikei.MachiHai = s.calcMachihai()
-			shantenAndAgarikei.Agarikei = &Agarikei{}
 			if shanten == -1 {
-				machi := s.checkMachi(player, &s.agarikei)
-				shantenAndAgarikei.Agarikei.Machi = &machi
+				tanki := TANKI
+				shantenAndAgarikei.Agarikei.Machi = &tanki
 			}
 		}
 	}
@@ -85,14 +86,13 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 	shantenTemp = s.checkChitoitsu(player)
 	if shantenTemp < shanten {
 		shanten = shantenTemp
-		shantenAndAgarikei.Shanten = shantenTemp
+		shantenAndAgarikei.Shanten = shanten
 
 		if shanten <= 0 {
 			shantenAndAgarikei.Agarikei.MachiHai = s.calcMachihai()
-			shantenAndAgarikei.Agarikei = &Agarikei{}
 			if shanten == -1 {
-				machi := s.checkMachi(player, &s.agarikei)
-				shantenAndAgarikei.Agarikei.Machi = &machi
+				tanki := TANKI
+				shantenAndAgarikei.Agarikei.Machi = &tanki
 			}
 		}
 	}
@@ -124,16 +124,16 @@ func (s *ShantenChecker) checkMachihai(player *Player) map[int]interface{} {
 	m := 0
 	n := 0
 	// 通常の形
-	for h = 1; h <= 37; h++ {
+	for h = 1; h <= len(s.tempMenzenTileIDs); h++ {
 		// 対子があれば取り出して
 		if s.tempMenzenTileIDs[h] >= 2 {
 			// 刻子刻子刻子 余り
 			s.tempMenzenTileIDs[h] -= 2
-			for i = 1; i <= 37; i++ {
+			for i = 1; i <= len(s.tempMenzenTileIDs); i++ {
 				if s.cutKotsu(i) {
-					for j = 1; j <= 37; j++ {
+					for j = 1; j <= len(s.tempMenzenTileIDs); j++ {
 						if s.cutKotsu(j) {
-							for k = 1; k <= 37; k++ {
+							for k = 1; k <= len(s.tempMenzenTileIDs); k++ {
 								if s.cutKotsu(k) {
 									for machihaiID := range s.calcMachihai() {
 										s.machihai[machihaiID] = struct{}{}
@@ -154,9 +154,9 @@ func (s *ShantenChecker) checkMachihai(player *Player) map[int]interface{} {
 					continue
 				}
 				if s.cutShuntsu(i) {
-					for j = 1; j <= 37; j++ {
+					for j = 1; j <= len(s.tempMenzenTileIDs); j++ {
 						if s.cutKotsu(j) {
-							for k = 1; k <= 37; k++ {
+							for k = 1; k <= len(s.tempMenzenTileIDs); k++ {
 								if s.cutKotsu(k) {
 									for machihaiID := range s.calcMachihai() {
 										s.machihai[machihaiID] = struct{}{}
@@ -182,7 +182,7 @@ func (s *ShantenChecker) checkMachihai(player *Player) map[int]interface{} {
 							continue
 						}
 						if s.cutShuntsu(j) {
-							for k = 1; k <= 37; k++ {
+							for k = 1; k <= len(s.tempMenzenTileIDs); k++ {
 								if s.cutKotsu(k) {
 									for machihaiID := range s.calcMachihai() {
 										s.machihai[machihaiID] = struct{}{}
@@ -227,18 +227,18 @@ func (s *ShantenChecker) checkMachihai(player *Player) map[int]interface{} {
 			}
 
 			// 七対子
-			for i = 1; i <= 37; i++ {
+			for i = 1; i <= len(s.tempMenzenTileIDs); i++ {
 				if s.cutToitsu(i) {
-					for j = 1; j <= 37; j++ {
+					for j = 1; j <= len(s.tempMenzenTileIDs); j++ {
 						if s.cutToitsu(j) {
-							for k = 1; k <= 37; k++ {
+							for k = 1; k <= len(s.tempMenzenTileIDs); k++ {
 								if s.cutToitsu(k) {
-									for l = 1; l <= 37; l++ {
+									for l = 1; l <= len(s.tempMenzenTileIDs); l++ {
 										if s.cutToitsu(l) {
-											for m = 1; m <= 37; m++ {
+											for m = 1; m <= len(s.tempMenzenTileIDs); m++ {
 												if s.cutToitsu(m) {
 													// 残りの牌で単騎待ち.
-													for n = 1; n <= 37; n++ {
+													for n = 1; n <= len(s.tempMenzenTileIDs); n++ {
 														if s.tempMenzenTileIDs[n] == 1 {
 															s.machihai[n] = struct{}{}
 														}
@@ -318,8 +318,9 @@ func (s *ShantenChecker) checkMachihai(player *Player) map[int]interface{} {
 			s.machihai[33] = struct{}{}
 			s.machihai[34] = struct{}{}
 			s.machihai[35] = struct{}{}
-			s.machihai[38] = struct{}{}
+			s.machihai[36] = struct{}{}
 			s.machihai[37] = struct{}{}
+			s.machihai[38] = struct{}{}
 		} else {
 			if s.tempMenzenTileIDs[1] == 0 {
 				s.machihai[1] = struct{}{}
@@ -377,81 +378,19 @@ func (s *ShantenChecker) checkNormal(player *Player) int {
 	s.countOfKanzenShuntsu = s.cutKanzenShuntsuAndGetCount()
 	s.countOfKanzenKoritsu = s.cutKanzenKoritsuAndGetCount()
 
-	resetAgarikei := func() {
-		s.agarikei.Janto.Reset()
-		s.agarikei.Mentsu1.Reset()
-		s.agarikei.Mentsu2.Reset()
-		s.agarikei.Mentsu3.Reset()
-		s.agarikei.Mentsu4.Reset()
-	}
-
 	//雀頭抜き出し→コーツ抜き出し→シュンツ抜き出し→ターツ候補抜き出し
-	for i = 1; i < 38; i++ {
-		shantenTemp := func() int {
-			tempMenzenTileIDs := s.tempMenzenTileIDs
-			resetTempMenzenTile := func() {
-				s.tempMenzenTileIDs = tempMenzenTileIDs
-			}
-
-			defer resetAgarikei()
-			defer resetTempMenzenTile()
-
-			s.shantenTemp = 8
-			s.countOfToitsu = 0
-			if s.tempMenzenTileIDs[i] >= 2 {
-				s.agarikei.Janto[i] = 2
-				s.countOfToitsu++
-				s.tempMenzenTileIDs[i] -= 2
-			}
-			s.mentsuCut(1)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return -1
-			}
-			s.tempMenzenTileIDs[i] += 2
-			s.countOfToitsu--
-			return s.shantenTemp
-		}()
-
-		if shantenTemp < s.shantenTemp {
-			s.shantenTemp = shantenTemp
-		}
-
-		if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-			return -1
+	for i = 1; i < len(s.tempMenzenTileIDs); i++ {
+		if s.tempMenzenTileIDs[i] >= 2 {
+			janto := &TileIDs{}
+			janto[i] = 2
+			s.addMentsu(janto, Janto)
+			s.cutMentsu(1)
+			s.undoJanto()
 		}
 	}
 
-	if s.agarikei.Janto.IsEmpty() || s.agarikei.Mentsu4.IsEmpty() {
-		shantenTemp := func() int {
-			tempMenzenTileIDs := s.tempMenzenTileIDs
-			resetTempMenzenTile := func() {
-				s.tempMenzenTileIDs = tempMenzenTileIDs
-			}
-
-			defer resetTempMenzenTile()
-			defer resetAgarikei()
-			s.countOfToitsu = 0
-			s.shantenTemp = 8
-			//【雀頭が無い場合の処理】コーツ抜き出し→シュンツ抜き出し→ターツ候補抜き出し
-			s.mentsuCut(1)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return -1
-			}
-			return s.shantenTemp
-		}()
-		if shantenTemp < s.shantenTemp {
-			s.shantenTemp = shantenTemp
-		}
-	}
-
-	if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-		return -1
-	}
-
-	if s.shantenTemp < s.shantenNormal {
-		s.shantenNormal = s.shantenTemp
-	}
-
+	//【雀頭が無い場合の処理】コーツ抜き出し→シュンツ抜き出し→ターツ候補抜き出し
+	s.cutMentsu(1)
 	return s.shantenNormal
 	// ˄
 }
@@ -478,7 +417,7 @@ func (s *ShantenChecker) checkKokushi(player *Player) int {
 	}
 
 	//字牌をチェックする処理
-	for i = 31; i < 38; i++ {
+	for i = 31; i < len(s.menzenTileIDs); i++ {
 		if s.menzenTileIDs[i] != 0 {
 			shantenKokusi--
 		}
@@ -503,7 +442,7 @@ func (s *ShantenChecker) checkChitoitsu(player *Player) int {
 	i := 0
 	countOfKantsuForChitoitsu := 0
 
-	for i = 1; i < 38; i++ {
+	for i = 1; i < len(s.tempMenzenTileIDs); i++ {
 		if s.tempMenzenTileIDs[i] == 0 {
 			continue
 		} //牌が無い時は以降の処理を中断して、ループの最初に戻る
@@ -535,13 +474,13 @@ func (s *ShantenChecker) checkChitoitsu(player *Player) int {
 	// ˄
 }
 
-func (s *ShantenChecker) checkMachi(player *Player, agarikei *Agarikei) Machi {
+func (s *ShantenChecker) checkMachi(player *Player, agarikei *Agarikei) *Machi {
 	// ˅
 	i := 0
 	agarihaiID := 0
 
 	deletedAgarihai := false
-	for _, tileIDs := range []TileIDs{
+	for _, tileIDs := range []*TileIDs{
 		agarikei.Janto,
 		agarikei.Mentsu1,
 		agarikei.Mentsu2,
@@ -563,10 +502,11 @@ func (s *ShantenChecker) checkMachi(player *Player, agarikei *Agarikei) Machi {
 		}
 		if deletedAgarihai {
 			// 単騎待ち
-			for i = 1; i < 38; i++ {
+			for i = 1; i < len(s.tempMenzenTileIDs); i++ {
 				if tileIDs[i] == 2 {
 					if i == agarihaiID {
-						return TANKI
+						tanki := TANKI
+						return &tanki
 					}
 				}
 			}
@@ -575,12 +515,14 @@ func (s *ShantenChecker) checkMachi(player *Player, agarikei *Agarikei) Machi {
 			for i = 0; i <= 2; i++ {
 				if tileIDs[i*10+1] == 1 && tileIDs[i*10+2] == 1 {
 					if i == agarihaiID {
-						return PENCHAN
+						penchan := PENCHAN
+						return &penchan
 					}
 				}
 				if tileIDs[i*10+8] == 1 && tileIDs[i*10+9] == 1 {
 					if i == agarihaiID {
-						return PENCHAN
+						penchan := PENCHAN
+						return &penchan
 					}
 				}
 			}
@@ -591,7 +533,8 @@ func (s *ShantenChecker) checkMachi(player *Player, agarikei *Agarikei) Machi {
 				}
 				if tileIDs[i] == 1 && tileIDs[i+1] == 1 {
 					if i-1 == agarihaiID || i+2 == agarihaiID {
-						return RYANMEN
+						ryanmen := RYANMEN
+						return &ryanmen
 					}
 				}
 			}
@@ -601,108 +544,60 @@ func (s *ShantenChecker) checkMachi(player *Player, agarikei *Agarikei) Machi {
 					continue
 				}
 				if tileIDs[i] == 1 && tileIDs[i+2] == 1 {
-					return KANCHAN
+					kanchan := KANCHAN
+					return &kanchan
 				}
 			}
 			break
 		}
 	}
-	return TANKI
+	tanki := TANKI
+	return &tanki
 	// ˄
 }
 
-func (s *ShantenChecker) mentsuCut(i int) {
+func (s *ShantenChecker) cutMentsu(i int) {
 	// ˅
+
 	j := 0
-	if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-		s.shantenTemp = -1
-		s.shantenNormal = -1
-		return
-	}
 	//※字牌のコーツは完全コーツ処理で抜いているの数牌だけで良い
-	for j = i; j < 30; j++ {
+	for j = i; j < len(s.tempMenzenTileIDs); j++ {
 		//コーツ抜き出し
 
-		if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-			s.shantenTemp = -1
-			s.shantenNormal = -1
-			return
-		}
 		if s.tempMenzenTileIDs[j] >= 3 {
-			s.countOfMentsu++
-			s.countOfKotsu++
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[j] = 3
 			s.addMentsu(mentsu, Anko)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				s.shantenTemp = -1
-				s.shantenNormal = -1
-				return
-			}
-			s.tempMenzenTileIDs[j] -= 3
-			s.mentsuCut(j)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				s.shantenTemp = -1
-				s.shantenNormal = -1
-				return
-			}
-			s.tempMenzenTileIDs[j] += 3
+			s.cutMentsu(j)
 			s.undoMentsu()
-			s.countOfKotsu--
-			s.countOfMentsu--
 		}
 		//シュンツ抜き出し
 		if s.tempMenzenTileIDs[j] != 0 && s.tempMenzenTileIDs[j+1] != 0 && s.tempMenzenTileIDs[j+2] != 0 && j < 28 {
-			s.countOfMentsu++
-			s.countOfShuntsu++
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[j] = 1
 			mentsu[j+1] = 1
 			mentsu[j+2] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				s.shantenTemp = -1
-				s.shantenNormal = -1
-				return
-			}
-			s.tempMenzenTileIDs[j]--
-			s.tempMenzenTileIDs[j+1]--
-			s.tempMenzenTileIDs[j+2]--
-
-			s.mentsuCut(j)
-
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				s.shantenTemp = -1
-				s.shantenNormal = -1
-				return
-			}
-			s.tempMenzenTileIDs[j]++
-			s.tempMenzenTileIDs[j+1]++
-			s.tempMenzenTileIDs[j+2]++
+			s.cutMentsu(j)
 			s.undoMentsu()
-			s.countOfShuntsu--
-			s.countOfMentsu--
 		}
 	}
-	s.tatsuCut(1) //ターツ抜きへ
-	return
+	s.cutTatsu(1) //ターツ抜きへ
 	// ˄
 }
 
-func (s *ShantenChecker) tatsuCut(i int) {
+func (s *ShantenChecker) cutTatsu(i int) {
 	// ˅
 	j := 0
 
-	for j = i; j < 38; j++ {
-		s.countOfMentsu = s.countOfAnkan + s.countOfMinkan + s.countOfKanzenKotsu + s.countOfKotsu + s.countOfKanzenShuntsu + s.countOfShuntsu
-
+	for j = i; j < len(s.tempMenzenTileIDs); j++ {
 		if s.countOfMentsu+s.countOfTatsu < 4 {
 			//メンツとターツの合計は4まで
 			//トイツ抜き出し
 			if s.tempMenzenTileIDs[j] == 2 {
-				s.countOfTatsu++
 				s.tempMenzenTileIDs[j] -= 2
-				s.tatsuCut(j)
+				s.countOfTatsu++
+				s.cutTatsu(j)
 				s.tempMenzenTileIDs[j] += 2
 				s.countOfTatsu--
 			}
@@ -710,10 +605,10 @@ func (s *ShantenChecker) tatsuCut(i int) {
 			//リャンメン・ペンチャン抜き出し
 			if j < 29 && j%10 < 9 {
 				if s.tempMenzenTileIDs[j] != 0 && s.tempMenzenTileIDs[j+1] != 0 {
-					s.countOfTatsu++
 					s.tempMenzenTileIDs[j]--
 					s.tempMenzenTileIDs[j+1]--
-					s.tatsuCut(j)
+					s.countOfTatsu++
+					s.cutTatsu(j)
 					s.tempMenzenTileIDs[j]++
 					s.tempMenzenTileIDs[j+1]++
 					s.countOfTatsu--
@@ -723,10 +618,10 @@ func (s *ShantenChecker) tatsuCut(i int) {
 			//カンチャン抜き出し
 			if j < 28 && j%10 < 8 {
 				if s.tempMenzenTileIDs[j] != 0 && s.tempMenzenTileIDs[j+1] == 0 && s.tempMenzenTileIDs[j+2] != 0 {
-					s.countOfTatsu++
 					s.tempMenzenTileIDs[j]--
 					s.tempMenzenTileIDs[j+2]--
-					s.tatsuCut(j)
+					s.countOfTatsu++
+					s.cutTatsu(j)
 					s.tempMenzenTileIDs[j]++
 					s.tempMenzenTileIDs[j+2]++
 					s.countOfTatsu--
@@ -738,95 +633,9 @@ func (s *ShantenChecker) tatsuCut(i int) {
 	s.shantenTemp = 8 - s.countOfMentsu*2 - s.countOfTatsu - s.countOfToitsu
 	if s.shantenTemp <= s.shantenNormal {
 		s.shantenNormal = s.shantenTemp
+		s.agarikei = *s.agarikeiTemp.Clone()
+		return
 	}
-	return
-	// ˄
-}
-
-func (s *ShantenChecker) kantsuCut() int {
-	// ˅
-	countOfKanzenKantsu := 0
-	i := 0
-	j := 0
-	//字牌の完全コーツを抜き出す
-	for i = 31; i < 38; i++ {
-		if s.tempMenzenTileIDs[i] >= 4 {
-			s.tempMenzenTileIDs[i] -= 4
-			countOfKanzenKantsu++
-
-			mentsu := TileIDs{}
-			mentsu[i] = 4
-			s.addMentsu(mentsu, Ankan)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenKantsu
-			}
-		}
-	}
-
-	//数牌の完全コーツを抜き出す
-	for i = 0; i < 30; i += 10 {
-		if s.tempMenzenTileIDs[i+1] >= 4 && s.tempMenzenTileIDs[i+2] == 0 && s.tempMenzenTileIDs[i+3] == 0 {
-			s.tempMenzenTileIDs[i+1] -= 4
-			countOfKanzenKantsu++
-
-			mentsu := TileIDs{}
-			mentsu[i+1] = 4
-			s.addMentsu(mentsu, Ankan)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenKantsu
-			}
-		}
-		if s.tempMenzenTileIDs[i+1] == 0 && s.tempMenzenTileIDs[i+2] >= 4 && s.tempMenzenTileIDs[i+3] == 0 && s.tempMenzenTileIDs[i+4] == 0 {
-			s.tempMenzenTileIDs[i+2] -= 4
-			countOfKanzenKantsu++
-
-			mentsu := TileIDs{}
-			mentsu[i+2] = 4
-			s.addMentsu(mentsu, Ankan)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenKantsu
-			}
-		}
-
-		//3~7の完全コーツを抜く
-		for j = 0; j < 5; j++ {
-			if s.tempMenzenTileIDs[i+j+1] == 0 && s.tempMenzenTileIDs[i+j+2] == 0 && s.tempMenzenTileIDs[i+j+3] >= 4 && s.tempMenzenTileIDs[i+j+4] == 0 && s.tempMenzenTileIDs[i+j+5] == 0 {
-				s.tempMenzenTileIDs[i+j+3] -= 4
-				countOfKanzenKantsu++
-
-				mentsu := TileIDs{}
-				mentsu[i+j+3] = 4
-				s.addMentsu(mentsu, Ankan)
-				if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-					return countOfKanzenKantsu
-				}
-			}
-		}
-		if s.tempMenzenTileIDs[i+6] == 0 && s.tempMenzenTileIDs[i+7] == 0 && s.tempMenzenTileIDs[i+8] >= 4 && s.tempMenzenTileIDs[i+9] == 0 {
-			s.tempMenzenTileIDs[i+8] -= 4
-			countOfKanzenKantsu++
-
-			mentsu := TileIDs{}
-			mentsu[i+8] = 4
-			s.addMentsu(mentsu, Ankan)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenKantsu
-			}
-		}
-
-		if s.tempMenzenTileIDs[i+7] == 0 && s.tempMenzenTileIDs[i+8] == 0 && s.tempMenzenTileIDs[i+9] >= 4 {
-			s.tempMenzenTileIDs[i+9] -= 4
-			countOfKanzenKantsu++
-
-			mentsu := TileIDs{}
-			mentsu[i+9] = 4
-			s.addMentsu(mentsu, Ankan)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenKantsu
-			}
-		}
-	}
-	return countOfKanzenKantsu
 	// ˄
 }
 
@@ -836,82 +645,56 @@ func (s *ShantenChecker) cutKanzenKotsuAndGetCount() int {
 	i := 0
 	j := 0
 	//字牌の完全コーツを抜き出す
-	for i = 31; i < 38; i++ {
+	for i = 31; i < len(s.tempMenzenTileIDs); i++ {
 		if s.tempMenzenTileIDs[i] >= 3 {
-			s.tempMenzenTileIDs[i] -= 3
-			countOfKanzenKotsu++
-
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i] = 3
 			s.addMentsu(mentsu, Anko)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenKotsu
-			}
 		}
 	}
 
 	//数牌の完全コーツを抜き出す
 	for i = 0; i < 30; i += 10 {
 		if s.tempMenzenTileIDs[i+1] >= 3 && s.tempMenzenTileIDs[i+2] == 0 && s.tempMenzenTileIDs[i+3] == 0 {
-			s.tempMenzenTileIDs[i+1] -= 3
 			countOfKanzenKotsu++
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+1] = 3
 			s.addMentsu(mentsu, Anko)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenKotsu
-			}
 		}
 		if s.tempMenzenTileIDs[i+1] == 0 && s.tempMenzenTileIDs[i+2] >= 3 && s.tempMenzenTileIDs[i+3] == 0 && s.tempMenzenTileIDs[i+4] == 0 {
-			s.tempMenzenTileIDs[i+2] -= 3
 			countOfKanzenKotsu++
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+2] = 3
 			s.addMentsu(mentsu, Anko)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenKotsu
-			}
 		}
 
 		//3~7の完全コーツを抜く
 		for j = 0; j < 5; j++ {
 			if s.tempMenzenTileIDs[i+j+1] == 0 && s.tempMenzenTileIDs[i+j+2] == 0 && s.tempMenzenTileIDs[i+j+3] >= 3 && s.tempMenzenTileIDs[i+j+4] == 0 && s.tempMenzenTileIDs[i+j+5] == 0 {
-				s.tempMenzenTileIDs[i+j+3] -= 3
 				countOfKanzenKotsu++
 
-				mentsu := TileIDs{}
+				mentsu := &TileIDs{}
 				mentsu[i+j+3] = 3
 				s.addMentsu(mentsu, Anko)
-				if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-					return countOfKanzenKotsu
-				}
 			}
 
 		}
 		if s.tempMenzenTileIDs[i+6] == 0 && s.tempMenzenTileIDs[i+7] == 0 && s.tempMenzenTileIDs[i+8] >= 3 && s.tempMenzenTileIDs[i+9] == 0 {
-			s.tempMenzenTileIDs[i+8] -= 3
 			countOfKanzenKotsu++
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+8] = 3
 			s.addMentsu(mentsu, Anko)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenKotsu
-			}
 		}
 
 		if s.tempMenzenTileIDs[i+7] == 0 && s.tempMenzenTileIDs[i+8] == 0 && s.tempMenzenTileIDs[i+9] >= 3 {
-			s.tempMenzenTileIDs[i+9] -= 3
 			countOfKanzenKotsu++
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+9] = 3
 			s.addMentsu(mentsu, Anko)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenKotsu
-			}
 		}
 	}
 	return countOfKanzenKotsu
@@ -928,121 +711,86 @@ func (s *ShantenChecker) cutKanzenShuntsuAndGetCount() int {
 		//マンズ→ピンズ→ソーズ
 		//123▲▲
 		if s.tempMenzenTileIDs[i+1] == 2 && s.tempMenzenTileIDs[i+2] == 2 && s.tempMenzenTileIDs[i+3] == 2 && s.tempMenzenTileIDs[i+4] == 0 && s.tempMenzenTileIDs[i+5] == 0 {
-			s.tempMenzenTileIDs[i+1] -= 2
-			s.tempMenzenTileIDs[i+2] -= 2
-			s.tempMenzenTileIDs[i+3] -= 2
 			countOfKanzenShuntsu += 2
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+1] = 1
 			mentsu[i+2] = 1
 			mentsu[i+3] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
+			s.addMentsu(mentsu, MenzenShuntsu)
 		}
 
 		//▲234▲▲
 		if s.tempMenzenTileIDs[i+1] == 0 && s.tempMenzenTileIDs[i+2] == 2 && s.tempMenzenTileIDs[i+3] == 2 && s.tempMenzenTileIDs[i+4] == 2 && s.tempMenzenTileIDs[i+5] == 0 && s.tempMenzenTileIDs[i+6] == 0 {
-			s.tempMenzenTileIDs[i+2] -= 2
-			s.tempMenzenTileIDs[i+3] -= 2
-			s.tempMenzenTileIDs[i+4] -= 2
 			countOfKanzenShuntsu += 2
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+2] = 1
 			mentsu[i+3] = 1
 			mentsu[i+4] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
+			s.addMentsu(mentsu, MenzenShuntsu)
 		}
 
 		//▲▲345▲▲
 		if s.tempMenzenTileIDs[i+1] == 0 && s.tempMenzenTileIDs[i+2] == 0 && s.tempMenzenTileIDs[i+3] == 2 && s.tempMenzenTileIDs[i+4] == 2 && s.tempMenzenTileIDs[i+5] == 2 && s.tempMenzenTileIDs[i+6] == 0 && s.tempMenzenTileIDs[i+7] == 0 {
-			s.tempMenzenTileIDs[i+3] -= 2
-			s.tempMenzenTileIDs[i+4] -= 2
-			s.tempMenzenTileIDs[i+5] -= 2
 			countOfKanzenShuntsu += 2
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+3] = 1
 			mentsu[i+4] = 1
 			mentsu[i+5] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
+			s.addMentsu(mentsu, MenzenShuntsu)
 		}
 
 		//▲▲456▲▲
 		if s.tempMenzenTileIDs[i+2] == 0 && s.tempMenzenTileIDs[i+3] == 0 && s.tempMenzenTileIDs[i+4] == 2 && s.tempMenzenTileIDs[i+5] == 2 && s.tempMenzenTileIDs[i+6] == 2 && s.tempMenzenTileIDs[i+7] == 0 && s.tempMenzenTileIDs[i+8] == 0 {
-			s.tempMenzenTileIDs[i+4] -= 2
-			s.tempMenzenTileIDs[i+5] -= 2
-			s.tempMenzenTileIDs[i+6] -= 2
 			countOfKanzenShuntsu += 2
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+4] = 1
 			mentsu[i+5] = 1
 			mentsu[i+6] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
+			s.addMentsu(mentsu, MenzenShuntsu)
 		}
 
 		//▲▲567▲▲
 		if s.tempMenzenTileIDs[i+3] == 0 && s.tempMenzenTileIDs[i+4] == 0 && s.tempMenzenTileIDs[i+5] == 2 && s.tempMenzenTileIDs[i+6] == 2 && s.tempMenzenTileIDs[i+7] == 2 && s.tempMenzenTileIDs[i+8] == 0 && s.tempMenzenTileIDs[i+9] == 0 {
-			s.tempMenzenTileIDs[i+5] -= 2
-			s.tempMenzenTileIDs[i+6] -= 2
-			s.tempMenzenTileIDs[i+7] -= 2
 			countOfKanzenShuntsu += 2
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+5] = 1
 			mentsu[i+6] = 1
 			mentsu[i+7] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
+			s.addMentsu(mentsu, MenzenShuntsu)
 		}
 
 		//▲▲678▲
 		if s.tempMenzenTileIDs[i+4] == 0 && s.tempMenzenTileIDs[i+5] == 0 && s.tempMenzenTileIDs[i+6] == 2 && s.tempMenzenTileIDs[i+7] == 2 && s.tempMenzenTileIDs[i+8] == 2 && s.tempMenzenTileIDs[i+9] == 0 {
-			s.tempMenzenTileIDs[i+6] -= 2
-			s.tempMenzenTileIDs[i+7] -= 2
-			s.tempMenzenTileIDs[i+8] -= 2
 			countOfKanzenShuntsu += 2
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+6] = 1
 			mentsu[i+7] = 1
 			mentsu[i+8] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
+			s.addMentsu(mentsu, MenzenShuntsu)
 		}
 
 		//▲▲789
 		if s.tempMenzenTileIDs[i+5] == 0 && s.tempMenzenTileIDs[i+6] == 0 && s.tempMenzenTileIDs[i+7] == 2 && s.tempMenzenTileIDs[i+8] == 2 && s.tempMenzenTileIDs[i+9] == 2 {
-			s.tempMenzenTileIDs[i+7] -= 2
-			s.tempMenzenTileIDs[i+8] -= 2
-			s.tempMenzenTileIDs[i+9] -= 2
 			countOfKanzenShuntsu += 2
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+7] = 1
 			mentsu[i+8] = 1
 			mentsu[i+9] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
+			s.addMentsu(mentsu, MenzenShuntsu)
 		}
 	}
 
@@ -1050,121 +798,79 @@ func (s *ShantenChecker) cutKanzenShuntsuAndGetCount() int {
 		//マンズ→ピンズ→ソーズ
 		//123▲▲
 		if s.tempMenzenTileIDs[i+1] == 1 && s.tempMenzenTileIDs[i+2] == 1 && s.tempMenzenTileIDs[i+3] == 1 && s.tempMenzenTileIDs[i+4] == 0 && s.tempMenzenTileIDs[i+5] == 0 {
-			s.tempMenzenTileIDs[i+1]--
-			s.tempMenzenTileIDs[i+2]--
-			s.tempMenzenTileIDs[i+3]--
 			countOfKanzenShuntsu++
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+1] = 1
 			mentsu[i+2] = 1
 			mentsu[i+3] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
 		}
 
 		//▲234▲▲
 		if s.tempMenzenTileIDs[i+1] == 0 && s.tempMenzenTileIDs[i+2] == 1 && s.tempMenzenTileIDs[i+3] == 1 && s.tempMenzenTileIDs[i+4] == 1 && s.tempMenzenTileIDs[i+5] == 0 && s.tempMenzenTileIDs[i+6] == 0 {
-			s.tempMenzenTileIDs[i+2]--
-			s.tempMenzenTileIDs[i+3]--
-			s.tempMenzenTileIDs[i+4]--
 			countOfKanzenShuntsu++
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+2] = 1
 			mentsu[i+3] = 1
 			mentsu[i+4] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
 		}
 
 		//▲▲345▲▲
 		if s.tempMenzenTileIDs[i+1] == 0 && s.tempMenzenTileIDs[i+2] == 0 && s.tempMenzenTileIDs[i+3] == 1 && s.tempMenzenTileIDs[i+4] == 1 && s.tempMenzenTileIDs[i+5] == 1 && s.tempMenzenTileIDs[i+6] == 0 && s.tempMenzenTileIDs[i+7] == 0 {
-			s.tempMenzenTileIDs[i+3]--
-			s.tempMenzenTileIDs[i+4]--
-			s.tempMenzenTileIDs[i+5]--
 			countOfKanzenShuntsu++
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+3] = 1
 			mentsu[i+4] = 1
 			mentsu[i+5] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
 		}
 
 		//▲▲456▲▲
 		if s.tempMenzenTileIDs[i+2] == 0 && s.tempMenzenTileIDs[i+3] == 0 && s.tempMenzenTileIDs[i+4] == 1 && s.tempMenzenTileIDs[i+5] == 1 && s.tempMenzenTileIDs[i+6] == 1 && s.tempMenzenTileIDs[i+7] == 0 && s.tempMenzenTileIDs[i+8] == 0 {
-			s.tempMenzenTileIDs[i+4]--
-			s.tempMenzenTileIDs[i+5]--
-			s.tempMenzenTileIDs[i+6]--
 			countOfKanzenShuntsu++
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+4] = 1
 			mentsu[i+5] = 1
 			mentsu[i+6] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
 		}
 
 		//▲▲567▲▲
 		if s.tempMenzenTileIDs[i+3] == 0 && s.tempMenzenTileIDs[i+4] == 0 && s.tempMenzenTileIDs[i+5] == 1 && s.tempMenzenTileIDs[i+6] == 1 && s.tempMenzenTileIDs[i+7] == 1 && s.tempMenzenTileIDs[i+8] == 0 && s.tempMenzenTileIDs[i+9] == 0 {
-			s.tempMenzenTileIDs[i+5]--
-			s.tempMenzenTileIDs[i+6]--
-			s.tempMenzenTileIDs[i+7]--
 			countOfKanzenShuntsu++
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+5] = 1
 			mentsu[i+6] = 1
 			mentsu[i+7] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
 		}
 
 		//▲▲678▲
 		if s.tempMenzenTileIDs[i+4] == 0 && s.tempMenzenTileIDs[i+5] == 0 && s.tempMenzenTileIDs[i+6] == 1 && s.tempMenzenTileIDs[i+7] == 1 && s.tempMenzenTileIDs[i+8] == 1 && s.tempMenzenTileIDs[i+9] == 0 {
-			s.tempMenzenTileIDs[i+6]--
-			s.tempMenzenTileIDs[i+7]--
-			s.tempMenzenTileIDs[i+8]--
 			countOfKanzenShuntsu++
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+6] = 1
 			mentsu[i+7] = 1
 			mentsu[i+8] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
 		}
 
 		//▲▲789
 		if s.tempMenzenTileIDs[i+5] == 0 && s.tempMenzenTileIDs[i+6] == 0 && s.tempMenzenTileIDs[i+7] == 1 && s.tempMenzenTileIDs[i+8] == 1 && s.tempMenzenTileIDs[i+9] == 1 {
-			s.tempMenzenTileIDs[i+7]--
-			s.tempMenzenTileIDs[i+8]--
-			s.tempMenzenTileIDs[i+9]--
 			countOfKanzenShuntsu++
 
-			mentsu := TileIDs{}
+			mentsu := &TileIDs{}
 			mentsu[i+7] = 1
 			mentsu[i+8] = 1
 			mentsu[i+9] = 1
 			s.addMentsu(mentsu, MenzenShuntsu)
-			if !s.agarikei.Janto.IsEmpty() && !s.agarikei.Mentsu4.IsEmpty() {
-				return countOfKanzenShuntsu
-			}
 		}
 	}
 	return countOfKanzenShuntsu
@@ -1178,9 +884,9 @@ func (s *ShantenChecker) cutKanzenKoritsuAndGetCount() int {
 	i := 0
 	j := 0
 	//字牌の完全孤立牌を抜き出す
-	for i = 31; i < 38; i++ {
+	for i = 31; i < len(s.tempMenzenTileIDs); i++ {
 		if s.tempMenzenTileIDs[i] == 1 {
-			// s.kanzenKoritsu[i]++
+			s.kanzenKoritsu[i]++
 			s.tempMenzenTileIDs[i]--
 			countOfKanzenKoritsu++
 		}
@@ -1191,13 +897,13 @@ func (s *ShantenChecker) cutKanzenKoritsuAndGetCount() int {
 		//マンズ→ピンズ→ソーズ
 		//1の孤立牌を抜く
 		if s.tempMenzenTileIDs[i+1] == 1 && s.tempMenzenTileIDs[i+2] == 0 && s.tempMenzenTileIDs[i+3] == 0 {
-			// s.kanzenKoritsu[i+1]++
+			s.kanzenKoritsu[i+1]++
 			s.tempMenzenTileIDs[i+1]--
 			countOfKanzenKoritsu++
 		}
 		//2の完全孤立牌を抜く
 		if s.tempMenzenTileIDs[i+1] == 0 && s.tempMenzenTileIDs[i+2] == 1 && s.tempMenzenTileIDs[i+3] == 0 && s.tempMenzenTileIDs[i+4] == 0 {
-			// s.kanzenKoritsu[i+2]++
+			s.kanzenKoritsu[i+2]++
 			s.tempMenzenTileIDs[i+2]--
 			countOfKanzenKoritsu++
 		}
@@ -1205,20 +911,20 @@ func (s *ShantenChecker) cutKanzenKoritsuAndGetCount() int {
 		//3~7の完全孤立牌を抜く
 		for j = 0; j < 5; j++ {
 			if s.tempMenzenTileIDs[i+j+1] == 0 && s.tempMenzenTileIDs[i+j+2] == 0 && s.tempMenzenTileIDs[i+j+3] == 1 && s.tempMenzenTileIDs[i+j+4] == 0 && s.tempMenzenTileIDs[i+j+5] == 0 {
-				// s.kanzenKoritsu[i+j+3]++
+				s.kanzenKoritsu[i+j+3]++
 				s.tempMenzenTileIDs[i+j+3]--
 				countOfKanzenKoritsu++
 			}
 		}
 		//8の完全孤立牌を抜く
 		if s.tempMenzenTileIDs[i+6] == 0 && s.tempMenzenTileIDs[i+7] == 0 && s.tempMenzenTileIDs[i+8] == 1 && s.tempMenzenTileIDs[i+9] == 0 {
-			// s.kanzenKoritsu[i+8]++
+			s.kanzenKoritsu[i+8]++
 			s.tempMenzenTileIDs[i+8]--
 			countOfKanzenKoritsu++
 		}
 		//9の完全孤立牌を抜く
 		if s.tempMenzenTileIDs[i+7] == 0 && s.tempMenzenTileIDs[i+8] == 0 && s.tempMenzenTileIDs[i+9] == 1 {
-			// s.kanzenKoritsu[i+9]++
+			s.kanzenKoritsu[i+9]++
 			s.tempMenzenTileIDs[i+9]--
 			countOfKanzenKoritsu++
 		}
@@ -1282,59 +988,151 @@ func (s *ShantenChecker) addToitsu(tileID int) {
 
 // ˅
 
-func (s *ShantenChecker) addMentsu(mentsu TileIDs, mentsuType MentsuType) {
-	if s.agarikei.Mentsu1.IsEmpty() && s.agarikei.Mentsu1Type == Null {
-		s.agarikei.Mentsu1 = mentsu
-		s.agarikei.Mentsu1Type = mentsuType
-		return
+func (s *ShantenChecker) addMentsu(mentsu *TileIDs, mentsuType MentsuType) {
+	for tileid, count := range mentsu {
+		s.tempMenzenTileIDs[tileid] -= count
 	}
-	if s.agarikei.Mentsu2.IsEmpty() && s.agarikei.Mentsu2Type == Null {
-		s.agarikei.Mentsu2 = mentsu
-		s.agarikei.Mentsu2Type = mentsuType
-		return
+
+	if !s.agarikeiTemp.Janto.IsEmpty() && mentsuType == Janto {
+		panic("パイナップル")
+	} else if s.agarikeiTemp.Janto.IsEmpty() && mentsuType == Janto {
+		s.agarikeiTemp.Janto = mentsu
+		s.agarikeiTemp.JantoType = mentsuType
+	} else if s.agarikeiTemp.Mentsu1.IsEmpty() {
+		s.agarikeiTemp.Mentsu1 = mentsu
+		s.agarikeiTemp.Mentsu1Type = mentsuType
+		s.countOfMentsu = 1
+	} else if s.agarikeiTemp.Mentsu2.IsEmpty() {
+		s.agarikeiTemp.Mentsu2 = mentsu
+		s.agarikeiTemp.Mentsu2Type = mentsuType
+		s.countOfMentsu = 2
+	} else if s.agarikeiTemp.Mentsu3.IsEmpty() {
+		s.agarikeiTemp.Mentsu3 = mentsu
+		s.agarikeiTemp.Mentsu3Type = mentsuType
+		s.countOfMentsu = 3
+	} else if s.agarikeiTemp.Mentsu4.IsEmpty() {
+		s.agarikeiTemp.Mentsu4 = mentsu
+		s.agarikeiTemp.Mentsu4Type = mentsuType
+		s.countOfMentsu = 4
+	} else {
+		fmt.Printf("s.agarikeiTemp.Mentsu1 = %+v\n", s.agarikeiTemp.Mentsu1)
+		fmt.Printf("s.agarikeiTemp.Mentsu1.IsEmpty() = %+v\n", s.agarikeiTemp.Mentsu1.IsEmpty())
+		fmt.Printf("s.agarikeiTemp.Mentsu1Type = %+v\n", s.agarikeiTemp.Mentsu1Type)
+		fmt.Printf("s.agarikeiTemp.Mentsu2 = %+v\n", s.agarikeiTemp.Mentsu1)
+		fmt.Printf("s.agarikeiTemp.Mentsu2.IsEmpty() = %+v\n", s.agarikeiTemp.Mentsu2.IsEmpty())
+		fmt.Printf("s.agarikeiTemp.Mentsu2Type = %+v\n", s.agarikeiTemp.Mentsu2Type)
+		fmt.Printf("s.agarikeiTemp.Mentsu3 = %+v\n", s.agarikeiTemp.Mentsu1)
+		fmt.Printf("s.agarikeiTemp.Mentsu3.IsEmpty() = %+v\n", s.agarikeiTemp.Mentsu3.IsEmpty())
+		fmt.Printf("s.agarikeiTemp.Mentsu3Type = %+v\n", s.agarikeiTemp.Mentsu3Type)
+		fmt.Printf("s.agarikeiTemp.Mentsu4 = %+v\n", s.agarikeiTemp.Mentsu1)
+		fmt.Printf("s.agarikeiTemp.Mentsu4.IsEmpty() = %+v\n", s.agarikeiTemp.Mentsu4.IsEmpty())
+		fmt.Printf("s.agarikeiTemp.Mentsu4Type = %+v\n", s.agarikeiTemp.Mentsu4Type)
+		panic("ワニワニパニック")
 	}
-	if s.agarikei.Mentsu3.IsEmpty() && s.agarikei.Mentsu3Type == Null {
-		s.agarikei.Mentsu3 = mentsu
-		s.agarikei.Mentsu3Type = mentsuType
-		return
-	}
-	if s.agarikei.Mentsu4.IsEmpty() && s.agarikei.Mentsu4Type == Null {
-		s.agarikei.Mentsu4 = mentsu
-		s.agarikei.Mentsu4Type = mentsuType
-		return
+
+	switch mentsuType {
+	case Janto:
+		s.countOfToitsu++
+	case Ankan:
+		s.countOfAnkan++
+	case Minkan:
+		s.countOfMinkan++
+	case Anko:
+		s.countOfKotsu++
+	case Minko:
+		s.countOfKotsu++
+	case MenzenShuntsu:
+		s.countOfShuntsu++
+	case NakiShuntsu:
+		s.countOfShuntsu++
+	default:
 	}
 }
 
+func (s *ShantenChecker) undoJanto() {
+	s.countOfToitsu--
+	for tileid, count := range s.agarikeiTemp.Janto {
+		s.tempMenzenTileIDs[tileid] += count
+	}
+	s.agarikeiTemp.Janto.Reset()
+	s.agarikeiTemp.JantoType = Null
+}
+
 func (s *ShantenChecker) undoMentsu() {
-	if !s.agarikei.Mentsu4.IsEmpty() && s.agarikei.Mentsu4Type != Null {
-		s.agarikei.Mentsu4.Reset()
-		s.agarikei.Mentsu4Type = Null
-		return
+	f := func(mentsuType MentsuType) {
+		switch mentsuType {
+		case Janto:
+			s.countOfToitsu--
+		case Ankan:
+			s.countOfAnkan--
+		case Anko:
+			s.countOfKotsu--
+		case Minko:
+			s.countOfKotsu--
+		case MenzenShuntsu:
+			s.countOfShuntsu--
+		case NakiShuntsu:
+			s.countOfShuntsu--
+		default:
+		}
 	}
-	if !s.agarikei.Mentsu3.IsEmpty() && s.agarikei.Mentsu3Type != Null {
-		s.agarikei.Mentsu3.Reset()
-		s.agarikei.Mentsu3Type = Null
-		return
-	}
-	if !s.agarikei.Mentsu2.IsEmpty() && s.agarikei.Mentsu2Type != Null {
-		s.agarikei.Mentsu2.Reset()
-		s.agarikei.Mentsu2Type = Null
-		return
-	}
-	if !s.agarikei.Mentsu1.IsEmpty() && s.agarikei.Mentsu1Type != Null {
-		s.agarikei.Mentsu1.Reset()
-		s.agarikei.Mentsu1Type = Null
-		return
+	if !s.agarikeiTemp.Mentsu4.IsEmpty() && s.agarikeiTemp.Mentsu4Type != Null {
+		f(s.agarikeiTemp.Mentsu4Type)
+		for tileid, count := range s.agarikeiTemp.Mentsu4 {
+			s.tempMenzenTileIDs[tileid] += count
+		}
+		s.agarikeiTemp.Mentsu4.Reset()
+		s.agarikeiTemp.Mentsu4Type = Null
+		s.countOfMentsu = 3
+	} else if !s.agarikeiTemp.Mentsu3.IsEmpty() && s.agarikeiTemp.Mentsu3Type != Null {
+		f(s.agarikeiTemp.Mentsu3Type)
+		for tileid, count := range s.agarikeiTemp.Mentsu3 {
+			s.tempMenzenTileIDs[tileid] += count
+		}
+		s.agarikeiTemp.Mentsu3.Reset()
+		s.agarikeiTemp.Mentsu3Type = Null
+		s.countOfMentsu = 2
+	} else if !s.agarikeiTemp.Mentsu2.IsEmpty() && s.agarikeiTemp.Mentsu2Type != Null {
+		f(s.agarikeiTemp.Mentsu2Type)
+		for tileid, count := range s.agarikeiTemp.Mentsu2 {
+			s.tempMenzenTileIDs[tileid] += count
+		}
+		s.agarikeiTemp.Mentsu2.Reset()
+		s.agarikeiTemp.Mentsu2Type = Null
+		s.countOfMentsu = 1
+	} else if !s.agarikeiTemp.Mentsu1.IsEmpty() && s.agarikeiTemp.Mentsu1Type != Null {
+		f(s.agarikeiTemp.Mentsu1Type)
+		for tileid, count := range s.agarikeiTemp.Mentsu1 {
+			s.tempMenzenTileIDs[tileid] += count
+		}
+		s.agarikeiTemp.Mentsu1.Reset()
+		s.agarikeiTemp.Mentsu1Type = Null
+		s.countOfMentsu = 0
+	} else {
+		fmt.Printf("s.agarikeiTemp.Mentsu1 = %+v\n", s.agarikeiTemp.Mentsu1)
+		fmt.Printf("s.agarikeiTemp.Mentsu1.IsEmpty() = %+v\n", s.agarikeiTemp.Mentsu1.IsEmpty())
+		fmt.Printf("s.agarikeiTemp.Mentsu1Type = %+v\n", s.agarikeiTemp.Mentsu1Type)
+		fmt.Printf("s.agarikeiTemp.Mentsu1 = %+v\n", s.agarikeiTemp.Mentsu1)
+		fmt.Printf("s.agarikeiTemp.Mentsu2.IsEmpty() = %+v\n", s.agarikeiTemp.Mentsu2.IsEmpty())
+		fmt.Printf("s.agarikeiTemp.Mentsu2Type = %+v\n", s.agarikeiTemp.Mentsu2Type)
+		fmt.Printf("s.agarikeiTemp.Mentsu1 = %+v\n", s.agarikeiTemp.Mentsu1)
+		fmt.Printf("s.agarikeiTemp.Mentsu3.IsEmpty() = %+v\n", s.agarikeiTemp.Mentsu3.IsEmpty())
+		fmt.Printf("s.agarikeiTemp.Mentsu3Type = %+v\n", s.agarikeiTemp.Mentsu3Type)
+		fmt.Printf("s.agarikeiTemp.Mentsu4 = %+v\n", s.agarikeiTemp.Mentsu1)
+		fmt.Printf("s.agarikeiTemp.Mentsu4.IsEmpty() = %+v\n", s.agarikeiTemp.Mentsu4.IsEmpty())
+		fmt.Printf("s.agarikeiTemp.Mentsu4Type = %+v\n", s.agarikeiTemp.Mentsu4Type)
+		panic("ワニワニパニック")
 	}
 }
 
 func (s *ShantenChecker) preparation(player *Player) {
 	// 直接はいじらないようにしよう
 	p := player
-	s.menzenTileIDs = TileIDs{}
-	s.tempMenzenTileIDs = TileIDs{}
+	s.menzenTileIDs = &TileIDs{}
+	s.tempMenzenTileIDs = &TileIDs{}
+	s.kanzenKoritsu = &TileIDs{}
 
-	s.agarikei = Agarikei{}
+	s.agarikeiTemp = Agarikei{}
 
 	s.countOfMentsu = 0
 	s.countOfToitsu = 0
@@ -1362,15 +1160,11 @@ func (s *ShantenChecker) preparation(player *Player) {
 	for _, tileID := range s.minkanTileIDs {
 		tileID.Reset()
 	}
-	s.agarikei.Janto.Reset()
-	s.agarikei.Mentsu1.Reset()
-	s.agarikei.Mentsu2.Reset()
-	s.agarikei.Mentsu3.Reset()
-	s.agarikei.Mentsu4.Reset()
 
+	s.resetMentsu()
 	s.menzenTileIDs.Reset()
 	s.tempMenzenTileIDs.Reset()
-	// s.kanzenKoritsu.Reset()
+	s.kanzenKoritsu.Reset()
 
 	// 開かれた牌の読み取り（暗槓とかポンとか）
 	for _, OpenedTiles := range []*OpenedTiles{
@@ -1382,35 +1176,31 @@ func (s *ShantenChecker) preparation(player *Player) {
 		if OpenedTiles != nil && len(OpenedTiles.Tiles) != 0 {
 			switch *OpenedTiles.OpenType {
 			case OPEN_PON:
-				minko := TileIDs{}
+				minko := &TileIDs{}
 				for _, tile := range OpenedTiles.Tiles {
 					minko[int(tile.ID)]++
 				}
-				s.minkoTileIDs = append(s.minkoTileIDs, minko)
-				s.countOfKanzenKotsu++
+				s.addMentsu(minko, Minko)
 			case OPEN_CHI:
-				nakishuntsu := TileIDs{}
+				nakishuntsu := &TileIDs{}
 				for _, tile := range OpenedTiles.Tiles {
 					nakishuntsu[int(tile.ID)]++
 				}
-				s.nakishuntsuTileIDs = append(s.nakishuntsuTileIDs, nakishuntsu)
-				s.countOfKanzenShuntsu++
+				s.addMentsu(nakishuntsu, NakiShuntsu)
 			case OPEN_ANKAN:
-				ankan := TileIDs{}
+				ankan := &TileIDs{}
 				for _, tile := range OpenedTiles.Tiles {
 					ankan[int(tile.ID)]++
 				}
-				s.ankanTileIDs = append(s.ankanTileIDs, ankan)
-				s.countOfAnkan++
+				s.addMentsu(ankan, Ankan)
 			case OPEN_DAIMINKAN:
 				fallthrough
 			case OPEN_KAKAN:
-				minkan := TileIDs{}
+				minkan := &TileIDs{}
 				for _, tile := range OpenedTiles.Tiles {
 					minkan[int(tile.ID)]++
 				}
-				s.minkanTileIDs = append(s.minkanTileIDs, minkan)
-				s.countOfMinkan++
+				s.addMentsu(minkan, Minkan)
 			}
 		}
 	}
@@ -1432,13 +1222,45 @@ func (s *ShantenChecker) preparation(player *Player) {
 	}
 
 	// 開かれていない牌の読み取り
-	for _, tile := range append(p.Hand, p.TsumoriTile) {
+	handAndTsumoriTiles := append(p.Hand, p.TsumoriTile)
+	for _, tile := range handAndTsumoriTiles {
 		if tile == nil {
 			continue
 		}
 		s.menzenTileIDs[int(tile.ID)]++
 		s.tempMenzenTileIDs[int(tile.ID)]++
 	}
+}
+
+/*
+func (s *ShantenChecker) isAgari() bool {
+	return (!s.agarikeiTemp.Janto.IsEmpty() && !s.agarikeiTemp.Mentsu4.IsEmpty())
+}
+
+func (s *ShantenChecker) agari() int {
+	s.shantenTemp = -1
+	s.shantenNormal = -1
+	s.agarikei = *s.agarikeiTemp.Clone()
+	return -1
+}
+*/
+
+func (s *ShantenChecker) resetMentsu() {
+	s.agarikeiTemp.Janto = &TileIDs{}
+	s.agarikeiTemp.Mentsu1 = &TileIDs{}
+	s.agarikeiTemp.Mentsu2 = &TileIDs{}
+	s.agarikeiTemp.Mentsu3 = &TileIDs{}
+	s.agarikeiTemp.Mentsu4 = &TileIDs{}
+	s.agarikeiTemp.Janto.Reset()
+	s.agarikeiTemp.Mentsu1.Reset()
+	s.agarikeiTemp.Mentsu2.Reset()
+	s.agarikeiTemp.Mentsu3.Reset()
+	s.agarikeiTemp.Mentsu4.Reset()
+	s.agarikeiTemp.JantoType = Null
+	s.agarikeiTemp.Mentsu1Type = Null
+	s.agarikeiTemp.Mentsu2Type = Null
+	s.agarikeiTemp.Mentsu3Type = Null
+	s.agarikeiTemp.Mentsu4Type = Null
 }
 
 func (s *ShantenChecker) calcMachihai() map[int]interface{} {
@@ -1455,7 +1277,7 @@ func (s *ShantenChecker) calcMachihai() map[int]interface{} {
 	}
 
 	// 単騎待ち
-	for i = 1; i < 38; i++ {
+	for i = 1; i < len(s.tempMenzenTileIDs); i++ {
 		if s.tempMenzenTileIDs[i] == 2 {
 			set[i] = struct{}{}
 		}

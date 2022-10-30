@@ -20,7 +20,7 @@ type Table struct {
 
 	Player1 *Player
 
-	GameManager *GameManager `json:"-"`
+	GameManager *GameManager
 
 	Status *TableStatus
 
