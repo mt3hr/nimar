@@ -992,13 +992,9 @@ CALC_OPERATOR:
 		pe := OPEN_PE
 		OpenedTile := player.OpenedPe
 		OpenedTile.OpenType = &pe
+		player.Hand = append(player.Hand, player.TsumoriTile)
+		player.TsumoriTile = nil
 		for _, targetTile := range operator.TargetTiles {
-			if player.TsumoriTile.Name == targetTile.Name {
-				OpenedTile.Tiles = append(OpenedTile.Tiles, player.TsumoriTile)
-				player.TsumoriTile = nil
-				continue
-			}
-
 			tileIndex := 0
 			for i, tile := range player.Hand {
 				if tile.Name == targetTile.Name {
