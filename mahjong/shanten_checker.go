@@ -1173,35 +1173,36 @@ func (s *ShantenChecker) preparation(player *Player) {
 		p.OpenedTile3,
 		p.OpenedTile4,
 	} {
-		if OpenedTiles != nil && len(OpenedTiles.Tiles) != 0 {
-			switch *OpenedTiles.OpenType {
-			case OPEN_PON:
-				minko := &TileIDs{}
-				for _, tile := range OpenedTiles.Tiles {
-					minko[int(tile.ID)]++
-				}
-				s.addMentsu(minko, Minko)
-			case OPEN_CHI:
-				nakishuntsu := &TileIDs{}
-				for _, tile := range OpenedTiles.Tiles {
-					nakishuntsu[int(tile.ID)]++
-				}
-				s.addMentsu(nakishuntsu, NakiShuntsu)
-			case OPEN_ANKAN:
-				ankan := &TileIDs{}
-				for _, tile := range OpenedTiles.Tiles {
-					ankan[int(tile.ID)]++
-				}
-				s.addMentsu(ankan, Ankan)
-			case OPEN_DAIMINKAN:
-				fallthrough
-			case OPEN_KAKAN:
-				minkan := &TileIDs{}
-				for _, tile := range OpenedTiles.Tiles {
-					minkan[int(tile.ID)]++
-				}
-				s.addMentsu(minkan, Minkan)
+		if OpenedTiles == nil || len(OpenedTiles.Tiles) == 0 {
+			continue
+		}
+		switch *OpenedTiles.OpenType {
+		case OPEN_PON:
+			minko := &TileIDs{}
+			for _, tile := range OpenedTiles.Tiles {
+				minko[int(tile.ID)]++
 			}
+			s.addMentsu(minko, Minko)
+		case OPEN_CHI:
+			nakishuntsu := &TileIDs{}
+			for _, tile := range OpenedTiles.Tiles {
+				nakishuntsu[int(tile.ID)]++
+			}
+			s.addMentsu(nakishuntsu, NakiShuntsu)
+		case OPEN_ANKAN:
+			ankan := &TileIDs{}
+			for _, tile := range OpenedTiles.Tiles {
+				ankan[int(tile.ID)]++
+			}
+			s.addMentsu(ankan, Ankan)
+		case OPEN_DAIMINKAN:
+			fallthrough
+		case OPEN_KAKAN:
+			minkan := &TileIDs{}
+			for _, tile := range OpenedTiles.Tiles {
+				minkan[int(tile.ID)]++
+			}
+			s.addMentsu(minkan, Minkan)
 		}
 	}
 

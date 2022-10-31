@@ -48,6 +48,14 @@ type Player struct {
 
 func (p *Player) Rihai() {
 	// ˅
+	nilWithoutHand := []*Tile{}
+	for _, tile := range p.Hand {
+		if tile == nil {
+			continue
+		}
+		nilWithoutHand = append(nilWithoutHand, tile)
+	}
+	p.Hand = nilWithoutHand
 	sort.Slice(p.Hand, func(i, j int) bool {
 		return p.Hand[j].ThisIsBig(p.Hand[i])
 	})

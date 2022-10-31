@@ -55,7 +55,7 @@ func (g *GameManager) ExecuteOperator(operator *Operator) error {
 		return fmt.Errorf("部屋に対局相手がいません。プレイヤーID:%s", operator.PlayerID)
 	}
 
-	g.receivedOperator = operator
+	g.receivedOperator = g.removeNullForOperator(operator)
 
 	switch *operator.OperatorType {
 	case OPERATOR_START_GAME:
@@ -75,10 +75,14 @@ func (g *GameManager) StartGame() error {
 	g.receiveOperatorWG.Wait()
 
 	g.initializeGame()
-	for true {
-		if err := g.gameLoop(); err != nil {
+
+	var err error
+	for tsumo := true; true; {
+		tsumo, err = g.gameLoop(tsumo)
+		if err != nil {
 			return err
 		}
+		g.tradeTurn()
 	}
 	return nil
 	// ˄
@@ -440,9 +444,14 @@ func (g *GameManager) appendKakanOperators(player *Player, operators []*Operator
 		player.OpenedTile3,
 		player.OpenedTile4,
 	} {
-		if !OpenedTiles.IsNil() &&
-			*OpenedTiles.OpenType == OPEN_PON {
+		if OpenedTiles.IsNil() {
+			continue
+		}
+		if *OpenedTiles.OpenType == OPEN_PON {
 			for _, tile := range append(player.Hand, player.TsumoriTile) {
+				if tile == nil {
+					continue
+				}
 				if tile.ID == OpenedTiles.Tiles[0].ID {
 					operators = append(operators, &Operator{
 						RoomID:       g.Table.ID,
@@ -558,18 +567,20 @@ func (g *GameManager) appendReachOperators(player *Player, operators []*Operator
 func (g *GameManager) appendDahaiOperators(player *Player, operators []*Operator) []*Operator {
 	// ˅
 	dahai := OPERATOR_DAHAI
-	operators = append(operators, &Operator{
-		RoomID:       g.Table.ID,
-		PlayerID:     player.ID,
-		OperatorType: &dahai,
-		TargetTiles:  []*Tile{player.TsumoriTile},
-	})
-
-	if player.Status.Reach {
-		return operators
+	if player.TsumoriTile != nil {
+		operators = append(operators, &Operator{
+			RoomID:       g.Table.ID,
+			PlayerID:     player.ID,
+			OperatorType: &dahai,
+			TargetTiles:  []*Tile{player.TsumoriTile},
+		})
+		if player.Status.Reach {
+			return operators
+		}
 	}
 
 	for _, tile := range player.Hand {
+		fmt.Printf("tile = %+v\n", tile)
 		operators = append(operators, &Operator{
 			RoomID:       g.Table.ID,
 			PlayerID:     player.ID,
@@ -582,6 +593,128 @@ func (g *GameManager) appendDahaiOperators(player *Player, operators []*Operator
 }
 
 // ˅
+
+func (g *GameManager) appendRonOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
+	ron := OPERATOR_RON
+	agarikei := g.ShantenChecker.CheckCountOfShanten(opponentPlayer)
+	if agarikei.Shanten != 0 {
+		return operators
+	}
+	for machihaiID := range agarikei.Machihai {
+		if machihaiID == player.Kawa[len(player.Kawa)-1].ID {
+			operators = append(operators, &Operator{
+				RoomID:       g.Table.ID,
+				PlayerID:     opponentPlayer.ID,
+				OperatorType: &ron,
+				TargetTiles:  []*Tile{player.Kawa[len(player.Kawa)-1]},
+			})
+		}
+	}
+	return operators
+}
+func (g *GameManager) appendPonOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
+	pon := OPERATOR_PON
+	haiNum := player.Kawa[len(player.Kawa)-1].ID
+	tileIDs := handAndTsumoriTile(opponentPlayer)
+	for tileID := range tileIDs {
+		if tileIDs[tileID] >= 2 && haiNum == tileID {
+			targetTiles := []*Tile{player.Kawa[len(player.Kawa)-1]}
+			addedCnt := 0
+			for _, tile := range opponentPlayer.Hand {
+				if tile.ID == haiNum {
+					targetTiles = append(targetTiles, tile)
+					addedCnt++
+				}
+				if addedCnt == 2 {
+					break
+				}
+			}
+			operators = append(operators, &Operator{
+				RoomID:       g.Table.ID,
+				PlayerID:     opponentPlayer.ID,
+				OperatorType: &pon,
+				TargetTiles:  targetTiles,
+			})
+		}
+	}
+	return operators
+}
+func (g *GameManager) appendChiOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
+	chi := OPERATOR_CHI
+	haiNum := player.Kawa[len(player.Kawa)-1].ID
+	menzenTiles := handAndTsumoriTile(opponentPlayer)
+	tii := []*TileIDs{}
+
+	for i := 0; i <= 2; i++ {
+		for j := 1; j <= 9; j++ {
+			if haiNum == i*10+j && j <= 7 {
+				if menzenTiles[haiNum+1] >= 1 && menzenTiles[haiNum+2] >= 1 {
+					syuntsu := &TileIDs{}
+					syuntsu[haiNum+1] = 1
+					syuntsu[haiNum+2] = 1
+					tii = append(tii, syuntsu)
+				}
+			}
+			if haiNum == i*10+j && j >= 3 && j <= 9 {
+				if menzenTiles[haiNum-1] >= 1 && menzenTiles[haiNum-2] >= 1 {
+					syuntsu := &TileIDs{}
+					syuntsu[haiNum-1] = 1
+					syuntsu[haiNum-2] = 1
+					tii = append(tii, syuntsu)
+				}
+			}
+			if haiNum == i*10+j && j >= 2 && j <= 8 {
+				if menzenTiles[haiNum+1] >= 1 && menzenTiles[haiNum-1] >= 1 {
+					syuntsu := &TileIDs{}
+					syuntsu[haiNum+1] = 1
+					syuntsu[haiNum-1] = 1
+					tii = append(tii, syuntsu)
+				}
+			}
+		}
+	}
+	for _, mentsu := range tii {
+		targetTiles := []*Tile{player.Kawa[len(player.Kawa)-1]}
+		for tileid, cnt := range mentsu {
+			if cnt == 1 {
+				for _, tile := range append(opponentPlayer.Hand) {
+					if tile.ID == tileid {
+						targetTiles = append(targetTiles, tile)
+						break
+					}
+				}
+			}
+		}
+		operators = append(operators, &Operator{
+			RoomID:       g.Table.ID,
+			PlayerID:     opponentPlayer.ID,
+			OperatorType: &chi,
+			TargetTiles:  targetTiles,
+		})
+	}
+	return operators
+}
+func (g *GameManager) appendDaiminkanOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
+	daiminkan := OPERATOR_DAIMINKAN
+	haiNum := player.Kawa[len(player.Kawa)-1].ID
+	for tileid, cnt := range handAndTsumoriTile(opponentPlayer) {
+		if cnt == 3 && haiNum == tileid {
+			targetTiles := []*Tile{player.Kawa[len(player.Kawa)-1]}
+			for _, tile := range opponentPlayer.Hand {
+				if tile.ID == tileid {
+					targetTiles = append(targetTiles, tile)
+				}
+			}
+			operators = append(operators, &Operator{
+				RoomID:       g.Table.ID,
+				PlayerID:     opponentPlayer.ID,
+				OperatorType: &daiminkan,
+				TargetTiles:  targetTiles,
+			})
+		}
+	}
+	return operators
+}
 
 func newGameManager(Table *Table) *GameManager {
 	return &GameManager{
@@ -638,394 +771,481 @@ func (m *GameManager) generateAgariMessage(player *Player) *Message {
 	return message
 }
 
-func (g *GameManager) gameLoop() error {
-	player := g.Table.Status.PlayerWithTurn
-	opponentPlayer := g.Table.Status.PlayerWithNotTurn
+func (g *GameManager) gameLoop(tsumo bool) (nextTurnCanTsumo bool, err error) {
+TOP:
+	{
+		player, opponentPlayer := g.getPlayers()
 
-	// DRAW:
-	player.TsumoriTile = g.Table.Tsumo.Pop()
-	if NewKyushuKyuhai().IsMatch(player, g.Table, nil) {
-		player.Status.KyushuKyuhai = true
-	} else {
-		player.Status.KyushuKyuhai = false
-	}
+		player.Rihai()
+		opponentPlayer.Rihai()
+		if tsumo {
+			player.TsumoriTile = g.Table.Tsumo.Pop()
+		}
+		if NewKyushuKyuhai().IsMatch(player, g.Table, nil) {
+			player.Status.KyushuKyuhai = true
+		} else {
+			player.Status.KyushuKyuhai = false
+		}
 
-CALC_OPERATOR:
-	if NewTenho(0, 0).IsMatch(player, g.Table, nil) {
-		player.Status.Tenho = true
-	} else {
-		player.Status.Tenho = false
-	}
+		if NewTenho(0, 0).IsMatch(player, g.Table, nil) {
+			player.Status.Tenho = true
+		} else {
+			player.Status.Tenho = false
+		}
 
-	if NewChiho(0, 0).IsMatch(player, g.Table, nil) {
-		player.Status.Chiho = true
-	} else {
-		player.Status.Chiho = false
-	}
+		if NewChiho(0, 0).IsMatch(player, g.Table, nil) {
+			player.Status.Chiho = true
+		} else {
+			player.Status.Chiho = false
+		}
 
-	if g.Table.Tsumo.RemainTilesCount() <= 18 {
-		player.Status.Haitei = true
-		opponentPlayer.Status.Hotei = true
-	} else {
-		player.Status.Haitei = false
-		opponentPlayer.Status.Hotei = false
-	}
+		if g.Table.Tsumo.RemainTilesCount() <= 18 {
+			player.Status.Haitei = true
+			opponentPlayer.Status.Hotei = true
+		} else {
+			player.Status.Haitei = false
+			opponentPlayer.Status.Hotei = false
+		}
 
-	playerOperators := []*Operator{}
-	playerOperators = g.appendKyushuKyuhaiOperators(player, playerOperators)
-	playerOperators = g.appendAnkanOperators(player, playerOperators)
-	playerOperators = g.appendKakanOperators(player, playerOperators)
-	playerOperators = g.appendPeOperators(player, playerOperators)
-	playerOperators = g.appendTsumoAgariOperators(player, playerOperators)
-	playerOperators = g.appendReachOperators(player, playerOperators)
-	playerOperators = g.appendDahaiOperators(player, playerOperators)
+		playerOperators := []*Operator{}
+		playerOperators = g.appendKyushuKyuhaiOperators(player, playerOperators)
+		playerOperators = g.appendAnkanOperators(player, playerOperators)
+		playerOperators = g.appendKakanOperators(player, playerOperators)
+		playerOperators = g.appendPeOperators(player, playerOperators)
+		playerOperators = g.appendTsumoAgariOperators(player, playerOperators)
+		playerOperators = g.appendReachOperators(player, playerOperators)
+		playerOperators = g.appendDahaiOperators(player, playerOperators)
+		playerOperators = g.removeNullForOperators(playerOperators)
 
-	g.Table.Player1.Rihai() //TODO
-	g.Table.Player2.Rihai() //TODO
-
-	g.Table.UpdateView()
-	func() {
-		shanten := g.Table.GameManager.ShantenChecker.CheckCountOfShanten(player)
-		fmt.Printf("向聴数 %+v\n", shanten.Shanten)
-		if shanten.Shanten == -1 {
-			fmt.Printf("shanten.Agarikei = %+v\n", shanten.Agarikei)
-			point := g.PointCalcrator.CalcratePoint(player, shanten, g.Table, g.ShantenChecker.yakuList)
-			for _, yaku := range point.MatchYakus {
-				fmt.Println(yaku.GetName())
+		for _, op := range playerOperators {
+			for _, tile := range op.TargetTiles {
+				fmt.Printf("tile = %+v\n", tile)
 			}
-			fmt.Printf("%+v符%+v翻 %+v点\n", point.Hu, point.Han, point.Point)
-		}
-	}()
-
-	g.Table.UpdateView()
-	b, err := json.Marshal(playerOperators)
-	if err != nil {
-		panic(err)
-	}
-	_, err = player.OperatorWs.Write(b)
-	if err != nil {
-		panic(err)
-	}
-	g.Table.UpdateView()
-	g.receiveOperatorWG.Add(1)
-	g.receiveOperatorWG.Wait()
-
-	operator := g.receivedOperator
-	if operator == nil {
-		return nil
-	}
-	switch *(operator.OperatorType) {
-	case OPERATOR_OK:
-		//TODO
-	case OPERATOR_DRAW:
-		if player.TsumoriTile != nil {
-			return fmt.Errorf("すでに引いているのに更にひこうとしています。プレイヤーID:%s", operator.PlayerID)
 		}
 
-		Tsumo := g.Table.Tsumo
-		if !Tsumo.CanPop() {
-			return fmt.Errorf("ツモが18枚を下回ったので引けません。プレイヤーID:%s", operator.PlayerID)
+		func() {
+			shanten := g.Table.GameManager.ShantenChecker.CheckCountOfShanten(player)
+			fmt.Printf("向聴数 %+v\n", shanten.Shanten)
+			if shanten.Shanten == -1 {
+				fmt.Printf("shanten.Agarikei = %+v\n", shanten.Agarikei)
+				point := g.PointCalcrator.CalcratePoint(player, shanten, g.Table, g.ShantenChecker.yakuList)
+				for _, yaku := range point.MatchYakus {
+					fmt.Println(yaku.GetName())
+				}
+				fmt.Printf("%+v符%+v翻 %+v点\n", point.Hu, point.Han, point.Point)
+			}
+		}()
+
+		g.Table.UpdateView()
+		b, err := json.Marshal(playerOperators)
+		if err != nil {
+			panic(err)
 		}
-		player.TsumoriTile = Tsumo.Pop()
-	case OPERATOR_KYUSHUKYUHAI:
-		//TODO
-	case OPERATOR_TSUMO:
-		//TODO
-		message := g.generateAgariMessage(player)
-		_ = message
+		_, err = player.OperatorWs.Write(b)
+		if err != nil {
+			panic(err)
+		}
+		g.receiveOperatorWG.Add(1)
+		g.receiveOperatorWG.Wait()
 
-		g.okWG.Add(2)
+		operator := g.receivedOperator
+		if operator == nil {
+			return false, nil
+		}
 
-		//TODO
+		switch *(operator.OperatorType) {
+		case OPERATOR_KYUSHUKYUHAI:
+			//TODO
+		case OPERATOR_ANKAN:
+			ankan := OPEN_ANKAN
+			OpenedTile := &OpenedTiles{
+				OpenType: &ankan,
+			}
 
-		/*
-			(*player.GetNimaRMessageStreamServer()).Send(message)
-			(*opponentPlayer.GetNimaRMessageStreamServer()).Send(message)
-			(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
-				Operators: []*Operator{
-					&Operator{
-						RoomID:       g.Table.GetID(),
-						PlayerID:     player.GetID(),
-						OperatorType: OPERATOR_OK,
+			for _, targetTile := range operator.TargetTiles {
+				if player.TsumoriTile.Name == targetTile.Name {
+					OpenedTile.Tiles = append(OpenedTile.Tiles, player.TsumoriTile)
+					player.TsumoriTile = nil
+					continue
+				}
+
+				tileIndex := 0
+				for i, tile := range player.Hand {
+					if tile.Name == targetTile.Name {
+						tileIndex = i
+						break
+					}
+				}
+				hand := player.Hand
+				hand = append(hand[:tileIndex], hand[tileIndex+1:]...)
+				player.Hand = hand
+				OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
+			}
+			if player.OpenedTile1.IsNil() {
+				player.OpenedTile1 = OpenedTile
+			} else if player.OpenedTile2.IsNil() {
+				player.OpenedTile2 = OpenedTile
+			} else if player.OpenedTile3.IsNil() {
+				player.OpenedTile3 = OpenedTile
+			} else if player.OpenedTile4.IsNil() {
+				player.OpenedTile4 = OpenedTile
+			} else {
+				return false, fmt.Errorf("カンの完了に失敗しました。すでに4つ牌を開いています？")
+			}
+
+			player.TsumoriTile = g.Table.Tsumo.PopFromWanpai()
+			if !g.Table.Tsumo.OpenNextKandora() {
+				g.Table.Status.Sukaikan = true
+			}
+			tsumo = false
+			goto TOP
+		case OPERATOR_KAKAN:
+			//TODO
+			player.TsumoriTile = g.Table.Tsumo.PopFromWanpai()
+			if !g.Table.Tsumo.OpenNextKandora() {
+				g.Table.Status.Sukaikan = true
+			}
+			tsumo = false
+			goto TOP
+		case OPERATOR_PE:
+			pe := OPEN_PE
+			OpenedTile := player.OpenedPe
+			OpenedTile.OpenType = &pe
+			player.Hand = append(player.Hand, player.TsumoriTile)
+			player.TsumoriTile = nil
+			for _, targetTile := range operator.TargetTiles {
+				tileIndex := -1
+				for i, tile := range player.Hand {
+					if tile.Name == targetTile.Name {
+						tileIndex = i
+						break
+					}
+				}
+				player.Hand = append(player.Hand[:tileIndex], player.Hand[tileIndex+1:]...)
+				OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
+			}
+			player.OpenedPe = OpenedTile
+
+			player.TsumoriTile = g.Table.Tsumo.PopFromWanpai()
+			tsumo = false
+			goto TOP
+		case OPERATOR_TSUMO:
+			//TODO
+			message := g.generateAgariMessage(player)
+			_ = message
+
+			g.okWG.Add(2)
+
+			//TODO
+
+			/*
+				(*player.GetNimaRMessageStreamServer()).Send(message)
+				(*opponentPlayer.GetNimaRMessageStreamServer()).Send(message)
+				(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
+					Operators: []*Operator{
+						&Operator{
+							RoomID:       g.Table.GetID(),
+							PlayerID:     player.GetID(),
+							OperatorType: OPERATOR_OK,
+						},
 					},
-				},
-			})
-			(*opponentPlayer.GetNimaROperatorsStreamServer()).Send(&Operators{
-				Operators: []*Operator{
-					&Operator{
-						RoomID:       g.Table.GetID(),
-						PlayerID:     opponentPlayer.GetID(),
-						OperatorType: OPERATOR_OK,
+				})
+				(*opponentPlayer.GetNimaROperatorsStreamServer()).Send(&Operators{
+					Operators: []*Operator{
+						&Operator{
+							RoomID:       g.Table.GetID(),
+							PlayerID:     opponentPlayer.GetID(),
+							OperatorType: OPERATOR_OK,
+						},
 					},
-				},
+				})
+			*/
+			g.okWG.Wait()
+			//TODO 次の局にすすむ
+
+		case OPERATOR_DAHAI:
+			handAndTsumoriTile := append(player.Hand, player.TsumoriTile)
+			tileIndex := -1
+			for i, tile := range handAndTsumoriTile {
+				if tile.Name == operator.TargetTiles[0].Name {
+					tileIndex = i
+					break
+				}
+			}
+
+			if tileIndex == -1 {
+				return false, fmt.Errorf("手牌にない牌は捨てられません。プレイヤーID:%s 牌Name:%s", operator.PlayerID, operator.TargetTiles[0].Name)
+			}
+
+			player.Kawa = append(player.Kawa, handAndTsumoriTile[tileIndex])
+			player.Hand = append(handAndTsumoriTile[:tileIndex], handAndTsumoriTile[tileIndex+1:]...)
+			player.TsumoriTile = nil
+			nextTurnCanTsumo = true
+		case OPERATOR_REACH:
+			//TODO
+			handAndTsumoriTile := append(player.Hand, player.TsumoriTile)
+			tileIndex := -1
+			for i, tile := range handAndTsumoriTile {
+				if tile.Name == operator.TargetTiles[0].Name {
+					tileIndex = i
+					break
+				}
+			}
+
+			if tileIndex == -1 {
+				return false, fmt.Errorf("手牌にない牌は捨てられません。プレイヤーID:%s 牌Name:%s", operator.PlayerID, operator.TargetTiles[0].Name)
+			}
+
+			player.Kawa = append(player.Kawa, handAndTsumoriTile[tileIndex])
+			player.Hand = append(handAndTsumoriTile[:tileIndex], handAndTsumoriTile[tileIndex+1:]...)
+			player.TsumoriTile = nil
+			nextTurnCanTsumo = true
+		default:
+			return false, fmt.Errorf("変なオペレータが渡されました。オペレータタイプ:%d", operator.OperatorType)
+		}
+
+		//TODO  相手のOperator
+		opponentOperators := []*Operator{}
+		opponentOperators = g.appendRonOperators(player, opponentPlayer, opponentOperators)
+		opponentOperators = g.appendPonOperators(player, opponentPlayer, opponentOperators)
+		opponentOperators = g.appendChiOperators(player, opponentPlayer, opponentOperators)
+		opponentOperators = g.appendDaiminkanOperators(player, opponentPlayer, opponentOperators)
+		opponentOperators = g.removeNullForOperators(opponentOperators)
+		if len(opponentOperators) != 0 {
+			skip := OPERATOR_SKIP
+			opponentOperators = append(opponentOperators, &Operator{
+				RoomID:       g.Table.ID,
+				PlayerID:     opponentPlayer.ID,
+				TargetTiles:  []*Tile{},
+				OperatorType: &skip,
 			})
-		*/
-		g.okWG.Wait()
-		//TODO 次の局にすすむ
+			b, err = json.Marshal(opponentOperators)
+			_, err = opponentPlayer.OperatorWs.Write(b)
+			if err != nil {
+				panic(err)
+			}
+			g.Table.UpdateView()
+			g.receiveOperatorWG.Add(1)
+			g.receiveOperatorWG.Wait()
 
-	case OPERATOR_RON:
-		player.RonTile = opponentPlayer.Kawa[len(opponentPlayer.Kawa)-1]
-		opponentPlayer.Kawa = opponentPlayer.Kawa[:len(opponentPlayer.Kawa)-1]
+			operator = g.receivedOperator
 
-		message := g.generateAgariMessage(player)
-		_ = message
+			if operator == nil {
+				return false, nil
+			}
 
-		g.okWG.Add(2)
-
-		//TODO
-		/*
-			(*player.GetNimaRMessageStreamServer()).Send(message)
-			(*opponentPlayer.GetNimaRMessageStreamServer()).Send(message)
-			(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
-				Operators: []*Operator{
-					&Operator{
-						RoomID:       g.Table.GetID(),
-						PlayerID:     player.GetID(),
-						OperatorType: OPERATOR_OK,
-					},
-				},
-			})
-			(*opponentPlayer.GetNimaROperatorsStreamServer()).Send(&Operators{
-				Operators: []*Operator{
-					&Operator{
-						RoomID:       g.Table.GetID(),
-						PlayerID:     opponentPlayer.GetID(),
-						OperatorType: OPERATOR_OK,
-					},
-				},
-			})
-		*/
-		g.okWG.Wait()
-		//TODO 次の局にすすむ
-
-	case OPERATOR_KAKAN:
-		//TODO
-	case OPERATOR_DAHAI:
-		handAndTsumoriTile := append(player.Hand, player.TsumoriTile)
-		tileIndex := -1
-		for i, tile := range handAndTsumoriTile {
-			if tile.Name == operator.TargetTiles[0].Name {
-				tileIndex = i
+			switch *(operator.OperatorType) {
+			case OPERATOR_SKIP:
 				break
-			}
-		}
+			case OPERATOR_RON:
+				opponentPlayer.RonTile = opponentPlayer.Kawa[len(opponentPlayer.Kawa)-1]
+				opponentPlayer.Kawa = opponentPlayer.Kawa[:len(opponentPlayer.Kawa)-1]
 
-		if tileIndex == -1 {
-			return fmt.Errorf("手牌にない牌は捨てられません。プレイヤーID:%s 牌Name:%s", operator.PlayerID, operator.TargetTiles[0].Name)
-		}
+				message := g.generateAgariMessage(opponentPlayer)
+				_ = message
 
-		player.Kawa = append(player.Kawa, handAndTsumoriTile[tileIndex])
-		player.Hand = append(handAndTsumoriTile[:tileIndex], handAndTsumoriTile[tileIndex+1:]...)
-		player.TsumoriTile = nil
-	case OPERATOR_SKIP:
-		//TODO
-	case OPERATOR_PON:
-		pon := OPEN_PON
-		OpenedTile := &OpenedTiles{
-			OpenType: &pon,
-		}
+				g.okWG.Add(2)
 
-		for i, targetTile := range operator.TargetTiles {
-			if i == 0 {
-				if opponentPlayer.Kawa[len(opponentPlayer.Kawa)-1].Name == targetTile.Name {
-					opponentPlayer.Kawa = opponentPlayer.Kawa[:len(opponentPlayer.Kawa)-1]
-					OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
-					continue
-				} else {
-					return fmt.Errorf("ポンできません。相手の捨てた最後の牌:%s ポンしたい牌:%s", opponentPlayer.Kawa[len(opponentPlayer.Kawa)-1].Name, targetTile.Name)
+				//TODO
+				/*
+					(*player.GetNimaRMessageStreamServer()).Send(message)
+					(*opponentPlayer.GetNimaRMessageStreamServer()).Send(message)
+					(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
+						Operators: []*Operator{
+							&Operator{
+								RoomID:       g.Table.GetID(),
+								PlayerID:     player.GetID(),
+								OperatorType: OPERATOR_OK,
+							},
+						},
+					})
+					(*opponentPlayer.GetNimaROperatorsStreamServer()).Send(&Operators{
+						Operators: []*Operator{
+							&Operator{
+								RoomID:       g.Table.GetID(),
+								PlayerID:     opponentPlayer.GetID(),
+								OperatorType: OPERATOR_OK,
+							},
+						},
+					})
+				*/
+				g.okWG.Wait()
+				//TODO 次の局にすすむ
+			case OPERATOR_PON:
+				pon := OPEN_PON
+				OpenedTile := &OpenedTiles{
+					OpenType: &pon,
 				}
-			} else {
-				tileIndex := 0
-				for i, tile := range player.Hand {
-					if tile.Name == targetTile.Name {
-						tileIndex = i
-						break
+
+				removeIndexs := []int{}
+				for i, targetTile := range operator.TargetTiles {
+					if i == 0 {
+						if player.Kawa[len(player.Kawa)-1].Name == targetTile.Name {
+							player.Kawa = player.Kawa[:len(player.Kawa)-1]
+							OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
+						} else {
+							return false, fmt.Errorf("ポンできません。相手の捨てた最後の牌:%s ポンしたい牌:%s", player.Kawa[len(player.Kawa)-1].Name, targetTile.Name)
+						}
+					} else {
+						for i, tile := range opponentPlayer.Hand {
+							if tile.Name == targetTile.Name {
+								removeIndexs = append(removeIndexs, i)
+								break
+							}
+						}
 					}
 				}
-				hand := player.Hand
-				hand = append(hand[:tileIndex], hand[tileIndex+1:]...)
-				player.Hand = hand
-				OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
-			}
-		}
-		if *player.OpenedTile1.OpenType == OPEN_NULL {
-			player.OpenedTile1 = OpenedTile
-		} else if *player.OpenedTile1.OpenType == OPEN_NULL {
-			player.OpenedTile2 = OpenedTile
-		} else if *player.OpenedTile1.OpenType == OPEN_NULL {
-			player.OpenedTile3 = OpenedTile
-		} else if *player.OpenedTile1.OpenType == OPEN_NULL {
-			player.OpenedTile4 = OpenedTile
-		} else {
-			return fmt.Errorf("ポンの完了に失敗しました。すでに4つ牌を開いています？")
-		}
-	case OPERATOR_CHI:
-		chi := OPEN_CHI
-		OpenedTile := &OpenedTiles{
-			OpenType: &chi,
-		}
 
-		for i, targetTile := range operator.TargetTiles {
-			if i == 0 {
-				if opponentPlayer.Kawa[len(opponentPlayer.Kawa)-1].Name == targetTile.Name {
-					opponentPlayer.Kawa = opponentPlayer.Kawa[:len(opponentPlayer.Kawa)-1]
+				for i := 0; i < len(removeIndexs); i++ {
+					index := removeIndexs[i] - i
+					targetTile := opponentPlayer.Hand[index]
+					opponentPlayer.Hand = append(opponentPlayer.Hand[:index], opponentPlayer.Hand[index+1:]...)
 					OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
-					continue
-				} else {
-					return fmt.Errorf("チーできません。相手の捨てた最後の牌:%s チーしたい牌:%s", opponentPlayer.Kawa[len(opponentPlayer.Kawa)-1].Name, targetTile.Name)
 				}
-			} else {
-				tileIndex := 0
-				for i, tile := range player.Hand {
-					if tile.Name == targetTile.Name {
-						tileIndex = i
-						break
+
+				if opponentPlayer.OpenedTile1.IsNil() {
+					opponentPlayer.OpenedTile1 = OpenedTile
+				} else if opponentPlayer.OpenedTile2.IsNil() {
+					opponentPlayer.OpenedTile2 = OpenedTile
+				} else if opponentPlayer.OpenedTile3.IsNil() {
+					opponentPlayer.OpenedTile3 = OpenedTile
+				} else if opponentPlayer.OpenedTile4.IsNil() {
+					opponentPlayer.OpenedTile4 = OpenedTile
+				} else {
+					return false, fmt.Errorf("ポンの完了に失敗しました。すでに4つ牌を開いています？")
+				}
+				nextTurnCanTsumo = false
+			case OPERATOR_CHI:
+				chi := OPEN_CHI
+				OpenedTile := &OpenedTiles{
+					OpenType: &chi,
+				}
+
+				removeIndexs := []int{}
+				for i, targetTile := range operator.TargetTiles {
+					if i == 0 {
+						if player.Kawa[len(player.Kawa)-1].Name == targetTile.Name {
+							player.Kawa = player.Kawa[:len(player.Kawa)-1]
+							OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
+							continue
+						} else {
+							return false, fmt.Errorf("チーできません。相手の捨てた最後の牌:%s チーしたい牌:%s", player.Kawa[len(player.Kawa)-1].Name, targetTile.Name)
+						}
+					} else {
+						for i, tile := range opponentPlayer.Hand {
+							if tile.Name == targetTile.Name {
+								removeIndexs = append(removeIndexs, i)
+								break
+							}
+						}
 					}
 				}
-				hand := player.Hand
-				hand = append(hand[:tileIndex], hand[tileIndex+1:]...)
-				player.Hand = hand
-				OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
-			}
-		}
-		if *player.OpenedTile1.OpenType == OPEN_NULL {
-			player.OpenedTile1 = OpenedTile
-		} else if *player.OpenedTile1.OpenType == OPEN_NULL {
-			player.OpenedTile2 = OpenedTile
-		} else if *player.OpenedTile1.OpenType == OPEN_NULL {
-			player.OpenedTile3 = OpenedTile
-		} else if *player.OpenedTile1.OpenType == OPEN_NULL {
-			player.OpenedTile4 = OpenedTile
-		} else {
-			return fmt.Errorf("チーの完了に失敗しました。すでに4つ牌を開いています？")
-		}
-	case OPERATOR_DAIMINKAN:
-		daiminkan := OPEN_DAIMINKAN
-		OpenedTile := &OpenedTiles{
-			OpenType: &daiminkan,
-		}
-
-		for i, targetTile := range operator.TargetTiles {
-			if i == 0 {
-				if opponentPlayer.Kawa[len(opponentPlayer.Kawa)-1].Name == targetTile.Name {
-					opponentPlayer.Kawa = opponentPlayer.Kawa[:len(opponentPlayer.Kawa)-1]
+				for i := 0; i < len(removeIndexs); i++ {
+					index := removeIndexs[i] - i
+					targetTile := opponentPlayer.Hand[index]
+					opponentPlayer.Hand = append(opponentPlayer.Hand[:index], opponentPlayer.Hand[index+1:]...)
 					OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
-					continue
-				} else {
-					return fmt.Errorf("カンできません。相手の捨てた最後の牌:%s カンしたい牌:%s", opponentPlayer.Kawa[len(opponentPlayer.Kawa)-1].Name, targetTile.Name)
 				}
-			} else {
-				tileIndex := 0
-				for i, tile := range player.Hand {
-					if tile.Name == targetTile.Name {
-						tileIndex = i
-						break
+
+				if opponentPlayer.OpenedTile1.IsNil() {
+					opponentPlayer.OpenedTile1 = OpenedTile
+				} else if opponentPlayer.OpenedTile3.IsNil() {
+					opponentPlayer.OpenedTile2 = OpenedTile
+				} else if opponentPlayer.OpenedTile3.IsNil() {
+					opponentPlayer.OpenedTile3 = OpenedTile
+				} else if opponentPlayer.OpenedTile4.IsNil() {
+					opponentPlayer.OpenedTile4 = OpenedTile
+				} else {
+					return false, fmt.Errorf("チーの完了に失敗しました。すでに4つ牌を開いています？")
+				}
+				nextTurnCanTsumo = false
+			case OPERATOR_DAIMINKAN:
+				daiminkan := OPEN_DAIMINKAN
+				OpenedTile := &OpenedTiles{
+					OpenType: &daiminkan,
+				}
+
+				for i, targetTile := range operator.TargetTiles {
+					if i == 0 {
+						if player.Kawa[len(player.Kawa)-1].Name == targetTile.Name {
+							player.Kawa = player.Kawa[:len(player.Kawa)-1]
+							OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
+							continue
+						} else {
+							return false, fmt.Errorf("カンできません。相手の捨てた最後の牌:%s カンしたい牌:%s", player.Kawa[len(player.Kawa)-1].Name, targetTile.Name)
+						}
+					} else {
+						tileIndex := -1
+						for i, tile := range opponentPlayer.Hand {
+							if tile.Name == targetTile.Name {
+								tileIndex = i
+								break
+							}
+						}
+						opponentPlayer.Hand = append(opponentPlayer.Hand[:tileIndex], opponentPlayer.Hand[tileIndex+1:]...)
+						OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
 					}
 				}
-				hand := player.Hand
-				hand = append(hand[:tileIndex], hand[tileIndex+1:]...)
-				player.Hand = hand
-				OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
-			}
-		}
-		if *player.OpenedTile1.OpenType == OPEN_NULL {
-			player.OpenedTile1 = OpenedTile
-		} else if *player.OpenedTile1.OpenType == OPEN_NULL {
-			player.OpenedTile2 = OpenedTile
-		} else if *player.OpenedTile1.OpenType == OPEN_NULL {
-			player.OpenedTile3 = OpenedTile
-		} else if *player.OpenedTile1.OpenType == OPEN_NULL {
-			player.OpenedTile4 = OpenedTile
-		} else {
-			return fmt.Errorf("カンの完了に失敗しました。すでに4つ牌を開いています？")
-		}
-
-		player.TsumoriTile = g.Table.Tsumo.PopFromWanpai()
-		if !g.Table.Tsumo.OpenNextKandora() {
-			g.Table.Status.Sukaikan = true
-		}
-		goto CALC_OPERATOR
-
-	case OPERATOR_ANKAN:
-		ankan := OPEN_ANKAN
-		OpenedTile := &OpenedTiles{
-			OpenType: &ankan,
-		}
-
-		for _, targetTile := range operator.TargetTiles {
-			if player.TsumoriTile.Name == targetTile.Name {
-				OpenedTile.Tiles = append(OpenedTile.Tiles, player.TsumoriTile)
-				player.TsumoriTile = nil
-				continue
-			}
-
-			tileIndex := 0
-			for i, tile := range player.Hand {
-				if tile.Name == targetTile.Name {
-					tileIndex = i
-					break
+				if opponentPlayer.OpenedTile1.IsNil() {
+					opponentPlayer.OpenedTile1 = OpenedTile
+				} else if opponentPlayer.OpenedTile2.IsNil() {
+					opponentPlayer.OpenedTile2 = OpenedTile
+				} else if opponentPlayer.OpenedTile3.IsNil() {
+					opponentPlayer.OpenedTile3 = OpenedTile
+				} else if opponentPlayer.OpenedTile4.IsNil() {
+					opponentPlayer.OpenedTile4 = OpenedTile
+				} else {
+					return false, fmt.Errorf("カンの完了に失敗しました。すでに4つ牌を開いています？")
 				}
-			}
-			hand := player.Hand
-			hand = append(hand[:tileIndex], hand[tileIndex+1:]...)
-			player.Hand = hand
-			OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
-		}
-		if player.OpenedTile1.IsNil() {
-			player.OpenedTile1 = OpenedTile
-		} else if player.OpenedTile2.IsNil() {
-			player.OpenedTile2 = OpenedTile
-		} else if player.OpenedTile3.IsNil() {
-			player.OpenedTile3 = OpenedTile
-		} else if player.OpenedTile4.IsNil() {
-			player.OpenedTile4 = OpenedTile
-		} else {
-			return fmt.Errorf("カンの完了に失敗しました。すでに4つ牌を開いています？")
-		}
 
-		player.TsumoriTile = g.Table.Tsumo.PopFromWanpai()
-		if !g.Table.Tsumo.OpenNextKandora() {
-			g.Table.Status.Sukaikan = true
-		}
-		goto CALC_OPERATOR
-	case OPERATOR_PE:
-		pe := OPEN_PE
-		OpenedTile := player.OpenedPe
-		OpenedTile.OpenType = &pe
-		player.Hand = append(player.Hand, player.TsumoriTile)
-		player.TsumoriTile = nil
-		for _, targetTile := range operator.TargetTiles {
-			tileIndex := 0
-			for i, tile := range player.Hand {
-				if tile.Name == targetTile.Name {
-					tileIndex = i
-					break
+				opponentPlayer.TsumoriTile = g.Table.Tsumo.PopFromWanpai()
+				if !g.Table.Tsumo.OpenNextKandora() {
+					g.Table.Status.Sukaikan = true
 				}
+				nextTurnCanTsumo = false
 			}
-			hand := player.Hand
-			hand = append(hand[:tileIndex], hand[tileIndex+1:]...)
-			player.Hand = hand
-			OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
 		}
-		player.OpenedPe = OpenedTile
-
-		player.TsumoriTile = g.Table.Tsumo.PopFromWanpai()
-		goto CALC_OPERATOR
-	default:
-		return fmt.Errorf("変なオペレータが渡されました。オペレータタイプ:%d", operator.OperatorType)
 	}
-	g.Table.UpdateView()
-
-	tempPlayer := g.Table.Status.PlayerWithTurn
-	g.Table.Status.PlayerWithTurn = g.Table.Status.PlayerWithNotTurn
-	g.Table.Status.PlayerWithNotTurn = tempPlayer
-
 	//TODO
-	return nil
+	return nextTurnCanTsumo, nil
 }
 
 func (g *GameManager) GenerateTiles() []*Tile {
 	return g.generateTiles()
+}
+
+func (g *GameManager) getPlayers() (*Player, *Player) {
+	return g.Table.Status.PlayerWithTurn, g.Table.Status.PlayerWithNotTurn
+}
+
+func (g *GameManager) tradeTurn() {
+	g.Table.Status.PlayerWithTurn, g.Table.Status.PlayerWithNotTurn = g.Table.Status.PlayerWithNotTurn, g.Table.Status.PlayerWithTurn
+}
+
+// こんな関数書きたくなかったけど原因がわからないので書きます
+func (g *GameManager) removeNullForOperators(operators []*Operator) []*Operator {
+	ops := []*Operator{}
+	for _, operator := range operators {
+		ops = append(ops, g.removeNullForOperator(operator))
+	}
+	return ops
+}
+
+// こんな関数書きたくなかったけど原因がわからないので書きます
+func (g *GameManager) removeNullForOperator(operator *Operator) *Operator {
+	op := &Operator{
+		RoomID:       operator.RoomID,
+		PlayerID:     operator.PlayerID,
+		OperatorType: operator.OperatorType,
+		TargetTiles:  []*Tile{},
+	}
+	for _, targetTile := range operator.TargetTiles {
+		if targetTile == nil {
+			continue
+		}
+		op.TargetTiles = append(op.TargetTiles, targetTile)
+	}
+	return op
 }
 
 // ˄

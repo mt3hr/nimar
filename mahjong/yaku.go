@@ -24,6 +24,9 @@ type Yaku interface {
 func handAndTsumoriTile(player *Player) TileIDs {
 	tileIDs := TileIDs{}
 	for _, tile := range player.Hand {
+		if tile == nil {
+			continue
+		}
 		tileIDs[tile.ID]++
 	}
 	if player.TsumoriTile != nil {
