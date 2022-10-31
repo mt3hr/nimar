@@ -411,7 +411,7 @@ func (g *GameManager) appendAnkanOperators(player *Player, operators []*Operator
 	// ˅
 	ankan := OPERATOR_ANKAN
 	tileIDs := handAndTsumoriTile(player)
-	for _, tileID := range tileIDs {
+	for tileID := range tileIDs {
 		if tileIDs[tileID] == 4 {
 			ankanTiles := []*Tile{}
 			for _, tile := range player.Hand {
