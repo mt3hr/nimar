@@ -414,7 +414,7 @@ func (g *GameManager) appendAnkanOperators(player *Player, operators []*Operator
 	for tileID := range tileIDs {
 		if tileIDs[tileID] == 4 {
 			ankanTiles := []*Tile{}
-			for _, tile := range player.Hand {
+			for _, tile := range append(player.Hand, player.TsumoriTile) {
 				if tile.ID == tileID {
 					ankanTiles = append(ankanTiles, tile)
 				}
@@ -971,13 +971,13 @@ CALC_OPERATOR:
 			player.Hand = hand
 			OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
 		}
-		if *player.OpenedTile1.OpenType == OPEN_NULL {
+		if player.OpenedTile1.IsNil() {
 			player.OpenedTile1 = OpenedTile
-		} else if *player.OpenedTile1.OpenType == OPEN_NULL {
+		} else if player.OpenedTile2.IsNil() {
 			player.OpenedTile2 = OpenedTile
-		} else if *player.OpenedTile1.OpenType == OPEN_NULL {
+		} else if player.OpenedTile3.IsNil() {
 			player.OpenedTile3 = OpenedTile
-		} else if *player.OpenedTile1.OpenType == OPEN_NULL {
+		} else if player.OpenedTile4.IsNil() {
 			player.OpenedTile4 = OpenedTile
 		} else {
 			return fmt.Errorf("カンの完了に失敗しました。すでに4つ牌を開いています？")
