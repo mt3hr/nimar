@@ -580,7 +580,6 @@ func (g *GameManager) appendDahaiOperators(player *Player, operators []*Operator
 	}
 
 	for _, tile := range player.Hand {
-		fmt.Printf("tile = %+v\n", tile)
 		operators = append(operators, &Operator{
 			RoomID:       g.Table.ID,
 			PlayerID:     player.ID,
@@ -900,7 +899,44 @@ TOP:
 			tsumo = false
 			goto TOP
 		case OPERATOR_KAKAN:
-			//TODO
+			kakan := OPEN_KAKAN
+			for i, mentsu := range [][]*Tile{
+				player.OpenedTile1.Tiles,
+				player.OpenedTile2.Tiles,
+				player.OpenedTile3.Tiles,
+				player.OpenedTile4.Tiles,
+			} {
+				cnt := 0
+				for _, tile := range mentsu {
+					if tile.ID == operator.TargetTiles[0].ID {
+						cnt++
+					}
+				}
+				if cnt == 3 {
+					for i := range player.Hand {
+						if player.Hand[i].Name == operator.TargetTiles[0].Name {
+							player.Hand = append(player.Hand[:i], player.Hand[i+1])
+							break
+						}
+					}
+					mentsu = append(mentsu, operator.TargetTiles[0])
+					switch i {
+					case 0:
+						player.OpenedTile1.Tiles = mentsu
+						player.OpenedTile1.OpenType = &kakan
+					case 1:
+						player.OpenedTile2.Tiles = mentsu
+						player.OpenedTile2.OpenType = &kakan
+					case 2:
+						player.OpenedTile3.Tiles = mentsu
+						player.OpenedTile3.OpenType = &kakan
+					case 3:
+						player.OpenedTile4.Tiles = mentsu
+						player.OpenedTile4.OpenType = &kakan
+					}
+					break
+				}
+			}
 			player.TsumoriTile = g.Table.Tsumo.PopFromWanpai()
 			if !g.Table.Tsumo.OpenNextKandora() {
 				g.Table.Status.Sukaikan = true
@@ -1087,10 +1123,10 @@ TOP:
 							return false, fmt.Errorf("ポンできません。相手の捨てた最後の牌:%s ポンしたい牌:%s", player.Kawa[len(player.Kawa)-1].Name, targetTile.Name)
 						}
 					} else {
-						for i, tile := range opponentPlayer.Hand {
+						for i := 0; i < len(opponentPlayer.Hand); i++ {
+							tile := opponentPlayer.Hand[i]
 							if tile.Name == targetTile.Name {
 								removeIndexs = append(removeIndexs, i)
-								break
 							}
 						}
 					}
@@ -1132,10 +1168,10 @@ TOP:
 							return false, fmt.Errorf("チーできません。相手の捨てた最後の牌:%s チーしたい牌:%s", player.Kawa[len(player.Kawa)-1].Name, targetTile.Name)
 						}
 					} else {
-						for i, tile := range opponentPlayer.Hand {
+						for i := 0; i < len(opponentPlayer.Hand); i++ {
+							tile := opponentPlayer.Hand[i]
 							if tile.Name == targetTile.Name {
 								removeIndexs = append(removeIndexs, i)
-								break
 							}
 						}
 					}
