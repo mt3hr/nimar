@@ -62,7 +62,7 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 
 		if shanten <= 0 {
 			shantenAndAgarikei.Agarikei = s.agarikei.Clone()
-			shantenAndAgarikei.Agarikei.MachiHai = s.calcMachihai()
+			shantenAndAgarikei.Agarikei.MachiHai = s.checkMachihai(player)
 			if shanten == -1 {
 				shantenAndAgarikei.Agarikei.Machi = s.checkMachi(player, shantenAndAgarikei.Agarikei.Clone())
 			}
@@ -75,7 +75,7 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 		shantenAndAgarikei.Shanten = shanten
 
 		if shanten <= 0 {
-			shantenAndAgarikei.Agarikei.MachiHai = s.calcMachihai()
+			shantenAndAgarikei.Agarikei.MachiHai = s.checkMachihai(player)
 			if shanten == -1 {
 				tanki := TANKI
 				shantenAndAgarikei.Agarikei.Machi = &tanki
@@ -89,7 +89,7 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 		shantenAndAgarikei.Shanten = shanten
 
 		if shanten <= 0 {
-			shantenAndAgarikei.Agarikei.MachiHai = s.calcMachihai()
+			shantenAndAgarikei.Agarikei.MachiHai = s.checkMachihai(player)
 			if shanten == -1 {
 				tanki := TANKI
 				shantenAndAgarikei.Agarikei.Machi = &tanki
@@ -632,6 +632,10 @@ func (s *ShantenChecker) cutTatsu(i int) {
 
 	s.shantenTemp = 8 - s.countOfMentsu*2 - s.countOfTatsu - s.countOfToitsu
 	if s.shantenTemp <= s.shantenNormal {
+		fmt.Printf("s.countOfMentsu = %+v\n", s.countOfMentsu)
+		fmt.Printf("s.countOfTatsu = %+v\n", s.countOfTatsu)
+		fmt.Printf("s.countOfToitsu = %+v\n", s.countOfToitsu)
+		fmt.Printf("s.shantenTemp = %+v\n", s.shantenTemp)
 		s.shantenNormal = s.shantenTemp
 		s.agarikei = *s.agarikeiTemp.Clone()
 		return
@@ -989,8 +993,16 @@ func (s *ShantenChecker) addToitsu(tileID int) {
 // ˅
 
 func (s *ShantenChecker) addMentsu(mentsu *TileIDs, mentsuType MentsuType) {
-	for tileid, count := range mentsu {
-		s.tempMenzenTileIDs[tileid] -= count
+	switch mentsuType {
+	case Janto:
+		fallthrough
+	case Anko:
+		fallthrough
+	case MenzenShuntsu:
+		for tileid, count := range mentsu {
+			s.tempMenzenTileIDs[tileid] -= count
+		}
+	default:
 	}
 
 	if !s.agarikeiTemp.Janto.IsEmpty() && mentsuType == Janto {
@@ -1079,7 +1091,14 @@ func (s *ShantenChecker) undoMentsu() {
 	if !s.agarikeiTemp.Mentsu4.IsEmpty() && s.agarikeiTemp.Mentsu4Type != Null {
 		f(s.agarikeiTemp.Mentsu4Type)
 		for tileid, count := range s.agarikeiTemp.Mentsu4 {
-			s.tempMenzenTileIDs[tileid] += count
+			switch s.agarikeiTemp.Mentsu4Type {
+			case Janto:
+				fallthrough
+			case Anko:
+				fallthrough
+			case MenzenShuntsu:
+				s.tempMenzenTileIDs[tileid] += count
+			}
 		}
 		s.agarikeiTemp.Mentsu4.Reset()
 		s.agarikeiTemp.Mentsu4Type = Null
@@ -1087,7 +1106,15 @@ func (s *ShantenChecker) undoMentsu() {
 	} else if !s.agarikeiTemp.Mentsu3.IsEmpty() && s.agarikeiTemp.Mentsu3Type != Null {
 		f(s.agarikeiTemp.Mentsu3Type)
 		for tileid, count := range s.agarikeiTemp.Mentsu3 {
-			s.tempMenzenTileIDs[tileid] += count
+			switch s.agarikeiTemp.Mentsu3Type {
+			case Janto:
+				fallthrough
+			case Anko:
+				fallthrough
+			case MenzenShuntsu:
+
+				s.tempMenzenTileIDs[tileid] += count
+			}
 		}
 		s.agarikeiTemp.Mentsu3.Reset()
 		s.agarikeiTemp.Mentsu3Type = Null
@@ -1095,7 +1122,15 @@ func (s *ShantenChecker) undoMentsu() {
 	} else if !s.agarikeiTemp.Mentsu2.IsEmpty() && s.agarikeiTemp.Mentsu2Type != Null {
 		f(s.agarikeiTemp.Mentsu2Type)
 		for tileid, count := range s.agarikeiTemp.Mentsu2 {
-			s.tempMenzenTileIDs[tileid] += count
+			switch s.agarikeiTemp.Mentsu2Type {
+			case Janto:
+				fallthrough
+			case Anko:
+				fallthrough
+			case MenzenShuntsu:
+
+				s.tempMenzenTileIDs[tileid] += count
+			}
 		}
 		s.agarikeiTemp.Mentsu2.Reset()
 		s.agarikeiTemp.Mentsu2Type = Null
@@ -1103,7 +1138,15 @@ func (s *ShantenChecker) undoMentsu() {
 	} else if !s.agarikeiTemp.Mentsu1.IsEmpty() && s.agarikeiTemp.Mentsu1Type != Null {
 		f(s.agarikeiTemp.Mentsu1Type)
 		for tileid, count := range s.agarikeiTemp.Mentsu1 {
-			s.tempMenzenTileIDs[tileid] += count
+			switch s.agarikeiTemp.Mentsu1Type {
+			case Janto:
+				fallthrough
+			case Anko:
+				fallthrough
+			case MenzenShuntsu:
+
+				s.tempMenzenTileIDs[tileid] += count
+			}
 		}
 		s.agarikeiTemp.Mentsu1.Reset()
 		s.agarikeiTemp.Mentsu1Type = Null
@@ -1204,22 +1247,6 @@ func (s *ShantenChecker) preparation(player *Player) {
 			}
 			s.addMentsu(minkan, Minkan)
 		}
-	}
-
-	for _, mentsu := range s.ankanTileIDs {
-		s.addMentsu(mentsu, Ankan)
-	}
-
-	for _, mentsu := range s.minkanTileIDs {
-		s.addMentsu(mentsu, Minkan)
-	}
-
-	for _, mentsu := range s.minkoTileIDs {
-		s.addMentsu(mentsu, Minko)
-	}
-
-	for _, mentsu := range s.nakishuntsuTileIDs {
-		s.addMentsu(mentsu, NakiShuntsu)
 	}
 
 	// 開かれていない牌の読み取り

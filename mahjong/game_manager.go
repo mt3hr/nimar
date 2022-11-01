@@ -599,6 +599,7 @@ func (g *GameManager) appendRonOperators(player *Player, opponentPlayer *Player,
 	if agarikei.Shanten != 0 {
 		return operators
 	}
+	fmt.Printf("agarikei.Machihai = %+v\n", agarikei.Machihai)
 	for machihaiID := range agarikei.Machihai {
 		if machihaiID == player.Kawa[len(player.Kawa)-1].ID {
 			operators = append(operators, &Operator{
@@ -815,12 +816,6 @@ TOP:
 		playerOperators = g.appendReachOperators(player, playerOperators)
 		playerOperators = g.appendDahaiOperators(player, playerOperators)
 		playerOperators = g.removeNullForOperators(playerOperators)
-
-		for _, op := range playerOperators {
-			for _, tile := range op.TargetTiles {
-				fmt.Printf("tile = %+v\n", tile)
-			}
-		}
 
 		func() {
 			shanten := g.Table.GameManager.ShantenChecker.CheckCountOfShanten(player)
@@ -1185,7 +1180,7 @@ TOP:
 
 				if opponentPlayer.OpenedTile1.IsNil() {
 					opponentPlayer.OpenedTile1 = OpenedTile
-				} else if opponentPlayer.OpenedTile3.IsNil() {
+				} else if opponentPlayer.OpenedTile2.IsNil() {
 					opponentPlayer.OpenedTile2 = OpenedTile
 				} else if opponentPlayer.OpenedTile3.IsNil() {
 					opponentPlayer.OpenedTile3 = OpenedTile
