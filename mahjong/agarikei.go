@@ -48,9 +48,7 @@ func (a Agarikei) String() string {
 		a.Mentsu3,
 		a.Mentsu4,
 	} {
-		if !mentsus.IsEmpty() {
-			str += mentsus.String() + " "
-		}
+		str += mentsus.String() + " "
 	}
 	return str
 }

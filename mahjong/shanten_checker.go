@@ -1292,9 +1292,9 @@ func (s *ShantenChecker) updateShantenNormal(machihai map[int]interface{}) {
 	s.shantenTemp = 8 - s.countOfMentsu*2 - s.countOfTatsu - s.countOfToitsu
 	if s.shantenTemp < s.shantenNormal {
 		s.shantenNormal = s.shantenTemp
+		s.agarikei = *s.agarikeiTemp.Clone()
 	}
 	if s.shantenTemp == 0 {
-		s.agarikei = *s.agarikeiTemp.Clone()
 		for tile := range machihai {
 			s.machihai[tile] = struct{}{}
 		}

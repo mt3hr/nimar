@@ -606,7 +606,6 @@ func (g *GameManager) appendRonOperators(player *Player, opponentPlayer *Player,
 	if agarikei.Shanten != 0 {
 		return operators
 	}
-	fmt.Printf("agarikei.Agarikei.MachiHai = %+v\n", agarikei.Agarikei.MachiHai)
 	for machihaiID := range agarikei.Agarikei.MachiHai {
 		if machihaiID == player.Kawa[len(player.Kawa)-1].ID {
 			operators = append(operators, &Operator{
@@ -787,6 +786,23 @@ func (m *GameManager) generateAgariMessage(player *Player) *Message {
 	return message
 }
 
+func (g *GameManager) printShantenCount(player *Player) {
+	shanten := g.Table.GameManager.ShantenChecker.CheckCountOfShanten(player)
+	fmt.Printf("向聴数 %+v\n", shanten.Shanten)
+	if shanten.Shanten == -1 {
+		fmt.Printf("%s\n", shanten.Agarikei.String())
+		point := g.PointCalcrator.CalcratePoint(player, shanten, g.Table, g.ShantenChecker.yakuList)
+		for _, yaku := range point.MatchYakus {
+			if player.IsMenzen() {
+				fmt.Printf("%s %d翻\n", yaku.GetName(), yaku.NumberOfHan())
+			} else {
+				fmt.Printf("%s %d翻\n", yaku.GetName(), yaku.NumberOfHanWhenNaki())
+			}
+		}
+		fmt.Printf("%+v符%+v翻 %+v点\n", point.Hu, point.Han, point.Point)
+	}
+}
+
 func (g *GameManager) gameLoop(tsumo bool) (nextTurnCanTsumo bool, err error) {
 TOP:
 	{
@@ -833,18 +849,7 @@ TOP:
 		playerOperators = g.appendDahaiOperators(player, playerOperators)
 		playerOperators = g.removeNullForOperators(playerOperators)
 
-		func() {
-			shanten := g.Table.GameManager.ShantenChecker.CheckCountOfShanten(player)
-			fmt.Printf("向聴数 %+v\n", shanten.Shanten)
-			if shanten.Shanten == -1 {
-				fmt.Printf("shanten.Agarikei = %+v\n", shanten.Agarikei)
-				point := g.PointCalcrator.CalcratePoint(player, shanten, g.Table, g.ShantenChecker.yakuList)
-				for _, yaku := range point.MatchYakus {
-					fmt.Println(yaku.GetName())
-				}
-				fmt.Printf("%+v符%+v翻 %+v点\n", point.Hu, point.Han, point.Point)
-			}
-		}()
+		g.printShantenCount(player)
 
 		g.Table.UpdateView()
 		b, err := json.Marshal(playerOperators)
@@ -981,9 +986,9 @@ TOP:
 			goto TOP
 		case OPERATOR_TSUMO:
 			//TODO
+			g.printShantenCount(player)
 			message := g.generateAgariMessage(player)
 			_ = message
-			fmt.Printf("message = %+v\n", message)
 
 			g.okWG.Add(2)
 
@@ -1089,12 +1094,12 @@ TOP:
 			case OPERATOR_SKIP:
 				break
 			case OPERATOR_RON:
-				opponentPlayer.RonTile = opponentPlayer.Kawa[len(opponentPlayer.Kawa)-1]
-				opponentPlayer.Kawa = opponentPlayer.Kawa[:len(opponentPlayer.Kawa)-1]
+				opponentPlayer.RonTile = player.Kawa[len(player.Kawa)-1]
+				player.Kawa = player.Kawa[:len(player.Kawa)-1]
 
+				g.printShantenCount(opponentPlayer)
 				message := g.generateAgariMessage(opponentPlayer)
 				_ = message
-				fmt.Printf("message = %+v\n", message)
 
 				g.okWG.Add(2)
 
