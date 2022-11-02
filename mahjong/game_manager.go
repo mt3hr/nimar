@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var DEBUG bool = false
+
 // ˄
 
 type GameManager struct {
@@ -16,9 +18,9 @@ type GameManager struct {
 
 	// ˄
 
-	dealerPlayer *Player
+	oyaPlayer *Player
 
-	notDealerPlayer *Player
+	koPlayer *Player
 
 	ShantenChecker *ShantenChecker
 
@@ -69,12 +71,17 @@ func (g *GameManager) ExecuteOperator(operator *Operator) error {
 
 func (g *GameManager) StartGame() error {
 	// ˅
+
+	if DEBUG {
+		g.initializeGame()
+	}
 	g.waitStartWg.Add(2)
 	g.receiveOperatorWG.Add(2)
 	g.waitStartWg.Wait()
 	g.receiveOperatorWG.Wait()
-
-	g.initializeGame()
+	if !DEBUG {
+		g.initializeGame()
+	}
 
 	var err error
 	for tsumo := true; true; {
@@ -127,11 +134,11 @@ func (g *GameManager) initializeGame() {
 	g.determinateDealer()
 	g.Table.Tsumo.Tiles = g.generateTiles()
 	g.shuffleTiles(g.Table.Tsumo.Tiles)
-	g.Table.Status.ChichaPlayer = g.dealerPlayer
-	g.Table.Status.PlayerWithTurn = g.dealerPlayer
-	g.dealerPlayer.Status.Kaze = &ton
-	g.Table.Status.PlayerWithNotTurn = g.notDealerPlayer
-	g.notDealerPlayer.Status.Kaze = &nan
+	g.Table.Status.ChichaPlayer = g.oyaPlayer
+	g.Table.Status.PlayerWithTurn = g.oyaPlayer
+	g.Table.Status.PlayerWithTurn.Status.Kaze = &ton
+	g.Table.Status.PlayerWithNotTurn = g.koPlayer
+	g.Table.Status.PlayerWithNotTurn.Status.Kaze = &nan
 	g.distributeTiles()
 	//TODO
 	// ˄
@@ -139,7 +146,7 @@ func (g *GameManager) initializeGame() {
 
 func (g *GameManager) getDealerPlayer() *Player {
 	// ˅
-	return g.dealerPlayer
+	return g.oyaPlayer
 	// ˄
 }
 
@@ -343,11 +350,11 @@ func (g *GameManager) determinateDealer() {
 	rand.Seed(time.Now().UnixNano())
 	random := rand.Intn(2)
 	if random == 1 {
-		g.dealerPlayer = g.Table.Player1
-		g.notDealerPlayer = g.Table.Player2
+		g.oyaPlayer = g.Table.Player1
+		g.koPlayer = g.Table.Player2
 	} else {
-		g.dealerPlayer = g.Table.Player2
-		g.notDealerPlayer = g.Table.Player1
+		g.oyaPlayer = g.Table.Player2
+		g.koPlayer = g.Table.Player1
 	}
 	// ˄
 }
@@ -370,30 +377,30 @@ func (g *GameManager) distributeTiles() {
 	var tile *Tile
 	Tsumo := g.Table.Tsumo
 	for i := 0; i < 3; i++ {
-		hand = g.dealerPlayer.Hand
+		hand = g.oyaPlayer.Hand
 		for j := 0; j < 4; j++ {
 			tile = Tsumo.Pop()
 			hand = append(hand, tile)
 		}
-		g.dealerPlayer.Hand = hand
+		g.oyaPlayer.Hand = hand
 
-		hand = g.notDealerPlayer.Hand
+		hand = g.koPlayer.Hand
 		for j := 0; j < 4; j++ {
 			tile = Tsumo.Pop()
 			hand = append(hand, tile)
 		}
-		g.notDealerPlayer.Hand = hand
+		g.koPlayer.Hand = hand
 	}
 
-	hand = g.dealerPlayer.Hand
+	hand = g.oyaPlayer.Hand
 	tile = Tsumo.Pop()
 	hand = append(hand, tile)
-	g.dealerPlayer.Hand = hand
+	g.oyaPlayer.Hand = hand
 
-	hand = g.notDealerPlayer.Hand
+	hand = g.koPlayer.Hand
 	tile = Tsumo.Pop()
 	hand = append(hand, tile)
-	g.notDealerPlayer.Hand = hand
+	g.koPlayer.Hand = hand
 	// ˄
 }
 
@@ -414,7 +421,7 @@ func (g *GameManager) appendKyushuKyuhaiOperators(player *Player, operators []*O
 func (g *GameManager) appendAnkanOperators(player *Player, operators []*Operator) []*Operator {
 	// ˅
 	ankan := OPERATOR_ANKAN
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	for tileID := range tileIDs {
 		if tileIDs[tileID] == 4 {
 			ankanTiles := []*Tile{}
@@ -599,8 +606,8 @@ func (g *GameManager) appendRonOperators(player *Player, opponentPlayer *Player,
 	if agarikei.Shanten != 0 {
 		return operators
 	}
-	fmt.Printf("agarikei.Machihai = %+v\n", agarikei.Machihai)
-	for machihaiID := range agarikei.Machihai {
+	fmt.Printf("agarikei.Agarikei.MachiHai = %+v\n", agarikei.Agarikei.MachiHai)
+	for machihaiID := range agarikei.Agarikei.MachiHai {
 		if machihaiID == player.Kawa[len(player.Kawa)-1].ID {
 			operators = append(operators, &Operator{
 				RoomID:       g.Table.ID,
@@ -615,7 +622,7 @@ func (g *GameManager) appendRonOperators(player *Player, opponentPlayer *Player,
 func (g *GameManager) appendPonOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
 	pon := OPERATOR_PON
 	haiNum := player.Kawa[len(player.Kawa)-1].ID
-	tileIDs := handAndTsumoriTile(opponentPlayer)
+	tileIDs := HandAndAgariTile(opponentPlayer)
 	for tileID := range tileIDs {
 		if tileIDs[tileID] >= 2 && haiNum == tileID {
 			targetTiles := []*Tile{player.Kawa[len(player.Kawa)-1]}
@@ -642,7 +649,7 @@ func (g *GameManager) appendPonOperators(player *Player, opponentPlayer *Player,
 func (g *GameManager) appendChiOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
 	chi := OPERATOR_CHI
 	haiNum := player.Kawa[len(player.Kawa)-1].ID
-	menzenTiles := handAndTsumoriTile(opponentPlayer)
+	menzenTiles := HandAndAgariTile(opponentPlayer)
 	tii := []*TileIDs{}
 
 	for i := 0; i <= 2; i++ {
@@ -697,7 +704,7 @@ func (g *GameManager) appendChiOperators(player *Player, opponentPlayer *Player,
 func (g *GameManager) appendDaiminkanOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
 	daiminkan := OPERATOR_DAIMINKAN
 	haiNum := player.Kawa[len(player.Kawa)-1].ID
-	for tileid, cnt := range handAndTsumoriTile(opponentPlayer) {
+	for tileid, cnt := range HandAndAgariTile(opponentPlayer) {
 		if cnt == 3 && haiNum == tileid {
 			targetTiles := []*Tile{player.Kawa[len(player.Kawa)-1]}
 			for _, tile := range opponentPlayer.Hand {
@@ -731,9 +738,15 @@ func (m *GameManager) generateAgariMessage(player *Player) *Message {
 	point := m.PointCalcrator.CalcratePoint(player, agarikei, m.Table, m.Table.GameManager.ShantenChecker.yakuList)
 	magari := MessageAgari
 	message := &Message{MessageType: &magari}
+	openNull := OPEN_NULL
 	agari := &Agari{
-		ID:   player.ID,
-		Name: player.Name,
+		ID:          player.ID,
+		Name:        player.Name,
+		OpenedTile1: &OpenedTiles{OpenType: &openNull},
+		OpenedTile2: &OpenedTiles{OpenType: &openNull},
+		OpenedTile3: &OpenedTiles{OpenType: &openNull},
+		OpenedTile4: &OpenedTiles{OpenType: &openNull},
+		Pe:          &OpenedTiles{OpenType: &openNull},
 	}
 	for _, tile := range player.Hand {
 		agari.Hand = append(agari.Hand, tile)
@@ -746,9 +759,9 @@ func (m *GameManager) generateAgariMessage(player *Player) *Message {
 	}
 	agariOpenedTiles := []*OpenedTiles{
 		agari.OpenedTile1,
-		agari.OpenedTile1,
-		agari.OpenedTile1,
-		agari.OpenedTile1,
+		agari.OpenedTile2,
+		agari.OpenedTile3,
+		agari.OpenedTile4,
 		agari.Pe,
 	}
 	for i, OpenedTiles := range []*OpenedTiles{
@@ -758,6 +771,9 @@ func (m *GameManager) generateAgariMessage(player *Player) *Message {
 		player.OpenedTile4,
 		player.OpenedPe,
 	} {
+		if OpenedTiles.IsNil() {
+			continue
+		}
 		(*agariOpenedTiles[i]) = (*OpenedTiles.ToOpenedTiles())
 	}
 	agari.Point = &Point{}
@@ -856,6 +872,7 @@ TOP:
 				OpenType: &ankan,
 			}
 
+			removeIndexs := []int{}
 			for _, targetTile := range operator.TargetTiles {
 				if player.TsumoriTile.Name == targetTile.Name {
 					OpenedTile.Tiles = append(OpenedTile.Tiles, player.TsumoriTile)
@@ -863,18 +880,20 @@ TOP:
 					continue
 				}
 
-				tileIndex := 0
 				for i, tile := range player.Hand {
 					if tile.Name == targetTile.Name {
-						tileIndex = i
-						break
+						removeIndexs = append(removeIndexs, i)
 					}
 				}
-				hand := player.Hand
-				hand = append(hand[:tileIndex], hand[tileIndex+1:]...)
-				player.Hand = hand
+			}
+
+			for i := 0; i < len(removeIndexs); i++ {
+				index := removeIndexs[i] - i
+				targetTile := player.Hand[index]
+				player.Hand = append(player.Hand[:index], player.Hand[index+1:]...)
 				OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
 			}
+
 			if player.OpenedTile1.IsNil() {
 				player.OpenedTile1 = OpenedTile
 			} else if player.OpenedTile2.IsNil() {
@@ -908,9 +927,9 @@ TOP:
 					}
 				}
 				if cnt == 3 {
-					for i := range player.Hand {
-						if player.Hand[i].Name == operator.TargetTiles[0].Name {
-							player.Hand = append(player.Hand[:i], player.Hand[i+1])
+					for j := range player.Hand {
+						if player.Hand[j].Name == operator.TargetTiles[0].Name {
+							player.Hand = append(player.Hand[:j], player.Hand[j+1])
 							break
 						}
 					}
@@ -964,6 +983,7 @@ TOP:
 			//TODO
 			message := g.generateAgariMessage(player)
 			_ = message
+			fmt.Printf("message = %+v\n", message)
 
 			g.okWG.Add(2)
 
@@ -1074,6 +1094,7 @@ TOP:
 
 				message := g.generateAgariMessage(opponentPlayer)
 				_ = message
+				fmt.Printf("message = %+v\n", message)
 
 				g.okWG.Add(2)
 
@@ -1118,10 +1139,10 @@ TOP:
 							return false, fmt.Errorf("ポンできません。相手の捨てた最後の牌:%s ポンしたい牌:%s", player.Kawa[len(player.Kawa)-1].Name, targetTile.Name)
 						}
 					} else {
-						for i := 0; i < len(opponentPlayer.Hand); i++ {
-							tile := opponentPlayer.Hand[i]
+						for j := 0; j < len(opponentPlayer.Hand); j++ {
+							tile := opponentPlayer.Hand[j]
 							if tile.Name == targetTile.Name {
-								removeIndexs = append(removeIndexs, i)
+								removeIndexs = append(removeIndexs, j)
 							}
 						}
 					}
@@ -1158,15 +1179,14 @@ TOP:
 						if player.Kawa[len(player.Kawa)-1].Name == targetTile.Name {
 							player.Kawa = player.Kawa[:len(player.Kawa)-1]
 							OpenedTile.Tiles = append(OpenedTile.Tiles, targetTile)
-							continue
 						} else {
 							return false, fmt.Errorf("チーできません。相手の捨てた最後の牌:%s チーしたい牌:%s", player.Kawa[len(player.Kawa)-1].Name, targetTile.Name)
 						}
 					} else {
-						for i := 0; i < len(opponentPlayer.Hand); i++ {
-							tile := opponentPlayer.Hand[i]
+						for j := 0; j < len(opponentPlayer.Hand); j++ {
+							tile := opponentPlayer.Hand[j]
 							if tile.Name == targetTile.Name {
-								removeIndexs = append(removeIndexs, i)
+								removeIndexs = append(removeIndexs, j)
 							}
 						}
 					}
@@ -1207,9 +1227,9 @@ TOP:
 						}
 					} else {
 						tileIndex := -1
-						for i, tile := range opponentPlayer.Hand {
+						for j, tile := range opponentPlayer.Hand {
 							if tile.Name == targetTile.Name {
-								tileIndex = i
+								tileIndex = j
 								break
 							}
 						}

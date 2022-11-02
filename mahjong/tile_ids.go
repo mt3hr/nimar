@@ -32,13 +32,12 @@ func (t *TileIDs) String() string {
 	tiles := []*Tile{}
 
 	for tileid, count := range t {
-	loop:
 		for _, tile := range alltiles {
 			if tile.ID == tileid {
 				for i := 0; i < count; i++ {
 					tiles = append(tiles, tile)
-					break loop
 				}
+				break
 			}
 		}
 	}

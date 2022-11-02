@@ -1,7 +1,9 @@
 // ˅
 package mahjong
 
-import "sort"
+import (
+	"sort"
+)
 
 // ˄
 
@@ -21,7 +23,7 @@ type Yaku interface {
 
 // ˅
 
-func handAndTsumoriTile(player *Player) TileIDs {
+func HandAndAgariTile(player *Player) TileIDs {
 	tileIDs := TileIDs{}
 	for _, tile := range player.Hand {
 		if tile == nil {
@@ -338,7 +340,7 @@ func (p *PeNuki) NumberOfHanWhenNaki() int {
 }
 
 func (t *Tanyao) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tiles := handAndTsumoriTile(player)
+	tiles := HandAndAgariTile(player)
 
 	for i := range tiles {
 		if tiles[i] != 0 && (i == 1 || i == 9 || i == 11 || i == 19 || i == 21 || tiles[i] == 29 || (i >= 31 && i <= 37)) {
@@ -723,7 +725,7 @@ func (s *SuankoTanki) NumberOfHanWhenNaki() int {
 
 func (j *JunseiChuren) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
 	isJunseiTyuuren := false
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	if player.TsumoriTile != nil {
 		tileIDs[player.TsumoriTile.ID]--
 	}
@@ -760,7 +762,7 @@ func (j *JunseiChuren) NumberOfHanWhenNaki() int {
 
 func (k *Kokushi13) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
 	isKokusi13 := false
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	if player.TsumoriTile != nil {
 		tileIDs[player.TsumoriTile.ID]--
 	}
@@ -795,7 +797,7 @@ func (k *Kokushi13) NumberOfHanWhenNaki() int {
 }
 
 func (p *Pinhu) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	if tileIDs[35] != 0 {
 		return false
 	}
@@ -867,7 +869,7 @@ func (p *Pinhu) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAn
 	playerTemp.RonTile = nil
 
 	tileIDs[agariTileID] -= 1
-	matihai := agarikei.Machihai
+	matihai := agarikei.Agarikei.MachiHai
 	tileIDs[agariTileID] += 1
 	for i := 0; i <= 2; i++ {
 		for j := 1; j <= 6; j++ {
@@ -1136,7 +1138,7 @@ func (t *Toitoi) NumberOfHanWhenNaki() int {
 }
 
 func (s *SanshokuDoukou) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	for i := 1; i <= 9; i++ {
 		if tileIDs[i] > 3 && tileIDs[i+10] > 3 && tileIDs[i+20] > 3 {
 			return true
@@ -1158,7 +1160,7 @@ func (s *SanshokuDoukou) NumberOfHanWhenNaki() int {
 }
 
 func (s *SanshokuDoujun) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	for _, mentsu := range []*TileIDs{
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
@@ -1193,7 +1195,7 @@ func (s *SanshokuDoujun) NumberOfHanWhenNaki() int {
 }
 
 func (h *Honroto) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	for i := 2; i <= 8; i++ {
 		if tileIDs[i] != 0 {
 			return false
@@ -1299,7 +1301,7 @@ func (c *Chanta) NumberOfHanWhenNaki() int {
 }
 
 func (s *Shousangen) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	if tileIDs[35] >= 2 && tileIDs[36] >= 3 && tileIDs[37] >= 3 {
 		return true
 	}
@@ -1329,7 +1331,7 @@ func (h *Honitsu) IsMatch(player *Player, Table *Table, agarikei *CountOfShanten
 	var pin = false
 	var sou = false
 
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 
 	for i := 0; i < len(tileIDs); i++ {
 		for j := 1; j <= 9; j++ {
@@ -1390,7 +1392,7 @@ func (j *Junchan) NumberOfHanWhenNaki() int {
 }
 
 func (c *Chinitsu) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	var man = false
 	var pin = false
 	var sou = false
@@ -1424,7 +1426,7 @@ func (c *Chinitsu) NumberOfHanWhenNaki() int {
 }
 
 func (r *Ryuiso) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	var hasHatsu = false
 	for j := 0; j < len(tileIDs); j++ {
 		if ((j >= 1 && j <= 20) || (j >= 31 && j <= 35) || (j == 37) || (j == 21 || j == 25 || j == 27 || j == 29)) || tileIDs[j] != 0 {
@@ -1450,7 +1452,7 @@ func (r *Ryuiso) NumberOfHanWhenNaki() int {
 }
 
 func (d *Daisangen) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	return tileIDs[35] >= 3 && tileIDs[36] >= 3 && tileIDs[37] >= 3
 }
 
@@ -1467,7 +1469,7 @@ func (d *Daisangen) NumberOfHanWhenNaki() int {
 }
 
 func (s *Shosushi) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 
 	if tileIDs[31] >= 2 && tileIDs[32] >= 3 && tileIDs[33] >= 3 && tileIDs[34] >= 3 {
 		return true
@@ -1497,7 +1499,7 @@ func (s *Shosushi) NumberOfHanWhenNaki() int {
 }
 
 func (t *Tsuiso) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	for j := 0; j < len(tileIDs); j++ {
 		if !(j == 31 || j == 32 || j == 33 || j == 34 || j == 35 || j == 36 || j == 37) && tileIDs[j] != 0 {
 			return false
@@ -1564,7 +1566,7 @@ func (s *Suanko) NumberOfHanWhenNaki() int {
 }
 
 func (c *Chinroto) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	for i := 2; i <= 8; i++ {
 		if tileIDs[i] > 0 {
 			return false
@@ -1630,7 +1632,7 @@ func (s *Sukantsu) NumberOfHanWhenNaki() int {
 }
 
 func (d *Daisushi) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 	return tileIDs[31] >= 3 && tileIDs[32] >= 3 && tileIDs[33] >= 3 && tileIDs[34] >= 3
 }
 
@@ -1648,7 +1650,7 @@ func (d *Daisushi) NumberOfHanWhenNaki() int {
 
 func (c *Churenpoto) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
 	isChuren := false
-	tileIDs := handAndTsumoriTile(player)
+	tileIDs := HandAndAgariTile(player)
 
 	for i := 0; i < 3; i++ {
 		if tileIDs[i*10+1] >= 3 && tileIDs[i*10+2] >= 1 && tileIDs[i*10+3] >= 1 && tileIDs[i*10+4] >= 1 && tileIDs[i*10+5] >= 1 && tileIDs[i*10+6] >= 1 && tileIDs[i*10+7] >= 1 && tileIDs[i*10+8] >= 1 && tileIDs[i*10+9] >= 3 {
@@ -1991,7 +1993,7 @@ func (r *KyushuKyuhai) IsMatch(player *Player, Table *Table, agarikei *CountOfSh
 	hasHaku := 0
 	hasHatsu := 0
 	hasChun := 0
-	for _, tileNum := range handAndTsumoriTile(player) {
+	for _, tileNum := range HandAndAgariTile(player) {
 		if tileNum >= 0 && tileNum <= 9 {
 			hasMan = 1
 		}

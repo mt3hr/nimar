@@ -8,7 +8,95 @@ import (
 )
 
 func main() {
-	testShantenAgari()
+	testShantenAgariWithNaki()
+}
+
+func testShantenAgariWithNaki() {
+	handStr := "[西1] [1索1][1索2][1索3] [3索1][3索2][3索3] [中1][中2][中3] [7索1][8索1][9索1]"
+	openTypes := []mahjong.OpenType{
+		mahjong.OPEN_NULL,
+		mahjong.OPEN_PON,
+		mahjong.OPEN_PON,
+		mahjong.OPEN_PON,
+		mahjong.OPEN_CHI,
+	}
+	agariTileStr := "[西3]"
+	tsumo := false // falseでロン
+
+	table := mahjong.NewTable("tr", "testroom")
+	table.Player1 = mahjong.NewPlayer("player1", "p1")
+	table.Player2 = mahjong.NewPlayer("player2", "p2")
+
+	mahjong.DEBUG = true
+	go table.GameManager.StartGame()
+
+	for i, tiles := range parseTilesSplited(handStr) {
+		openedTiles := &mahjong.OpenedTiles{
+			OpenType: &openTypes[i],
+			Tiles:    tiles,
+		}
+
+		switch i {
+		case 0:
+			table.Player1.Hand = tiles
+		case 1:
+			table.Player1.OpenedTile1 = openedTiles
+		case 2:
+			table.Player1.OpenedTile2 = openedTiles
+		case 3:
+			table.Player1.OpenedTile3 = openedTiles
+		case 4:
+			table.Player1.OpenedTile4 = openedTiles
+		}
+	}
+	agariTile := parseTile(agariTileStr)
+	if tsumo {
+		table.Player1.TsumoriTile = agariTile
+	} else {
+		table.Player1.RonTile = agariTile
+	}
+	agarikei := table.GameManager.ShantenChecker.CheckCountOfShanten(table.Player1)
+	for _, tile := range table.Player1.Hand {
+		if tile == nil {
+			continue
+		}
+		fmt.Printf("[%s]", tile.Name)
+	}
+	for _, openedTiles := range []*mahjong.OpenedTiles{
+		table.Player1.OpenedTile1,
+		table.Player1.OpenedTile2,
+		table.Player1.OpenedTile3,
+		table.Player1.OpenedTile4,
+	} {
+		for _, tile := range openedTiles.Tiles {
+			if tile == nil {
+				continue
+			}
+			fmt.Printf("[%s]", tile.Name)
+		}
+	}
+	if table.Player1.TsumoriTile != nil {
+		fmt.Printf("[%s]", table.Player1.TsumoriTile.Name)
+	}
+	if table.Player1.RonTile != nil {
+		fmt.Printf("[%s]", table.Player1.RonTile.Name)
+	}
+	fmt.Println("")
+	fmt.Printf("shanten %+v\n", agarikei.Shanten)
+	fmt.Printf("table.Player1.Status = %+v\n", table.Player1.Status)
+	fmt.Printf("agarikei.Agarikei.Machi = %+v\n", agarikei.Agarikei.Machi)
+
+	point := table.GameManager.PointCalcrator.CalcratePoint(table.Player1, agarikei, table, table.GameManager.ShantenChecker.GetYakuList())
+	fmt.Printf("point = %+v\n", point)
+}
+
+func parseTilesSplited(tileNamesStrSpaceSplited string) [][]*mahjong.Tile {
+	tiles := [][]*mahjong.Tile{}
+
+	for _, tileNames := range strings.Split(tileNamesStrSpaceSplited, " ") {
+		tiles = append(tiles, parseTiles(tileNames))
+	}
+	return tiles
 }
 
 func parseTiles(tileNamesStr string) []*mahjong.Tile {

@@ -28,7 +28,7 @@ type Agarikei struct {
 
 	MachiHai map[int]interface{}
 
-	Machi *Machi
+	Machi Machi
 
 	// ˅
 
@@ -66,15 +66,11 @@ func (a Agarikei) Clone() *Agarikei {
 	agarikei.Mentsu3Type = a.Mentsu3Type
 	agarikei.Mentsu4Type = a.Mentsu4Type
 	agarikei.JantoType = a.JantoType
+	agarikei.Machi = a.Machi
 
 	agarikei.MachiHai = map[int]interface{}{}
 	for id := range a.MachiHai {
 		agarikei.MachiHai[id] = struct{}{}
-	}
-
-	if a.Machi != nil {
-		machi := *a.Machi
-		agarikei.Machi = &machi
 	}
 
 	return agarikei

@@ -12,10 +12,9 @@ type CountOfShantenAndAgarikei struct {
 
 	Agarikei *Agarikei
 
-	Machihai map[int]interface{}
-
 	// ˅
 
+	//TODO モデルからMachihaiを消して
 	// ˄
 }
 

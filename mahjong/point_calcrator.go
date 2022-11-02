@@ -181,7 +181,7 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 		}
 	}
 
-	switch *agarikei.Agarikei.Machi {
+	switch agarikei.Agarikei.Machi {
 	case TANKI:
 		fallthrough
 	case PENCHAN:
@@ -209,7 +209,7 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 		case 50:
 		case 60:
 			if point.Han >= 4 {
-				if player.ID == table.GameManager.dealerPlayer.ID {
+				if player.ID == table.GameManager.oyaPlayer.ID {
 					point.Point = 12000 + table.Status.NumberOfHonba*300
 					return point
 				} else {
@@ -224,7 +224,7 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 		case 100:
 		case 110:
 			if point.Han >= 3 {
-				if player.ID == table.GameManager.dealerPlayer.ID {
+				if player.ID == table.GameManager.oyaPlayer.ID {
 					point.Point = 12000 + table.Status.NumberOfHonba*300
 					return point
 				} else {
@@ -236,7 +236,7 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 		}
 		kihonten := point.Hu * int(math.Pow(float64(2), float64(point.Han+2)))
 		tensuu := 0
-		if player.ID == table.GameManager.dealerPlayer.ID {
+		if player.ID == table.GameManager.oyaPlayer.ID {
 			tensuu = kihonten * 6
 		} else {
 			tensuu = kihonten * 4
@@ -252,7 +252,7 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 
 	// 満願以上
 	if point.Han == 5 {
-		if player.ID == table.GameManager.dealerPlayer.ID {
+		if player.ID == table.GameManager.oyaPlayer.ID {
 			point.Point = 12000 + table.Status.NumberOfHonba*300
 			return point
 		} else {
@@ -261,7 +261,7 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 		}
 	}
 	if point.Han >= 6 && point.Han <= 7 {
-		if player.ID == table.GameManager.dealerPlayer.ID {
+		if player.ID == table.GameManager.oyaPlayer.ID {
 			point.Point = 18000 + table.Status.NumberOfHonba*300
 			return point
 		} else {
@@ -270,7 +270,7 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 		}
 	}
 	if point.Han >= 8 && point.Han <= 10 {
-		if player.ID == table.GameManager.dealerPlayer.ID {
+		if player.ID == table.GameManager.oyaPlayer.ID {
 			point.Point = 24000 + table.Status.NumberOfHonba*300
 			return point
 		} else {
@@ -279,7 +279,7 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 		}
 	}
 	if point.Han >= 11 && point.Han <= 12 {
-		if player.ID == table.GameManager.dealerPlayer.ID {
+		if player.ID == table.GameManager.oyaPlayer.ID {
 			point.Point = 36000 + table.Status.NumberOfHonba*300
 			return point
 		} else {
@@ -287,7 +287,7 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 			return point
 		}
 	}
-	if player.ID == table.GameManager.dealerPlayer.ID {
+	if player.ID == table.GameManager.oyaPlayer.ID {
 		point.Point = point.Han/13*48000 + table.Status.NumberOfHonba*300
 		return point
 	} else {
