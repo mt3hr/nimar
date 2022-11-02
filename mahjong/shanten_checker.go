@@ -50,10 +50,13 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 	shanten := 8
 	shantenTemp := 8
 
+	machi := Machi(0)
+
 	shantenAndAgarikei := &CountOfShantenAndAgarikei{
 		Shanten: shanten,
 		Agarikei: &Agarikei{
 			MachiHai: map[int]interface{}{},
+			Machi:    &machi,
 		},
 	}
 
