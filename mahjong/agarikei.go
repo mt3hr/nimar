@@ -56,7 +56,10 @@ func (a Agarikei) String() string {
 }
 
 func (a Agarikei) Clone() *Agarikei {
-	agarikei := &Agarikei{}
+	machi := Machi(0)
+	agarikei := &Agarikei{
+		Machi: &machi,
+	}
 	agarikei.Janto = a.Janto.Clone()
 	agarikei.Mentsu1 = a.Mentsu1.Clone()
 	agarikei.Mentsu2 = a.Mentsu2.Clone()
@@ -67,7 +70,9 @@ func (a Agarikei) Clone() *Agarikei {
 	agarikei.Mentsu3Type = a.Mentsu3Type
 	agarikei.Mentsu4Type = a.Mentsu4Type
 	agarikei.JantoType = a.JantoType
-	agarikei.Machi = a.Machi
+	if a.Machi != nil {
+		*agarikei.Machi = *a.Machi
+	}
 
 	agarikei.MachiHai = map[int]interface{}{}
 	for id := range a.MachiHai {
