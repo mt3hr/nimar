@@ -28,11 +28,12 @@ type Agarikei struct {
 
 	MachiHai map[int]interface{}
 
-	Machi Machi
+	Machi *Machi
 
 	// ˅
 
 	JantoType MentsuType
+
 	// ˄
 }
 

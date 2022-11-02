@@ -131,7 +131,7 @@ func (g *GameManager) initializeGame() {
 	ton := KAZE_TON
 	nan := KAZE_NAN
 	g.resetGame()
-	g.determinateDealer()
+	g.determinateOya()
 	g.Table.Tsumo.Tiles = g.generateTiles()
 	g.shuffleTiles(g.Table.Tsumo.Tiles)
 	g.Table.Status.ChichaPlayer = g.oyaPlayer
@@ -144,7 +144,7 @@ func (g *GameManager) initializeGame() {
 	// ˄
 }
 
-func (g *GameManager) getDealerPlayer() *Player {
+func (g *GameManager) getOyaPlayer() *Player {
 	// ˅
 	return g.oyaPlayer
 	// ˄
@@ -345,7 +345,7 @@ func (g *GameManager) generateTiles() []*Tile {
 	// ˄
 }
 
-func (g *GameManager) determinateDealer() {
+func (g *GameManager) determinateOya() {
 	// ˅
 	rand.Seed(time.Now().UnixNano())
 	random := rand.Intn(2)

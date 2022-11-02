@@ -181,7 +181,7 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 		}
 	}
 
-	switch agarikei.Agarikei.Machi {
+	switch *agarikei.Agarikei.Machi {
 	case TANKI:
 		fallthrough
 	case PENCHAN:

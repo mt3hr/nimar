@@ -69,8 +69,7 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 			}
 			if shanten == -1 {
 				shantenAndAgarikei.Agarikei = s.agarikei.Clone()
-				machiNormal := s.machiNormal
-				shantenAndAgarikei.Agarikei.Machi = machiNormal
+				*shantenAndAgarikei.Agarikei.Machi = s.machiNormal
 			}
 		}
 	}
@@ -85,8 +84,7 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 				shantenAndAgarikei.Agarikei.MachiHai[tileID] = struct{}{}
 			}
 			if shanten == -1 {
-				tanki := TANKI
-				shantenAndAgarikei.Agarikei.Machi = tanki
+				*shantenAndAgarikei.Agarikei.Machi = TANKI
 			}
 		}
 	}
@@ -101,8 +99,7 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 				shantenAndAgarikei.Agarikei.MachiHai[tileID] = struct{}{}
 			}
 			if shanten == -1 {
-				tanki := TANKI
-				shantenAndAgarikei.Agarikei.Machi = tanki
+				*shantenAndAgarikei.Agarikei.Machi = TANKI
 			}
 		}
 	}
@@ -531,96 +528,6 @@ func (s *ShantenChecker) cutMentsu(i int) {
 	}
 	s.cutTatsu(1) //ターツ抜きへ
 	// ˄
-}
-
-func (s *ShantenChecker) updateShantenNormal(machihai map[int]interface{}) {
-	s.shantenTemp = 8 - s.countOfMentsu*2 - s.countOfTatsu - s.countOfToitsu
-	if s.shantenTemp < s.shantenNormal {
-		s.shantenNormal = s.shantenTemp
-	}
-	if s.shantenTemp == 0 {
-		s.agarikei = *s.agarikeiTemp.Clone()
-		for tile := range machihai {
-			s.machihai[tile] = struct{}{}
-		}
-	}
-
-	if s.shantenTemp == -1 {
-		s.agarikei = *s.agarikeiTemp.Clone()
-		i := 0
-		agarihaiID := 0
-
-		deletedAgarihai := false
-		for _, tileIDs := range []*TileIDs{
-			s.agarikeiTemp.Janto,
-			s.agarikeiTemp.Mentsu1,
-			s.agarikeiTemp.Mentsu2,
-			s.agarikeiTemp.Mentsu3,
-			s.agarikeiTemp.Mentsu4,
-		} {
-			for tileID, tileCount := range tileIDs {
-				if !deletedAgarihai && (s.player.TsumoriTile != nil && s.player.TsumoriTile.ID == tileID && tileCount > 1) {
-					tileIDs[tileID]--
-					agarihaiID = tileID
-					deletedAgarihai = true
-				}
-
-				if !deletedAgarihai && (s.player.RonTile != nil && s.player.RonTile.ID == tileID && tileCount > 1) {
-					tileIDs[tileID]--
-					agarihaiID = tileID
-					deletedAgarihai = true
-				}
-				if deletedAgarihai {
-					break
-				}
-			}
-			// 単騎待ち
-			for i = 1; i < len(s.tempMenzenTileIDs); i++ {
-				if tileIDs[i] == 2 {
-					if i == agarihaiID {
-						s.machiNormal = TANKI
-					}
-				}
-			}
-
-			// 辺張待ち
-			for i = 0; i <= 2; i++ {
-				if tileIDs[i*10+1] == 1 && tileIDs[i*10+2] == 1 {
-					if i == agarihaiID {
-						s.machiNormal = PENCHAN
-					}
-				}
-				if tileIDs[i*10+8] == 1 && tileIDs[i*10+9] == 1 {
-					if i == agarihaiID {
-						s.machiNormal = PENCHAN
-					}
-				}
-			}
-			// 両面待ち
-			for i = 0; i <= 29; i++ {
-				if !((i >= 2 && i <= 7) || (i >= 12 && i <= 17) || (i >= 22 && i <= 27)) {
-					continue
-				}
-				if tileIDs[i] == 1 && tileIDs[i+1] == 1 {
-					if i-1 == agarihaiID || i+2 == agarihaiID {
-						s.machiNormal = RYANMEN
-					}
-				}
-			}
-			// 嵌張待ち
-			for i = 0; i <= 29; i++ {
-				if !((i >= 2 && i <= 7) || (i >= 12 && i <= 17) || (i >= 22 && i <= 27)) {
-					continue
-				}
-				if tileIDs[i] == 1 && tileIDs[i+2] == 1 {
-					s.machiNormal = KANCHAN
-				}
-			}
-		}
-		if s.machiNormal == 0 {
-			s.machiNormal = TANKI
-		}
-	}
 }
 
 func (s *ShantenChecker) cutTatsu(i int) {
@@ -1375,6 +1282,96 @@ func (s *ShantenChecker) calcMachihai() map[int]interface{} {
 func NewShantenChecker() *ShantenChecker {
 	return &ShantenChecker{
 		yakuList: GenerateYakusDefault(),
+	}
+}
+
+func (s *ShantenChecker) updateShantenNormal(machihai map[int]interface{}) {
+	s.shantenTemp = 8 - s.countOfMentsu*2 - s.countOfTatsu - s.countOfToitsu
+	if s.shantenTemp < s.shantenNormal {
+		s.shantenNormal = s.shantenTemp
+	}
+	if s.shantenTemp == 0 {
+		s.agarikei = *s.agarikeiTemp.Clone()
+		for tile := range machihai {
+			s.machihai[tile] = struct{}{}
+		}
+	}
+
+	if s.shantenTemp == -1 {
+		s.agarikei = *s.agarikeiTemp.Clone()
+		i := 0
+		agarihaiID := 0
+
+		deletedAgarihai := false
+		for _, tileIDs := range []*TileIDs{
+			s.agarikeiTemp.Janto,
+			s.agarikeiTemp.Mentsu1,
+			s.agarikeiTemp.Mentsu2,
+			s.agarikeiTemp.Mentsu3,
+			s.agarikeiTemp.Mentsu4,
+		} {
+			for tileID, tileCount := range tileIDs {
+				if !deletedAgarihai && (s.player.TsumoriTile != nil && s.player.TsumoriTile.ID == tileID && tileCount > 1) {
+					tileIDs[tileID]--
+					agarihaiID = tileID
+					deletedAgarihai = true
+				}
+
+				if !deletedAgarihai && (s.player.RonTile != nil && s.player.RonTile.ID == tileID && tileCount > 1) {
+					tileIDs[tileID]--
+					agarihaiID = tileID
+					deletedAgarihai = true
+				}
+				if deletedAgarihai {
+					break
+				}
+			}
+			// 単騎待ち
+			for i = 1; i < len(s.tempMenzenTileIDs); i++ {
+				if tileIDs[i] == 2 {
+					if i == agarihaiID {
+						s.machiNormal = TANKI
+					}
+				}
+			}
+
+			// 辺張待ち
+			for i = 0; i <= 2; i++ {
+				if tileIDs[i*10+1] == 1 && tileIDs[i*10+2] == 1 {
+					if i == agarihaiID {
+						s.machiNormal = PENCHAN
+					}
+				}
+				if tileIDs[i*10+8] == 1 && tileIDs[i*10+9] == 1 {
+					if i == agarihaiID {
+						s.machiNormal = PENCHAN
+					}
+				}
+			}
+			// 両面待ち
+			for i = 0; i <= 29; i++ {
+				if !((i >= 2 && i <= 7) || (i >= 12 && i <= 17) || (i >= 22 && i <= 27)) {
+					continue
+				}
+				if tileIDs[i] == 1 && tileIDs[i+1] == 1 {
+					if i-1 == agarihaiID || i+2 == agarihaiID {
+						s.machiNormal = RYANMEN
+					}
+				}
+			}
+			// 嵌張待ち
+			for i = 0; i <= 29; i++ {
+				if !((i >= 2 && i <= 7) || (i >= 12 && i <= 17) || (i >= 22 && i <= 27)) {
+					continue
+				}
+				if tileIDs[i] == 1 && tileIDs[i+2] == 1 {
+					s.machiNormal = KANCHAN
+				}
+			}
+		}
+		if s.machiNormal == 0 {
+			s.machiNormal = TANKI
+		}
 	}
 }
 
