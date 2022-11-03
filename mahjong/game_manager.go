@@ -789,6 +789,11 @@ func (m *GameManager) generateAgariMessage(player *Player) *Message {
 func (g *GameManager) printShantenCount(player *Player) {
 	shanten := g.Table.GameManager.ShantenChecker.CheckCountOfShanten(player)
 	fmt.Printf("向聴数 %+v\n", shanten.Shanten)
+	if shanten.Shanten == 0 {
+		for machi := range shanten.Agarikei.MachiHai {
+			fmt.Printf("machi = %+v\n", machi)
+		}
+	}
 	if shanten.Shanten == -1 {
 		fmt.Printf("%s\n", shanten.Agarikei.String())
 		point := g.PointCalcrator.CalcratePoint(player, shanten, g.Table, g.ShantenChecker.yakuList)

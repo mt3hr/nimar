@@ -538,15 +538,16 @@ func (s *ShantenChecker) cutTatsu(i int) {
 
 	j := 0
 
+	machihai := map[int]interface{}{}
 	for j = i; j < len(s.tempMenzenTileIDs); j++ {
 		if s.countOfMentsu+s.countOfTatsu < 4 {
+
 			//メンツとターツの合計は4まで
 			//トイツ抜き出し
 			if s.tempMenzenTileIDs[j] >= 2 {
 				s.tempMenzenTileIDs[j] -= 2
 				s.countOfToitsu++
 				s.cutTatsu(j)
-				machihai := map[int]interface{}{}
 				machihai[j] = struct{}{}
 				s.updateShantenNormal(machihai)
 				s.tempMenzenTileIDs[j] += 2
@@ -560,7 +561,6 @@ func (s *ShantenChecker) cutTatsu(i int) {
 					s.tempMenzenTileIDs[j+1]--
 					s.countOfTatsu++
 					s.cutTatsu(j)
-					machihai := map[int]interface{}{}
 					machihai[j-1] = struct{}{}
 					machihai[j+2] = struct{}{}
 					s.updateShantenNormal(machihai)
@@ -577,7 +577,6 @@ func (s *ShantenChecker) cutTatsu(i int) {
 					s.tempMenzenTileIDs[j+2]--
 					s.countOfTatsu++
 					s.cutTatsu(j)
-					machihai := map[int]interface{}{}
 					machihai[j+1] = struct{}{}
 					s.updateShantenNormal(machihai)
 					s.tempMenzenTileIDs[j]++
@@ -586,8 +585,15 @@ func (s *ShantenChecker) cutTatsu(i int) {
 				}
 			}
 		}
+		if s.tempMenzenTileIDs[j] == 1 {
+			s.tempMenzenTileIDs[j]--
+			if s.tempMenzenTileIDs.IsEmpty() {
+				machihai[j] = struct{}{}
+				s.updateShantenNormal(machihai)
+			}
+			s.tempMenzenTileIDs[j]++
+		}
 	}
-	machihai := map[int]interface{}{}
 	s.updateShantenNormal(machihai)
 	// ˄
 }
