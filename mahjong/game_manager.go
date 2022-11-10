@@ -511,21 +511,24 @@ func (g *GameManager) appendTsumoAgariOperators(player *Player, operators []*Ope
 
 func (g *GameManager) appendReachOperators(player *Player, operators []*Operator) []*Operator {
 	// ˅
+	if player.Status.Reach {
+		return operators
+	}
 	reach := OPERATOR_REACH
 	canReach := true
-	for _, OpenedTiles := range []OpenedTiles{
+	for _, openedTiles := range []OpenedTiles{
 		*player.OpenedTile1,
 		*player.OpenedTile2,
 		*player.OpenedTile3,
 		*player.OpenedTile4,
 	} {
-		if OpenedTiles.IsNil() {
+		if openedTiles.IsNil() {
 			continue
 		}
-		if *OpenedTiles.OpenType == OPEN_PON ||
-			*OpenedTiles.OpenType == OPEN_CHI ||
-			*OpenedTiles.OpenType == OPEN_DAIMINKAN ||
-			*OpenedTiles.OpenType == OPEN_KAKAN {
+		if *openedTiles.OpenType == OPEN_PON ||
+			*openedTiles.OpenType == OPEN_CHI ||
+			*openedTiles.OpenType == OPEN_DAIMINKAN ||
+			*openedTiles.OpenType == OPEN_KAKAN {
 			canReach = false
 			break
 		}
@@ -537,10 +540,11 @@ func (g *GameManager) appendReachOperators(player *Player, operators []*Operator
 	var playerTemp Player
 	playerTemp = *player
 	handTemp := []*Tile{}
-	playerTemp.Hand = handTemp
-	for _, tile := range playerTemp.Hand {
+	for _, tile := range player.Hand {
 		handTemp = append(handTemp, tile)
 	}
+	playerTemp.Hand = handTemp
+	TsumoriTileTemp := playerTemp.TsumoriTile
 
 	for i, sutehai := range playerTemp.Hand {
 		playerTemp.Hand = append(playerTemp.Hand[:i], playerTemp.Hand[i+1:]...)
@@ -552,10 +556,13 @@ func (g *GameManager) appendReachOperators(player *Player, operators []*Operator
 				TargetTiles:  []*Tile{sutehai},
 			})
 		}
+		handTemp := []*Tile{}
+		for _, tile := range player.Hand {
+			handTemp = append(handTemp, tile)
+		}
 		playerTemp.Hand = handTemp
 	}
 
-	TsumoriTileTemp := playerTemp.TsumoriTile
 	playerTemp.TsumoriTile = nil
 	if g.ShantenChecker.CheckCountOfShanten(&playerTemp).Shanten == 0 {
 		operators = append(operators, &Operator{
@@ -584,6 +591,10 @@ func (g *GameManager) appendDahaiOperators(player *Player, operators []*Operator
 		if player.Status.Reach {
 			return operators
 		}
+	}
+
+	if player.Status.Reach {
+		return operators
 	}
 
 	for _, tile := range player.Hand {
@@ -619,6 +630,9 @@ func (g *GameManager) appendRonOperators(player *Player, opponentPlayer *Player,
 	return operators
 }
 func (g *GameManager) appendPonOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
+	if opponentPlayer.Status.Reach {
+		return operators
+	}
 	pon := OPERATOR_PON
 	haiNum := player.Kawa[len(player.Kawa)-1].ID
 	tileIDs := HandAndAgariTile(opponentPlayer)
@@ -646,6 +660,9 @@ func (g *GameManager) appendPonOperators(player *Player, opponentPlayer *Player,
 	return operators
 }
 func (g *GameManager) appendChiOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
+	if opponentPlayer.Status.Reach {
+		return operators
+	}
 	chi := OPERATOR_CHI
 	haiNum := player.Kawa[len(player.Kawa)-1].ID
 	menzenTiles := HandAndAgariTile(opponentPlayer)
@@ -701,6 +718,9 @@ func (g *GameManager) appendChiOperators(player *Player, opponentPlayer *Player,
 	return operators
 }
 func (g *GameManager) appendDaiminkanOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
+	if opponentPlayer.Status.Reach {
+		return operators
+	}
 	daiminkan := OPERATOR_DAIMINKAN
 	haiNum := player.Kawa[len(player.Kawa)-1].ID
 	for tileid, cnt := range HandAndAgariTile(opponentPlayer) {
@@ -1044,6 +1064,7 @@ TOP:
 			nextTurnCanTsumo = true
 		case OPERATOR_REACH:
 			//TODO
+			player.Status.Reach = true
 			handAndTsumoriTile := append(player.Hand, player.TsumoriTile)
 			tileIndex := -1
 			for i, tile := range handAndTsumoriTile {

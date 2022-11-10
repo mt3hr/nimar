@@ -2478,11 +2478,115 @@ func GenerateYakusDefault() Yakus {
 }
 
 func (y Yakus) MatchYakus(player *Player, table *Table, agarikei *CountOfShantenAndAgarikei) []Yaku {
+	var reach Yaku
+	var doubleReach Yaku // リーチと複合しない
+	var honitsu Yaku
+	var chinitsu Yaku // 混一色と複合しない
+	var chanta Yaku
+	var junchan Yaku  // 混全帯么九とと複合しない
+	var honroto Yaku  // 混全帯么九, 純全帯么九と複合しない
+	var chinroto Yaku // 混全帯么九, 純全帯么九, 混老頭と複合しない
+	var churenpoto Yaku
+	var junseiChurenpoto Yaku // 九蓮宝燈と複合しない
+	var shosushi Yaku
+	var daisushi Yaku // 小四喜と複合しない
+	var kokushi Yaku
+	var kokushi13 Yaku // 国士無双と複合しない
+	var suanko Yaku
+	var suankoTanki Yaku // 四暗刻と複合しない
+	var sankantsu Yaku
+	var sukantsu Yaku // 三槓子と複合しない
+	var ipeko Yaku
+	var ryanpeko Yaku // 一盃口と複合しない
 	yakus := []Yaku{}
 	for _, yaku := range y {
+		switch yaku.GetName() {
+		case "立直":
+			reach = yaku
+		case "ダブルリーチ":
+			doubleReach = yaku
+		case "混一色":
+			honitsu = yaku
+		case "清一色":
+			chinitsu = yaku
+		case "混全帯么九":
+			chanta = yaku
+		case "純全帯么九":
+			junchan = yaku
+		case "混老頭":
+			honroto = yaku
+		case "清老頭":
+			chinroto = yaku
+		case "九蓮宝燈":
+			churenpoto = yaku
+		case "純正九蓮宝燈":
+			junseiChurenpoto = yaku
+		case "小四喜":
+			shosushi = yaku
+		case "大四喜":
+			daisushi = yaku
+		case "国士無双":
+			kokushi = yaku
+		case "国士無双十三面待ち":
+			kokushi13 = yaku
+		case "四暗刻":
+			suanko = yaku
+		case "四暗刻単騎":
+			suankoTanki = yaku
+		case "三槓子":
+			sankantsu = yaku
+		case "四槓子":
+			sukantsu = yaku
+		case "一盃口":
+			ipeko = yaku
+		case "二盃口":
+			ryanpeko = yaku
+		}
 		if yaku.IsMatch(player, table, agarikei) {
 			yakus = append(yakus, yaku)
 		}
+	}
+
+	removeYaku := func(yaku Yaku) {
+		if yaku == nil {
+			return
+		}
+		delete(y, yaku.GetName())
+	}
+
+	if doubleReach != nil && doubleReach.IsMatch(player, table, agarikei) {
+		removeYaku(reach)
+	}
+	if chinitsu != nil && chinitsu.IsMatch(player, table, agarikei) {
+		removeYaku(honitsu)
+	}
+	if chinroto != nil && chinroto.IsMatch(player, table, agarikei) {
+		removeYaku(honroto)
+		removeYaku(junchan)
+		removeYaku(chanta)
+	} else if honroto != nil && honroto.IsMatch(player, table, agarikei) {
+		removeYaku(junchan)
+		removeYaku(chanta)
+	} else if junchan != nil && junchan.IsMatch(player, table, agarikei) {
+		removeYaku(chanta)
+	}
+	if junseiChurenpoto != nil && junseiChurenpoto.IsMatch(player, table, agarikei) {
+		removeYaku(churenpoto)
+	}
+	if daisushi != nil && daisushi.IsMatch(player, table, agarikei) {
+		removeYaku(shosushi)
+	}
+	if kokushi13 != nil && kokushi13.IsMatch(player, table, agarikei) {
+		removeYaku(kokushi)
+	}
+	if suankoTanki != nil && suankoTanki.IsMatch(player, table, agarikei) {
+		removeYaku(suanko)
+	}
+	if sukantsu != nil && sukantsu.IsMatch(player, table, agarikei) {
+		removeYaku(sankantsu)
+	}
+	if ipeko != nil && ipeko.IsMatch(player, table, agarikei) {
+		removeYaku(ryanpeko)
 	}
 	sort.Slice(yakus, func(i, j int) bool {
 		return yakus[i].GetName() < yakus[j].GetName()
