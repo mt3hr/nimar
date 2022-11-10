@@ -547,7 +547,7 @@ func (g *GameManager) appendReachOperators(player *Player, operators []*Operator
 	TsumoriTileTemp := playerTemp.TsumoriTile
 
 	for i, sutehai := range playerTemp.Hand {
-		playerTemp.Hand = append(playerTemp.Hand[:i], playerTemp.Hand[i+1:]...)
+		playerTemp.Hand = append(handTemp[:i], handTemp[i+1:]...)
 		if g.ShantenChecker.CheckCountOfShanten(&playerTemp).Shanten == 0 {
 			operators = append(operators, &Operator{
 				RoomID:       g.Table.ID,
@@ -556,11 +556,6 @@ func (g *GameManager) appendReachOperators(player *Player, operators []*Operator
 				TargetTiles:  []*Tile{sutehai},
 			})
 		}
-		handTemp := []*Tile{}
-		for _, tile := range player.Hand {
-			handTemp = append(handTemp, tile)
-		}
-		playerTemp.Hand = handTemp
 	}
 
 	playerTemp.TsumoriTile = nil
