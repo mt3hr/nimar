@@ -976,7 +976,7 @@ func (h *Hatsu) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAn
 }
 
 func (h *Hatsu) GetName() string {
-	return "白"
+	return "發"
 }
 
 func (h *Hatsu) NumberOfHan() int {
@@ -2456,7 +2456,7 @@ func GenerateYakusDefault() Yakus {
 	yakus[yaku.GetName()] = yaku
 	yaku = NewSanshokuDoujun(2, 1)
 	yakus[yaku.GetName()] = yaku
-	yaku = NewHonroto(13, 13)
+	yaku = NewHonroto(2, 2)
 	yakus[yaku.GetName()] = yaku
 	yaku = NewIkkitsuukan(2, 1)
 	yakus[yaku.GetName()] = yaku
@@ -2504,6 +2504,13 @@ func GenerateYakusDefault() Yakus {
 }
 
 func (y Yakus) MatchYakus(player *Player, table *Table, agarikei *CountOfShantenAndAgarikei) []Yaku {
+	removeYaku := func(yaku Yaku) {
+		if yaku == nil {
+			return
+		}
+		delete(y, yaku.GetName())
+	}
+
 	var reach Yaku
 	var doubleReach Yaku // リーチと複合しない
 	var honitsu Yaku
@@ -2525,6 +2532,7 @@ func (y Yakus) MatchYakus(player *Player, table *Table, agarikei *CountOfShanten
 	var ipeko Yaku
 	var ryanpeko Yaku // 一盃口と複合しない
 	yakus := []Yaku{}
+	isYakuman := false
 	for _, yaku := range y {
 		switch yaku.GetName() {
 		case "立直":
@@ -2571,13 +2579,128 @@ func (y Yakus) MatchYakus(player *Player, table *Table, agarikei *CountOfShanten
 		if yaku.IsMatch(player, table, agarikei) {
 			yakus = append(yakus, yaku)
 		}
-	}
 
-	removeYaku := func(yaku Yaku) {
-		if yaku == nil {
-			return
+		switch yaku.GetName() {
+		case "四暗刻単騎":
+			fallthrough
+		case "純正九蓮宝燈":
+			fallthrough
+		case "国士無双十三面待ち":
+			fallthrough
+		case "緑一色":
+			fallthrough
+		case "大三元":
+			fallthrough
+		case "小四喜":
+			fallthrough
+		case "字一色":
+			fallthrough
+		case "国士無双":
+			fallthrough
+		case "四暗刻":
+			fallthrough
+		case "清老頭":
+			fallthrough
+		case "四槓子":
+			fallthrough
+		case "大四喜":
+			fallthrough
+		case "九蓮宝燈":
+			fallthrough
+		case "天和":
+			fallthrough
+		case "地和":
+			fallthrough
+		case "人和":
+			isYakuman = true
 		}
-		delete(y, yaku.GetName())
+
+	}
+	if isYakuman {
+		removeYakus := []Yaku{}
+		for _, yaku := range yakus {
+			switch yaku.GetName() {
+			case "ドラ":
+				fallthrough
+			case "抜きドラ":
+				fallthrough
+			case "断么九":
+				fallthrough
+			case "立直":
+				fallthrough
+			case "一発":
+				fallthrough
+			case "門前自摸":
+				fallthrough
+			case "槍槓":
+				fallthrough
+			case "嶺上開花":
+				fallthrough
+			case "海底撈月":
+				fallthrough
+			case "河底撈魚":
+				fallthrough
+			case "ダブルリーチ":
+				fallthrough
+			case "七対子":
+				fallthrough
+			case "連風東":
+				fallthrough
+			case "連風南":
+				fallthrough
+			case "連風西":
+				fallthrough
+			case "連風北":
+				fallthrough
+			case "三暗刻":
+				fallthrough
+			case "三槓子":
+				fallthrough
+			case "平和":
+				fallthrough
+			case "白":
+				fallthrough
+			case "發":
+				fallthrough
+			case "中":
+				fallthrough
+			case "東":
+				fallthrough
+			case "南":
+				fallthrough
+			case "西":
+				fallthrough
+			case "北":
+				fallthrough
+			case "対々和":
+				fallthrough
+			case "三色同刻":
+				fallthrough
+			case "三色同順":
+				fallthrough
+			case "混老頭":
+				fallthrough
+			case "一気通貫":
+				fallthrough
+			case "混全帯么九":
+				fallthrough
+			case "小三元":
+				fallthrough
+			case "混一色":
+				fallthrough
+			case "純全帯么九":
+				fallthrough
+			case "清一色":
+				fallthrough
+			case "二盃口":
+				fallthrough
+			case "一盃口":
+				removeYakus = append(removeYakus, yaku)
+			}
+		}
+		for _, yaku := range removeYakus {
+			removeYaku(yaku)
+		}
 	}
 
 	if doubleReach != nil && doubleReach.IsMatch(player, table, agarikei) {
