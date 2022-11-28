@@ -88,6 +88,102 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 			}
 			if shanten == -1 {
 				*shantenAndAgarikei.Agarikei.Machi = TANKI
+
+			}
+			if shanten == 0 {
+				jantou := -1
+				if s.tempMenzenTileIDs[1] == 2 {
+					jantou = 1
+				}
+				if s.tempMenzenTileIDs[9] == 2 {
+					jantou = 2
+				}
+				if s.tempMenzenTileIDs[11] == 2 {
+					jantou = 11
+				}
+				if s.tempMenzenTileIDs[19] == 2 {
+					jantou = 19
+				}
+				if s.tempMenzenTileIDs[21] == 2 {
+					jantou = 21
+				}
+				if s.tempMenzenTileIDs[31] == 2 {
+					jantou = 31
+				}
+				if s.tempMenzenTileIDs[32] == 2 {
+					jantou = 32
+				}
+				if s.tempMenzenTileIDs[33] == 2 {
+					jantou = 33
+				}
+				if s.tempMenzenTileIDs[34] == 2 {
+					jantou = 34
+				}
+				if s.tempMenzenTileIDs[35] == 2 {
+					jantou = 35
+				}
+				if s.tempMenzenTileIDs[36] == 2 {
+					jantou = 36
+				}
+				if s.tempMenzenTileIDs[37] == 2 {
+					jantou = 37
+				}
+
+				if jantou == -1 {
+					s.machihai[1] = struct{}{}
+					s.machihai[9] = struct{}{}
+					s.machihai[11] = struct{}{}
+					s.machihai[19] = struct{}{}
+					s.machihai[21] = struct{}{}
+					s.machihai[29] = struct{}{}
+					s.machihai[31] = struct{}{}
+					s.machihai[32] = struct{}{}
+					s.machihai[33] = struct{}{}
+					s.machihai[34] = struct{}{}
+					s.machihai[35] = struct{}{}
+					s.machihai[36] = struct{}{}
+					s.machihai[37] = struct{}{}
+				} else {
+					if s.tempMenzenTileIDs[1] == 0 {
+						s.machihai[1] = struct{}{}
+					}
+					if s.tempMenzenTileIDs[9] == 0 {
+						s.machihai[9] = struct{}{}
+					}
+					if s.tempMenzenTileIDs[11] == 0 {
+						s.machihai[11] = struct{}{}
+					}
+					if s.tempMenzenTileIDs[19] == 0 {
+						s.machihai[19] = struct{}{}
+					}
+					if s.tempMenzenTileIDs[21] == 0 {
+						s.machihai[21] = struct{}{}
+					}
+					if s.tempMenzenTileIDs[29] == 0 {
+						s.machihai[29] = struct{}{}
+					}
+					if s.tempMenzenTileIDs[31] == 0 {
+						s.machihai[31] = struct{}{}
+					}
+					if s.tempMenzenTileIDs[32] == 0 {
+						s.machihai[32] = struct{}{}
+					}
+					if s.tempMenzenTileIDs[33] == 0 {
+						s.machihai[33] = struct{}{}
+					}
+					if s.tempMenzenTileIDs[34] == 0 {
+						s.machihai[34] = struct{}{}
+					}
+					if s.tempMenzenTileIDs[35] == 0 {
+						s.machihai[35] = struct{}{}
+					}
+					if s.tempMenzenTileIDs[36] == 0 {
+						s.machihai[36] = struct{}{}
+					}
+					if s.tempMenzenTileIDs[37] == 0 {
+						s.machihai[37] = struct{}{}
+					}
+				}
 			}
 		}
 	}
@@ -103,6 +199,45 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 			}
 			if shanten == -1 {
 				*shantenAndAgarikei.Agarikei.Machi = TANKI
+
+			}
+			if shanten == 0 {
+				for h := 1; h <= 37; h++ {
+					if s.tempMenzenTileIDs[h] >= 2 {
+						for i := 1; i <= 37; i++ {
+							if s.cutToitsu(i) {
+								for j := 1; j <= 37; j++ {
+									if s.cutToitsu(j) {
+										for k := 1; k <= 37; k++ {
+											if s.cutToitsu(k) {
+												for l := 1; l <= 37; l++ {
+													if s.cutToitsu(l) {
+														for m := 1; m <= 37; m++ {
+															if s.cutToitsu(m) {
+																// 残りの牌で単騎待ち.
+																for n := 1; n <= 37; n++ {
+																	if s.tempMenzenTileIDs[n] == 1 {
+																		s.machihai[n] = struct{}{}
+																	}
+																}
+																s.addToitsu(m)
+															}
+														}
+														s.addToitsu(l)
+													}
+												}
+												s.addToitsu(k)
+											}
+										}
+										s.addToitsu(j)
+									}
+								}
+								s.addToitsu(i)
+							}
+						}
+						s.tempMenzenTileIDs[h] += 2
+					}
+				}
 			}
 		}
 	}

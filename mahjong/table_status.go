@@ -22,6 +22,10 @@ type TableStatus struct {
 
 	PlayerWithNotTurn *Player
 
+	Oya *Player
+
+	Ko *Player
+
 	Kaze *Kaze
 
 	// ˅

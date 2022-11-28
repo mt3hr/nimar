@@ -18,17 +18,13 @@ type GameManager struct {
 
 	// ˄
 
-	oyaPlayer *Player
-
-	koPlayer *Player
-
 	ShantenChecker *ShantenChecker
 
 	PointCalcrator *PointCalcrator
 
 	// ˅
 
-	Table *Table `json:"-"`
+	Table *Table
 
 	receivedOperator *Operator
 
@@ -123,6 +119,8 @@ func (g *GameManager) resetGame() {
 	g.Table.Player2.OpenedTile2 = &OpenedTiles{}
 	g.Table.Player2.OpenedTile3 = &OpenedTiles{}
 	g.Table.Player2.OpenedTile4 = &OpenedTiles{}
+	g.Table.Player1.Point = 50000
+	g.Table.Player2.Point = 50000
 	// ˄
 }
 
@@ -134,10 +132,10 @@ func (g *GameManager) initializeGame() {
 	g.determinateOya()
 	g.Table.Tsumo.Tiles = g.generateTiles()
 	g.shuffleTiles(g.Table.Tsumo.Tiles)
-	g.Table.Status.ChichaPlayer = g.oyaPlayer
-	g.Table.Status.PlayerWithTurn = g.oyaPlayer
+	g.Table.Status.ChichaPlayer = g.Table.Status.Oya
+	g.Table.Status.PlayerWithTurn = g.Table.Status.Oya
 	g.Table.Status.PlayerWithTurn.Status.Kaze = &ton
-	g.Table.Status.PlayerWithNotTurn = g.koPlayer
+	g.Table.Status.PlayerWithNotTurn = g.Table.Status.Ko
 	g.Table.Status.PlayerWithNotTurn.Status.Kaze = &nan
 	g.distributeTiles()
 	//TODO
@@ -146,7 +144,7 @@ func (g *GameManager) initializeGame() {
 
 func (g *GameManager) getOyaPlayer() *Player {
 	// ˅
-	return g.oyaPlayer
+	return g.Table.Status.Oya
 	// ˄
 }
 
@@ -350,11 +348,11 @@ func (g *GameManager) determinateOya() {
 	rand.Seed(time.Now().UnixNano())
 	random := rand.Intn(2)
 	if random == 1 {
-		g.oyaPlayer = g.Table.Player1
-		g.koPlayer = g.Table.Player2
+		g.Table.Status.Oya = g.Table.Player1
+		g.Table.Status.Ko = g.Table.Player2
 	} else {
-		g.oyaPlayer = g.Table.Player2
-		g.koPlayer = g.Table.Player1
+		g.Table.Status.Oya = g.Table.Player2
+		g.Table.Status.Ko = g.Table.Player1
 	}
 	// ˄
 }
@@ -377,30 +375,30 @@ func (g *GameManager) distributeTiles() {
 	var tile *Tile
 	Tsumo := g.Table.Tsumo
 	for i := 0; i < 3; i++ {
-		hand = g.oyaPlayer.Hand
+		hand = g.Table.Status.Oya.Hand
 		for j := 0; j < 4; j++ {
 			tile = Tsumo.Pop()
 			hand = append(hand, tile)
 		}
-		g.oyaPlayer.Hand = hand
+		g.Table.Status.Oya.Hand = hand
 
-		hand = g.koPlayer.Hand
+		hand = g.Table.Status.Ko.Hand
 		for j := 0; j < 4; j++ {
 			tile = Tsumo.Pop()
 			hand = append(hand, tile)
 		}
-		g.koPlayer.Hand = hand
+		g.Table.Status.Ko.Hand = hand
 	}
 
-	hand = g.oyaPlayer.Hand
+	hand = g.Table.Status.Oya.Hand
 	tile = Tsumo.Pop()
 	hand = append(hand, tile)
-	g.oyaPlayer.Hand = hand
+	g.Table.Status.Oya.Hand = hand
 
-	hand = g.koPlayer.Hand
+	hand = g.Table.Status.Ko.Hand
 	tile = Tsumo.Pop()
 	hand = append(hand, tile)
-	g.koPlayer.Hand = hand
+	g.Table.Status.Ko.Hand = hand
 	// ˄
 }
 
@@ -796,6 +794,7 @@ func (m *GameManager) generateAgariMessage(player *Player) *Message {
 	agari.Point.Point = point.Point
 	for _, yaku := range point.MatchYakus {
 		agari.Point.MatchYakus = append(agari.Point.MatchYakus, yaku)
+		agari.Point.MatchYakusForMessage = append(agari.Point.MatchYakusForMessage, convertYakuForMessage(yaku, player.IsMenzen()))
 	}
 	message.Agari = agari
 	return message
@@ -869,7 +868,7 @@ TOP:
 		playerOperators = g.appendDahaiOperators(player, playerOperators)
 		playerOperators = g.removeNullForOperators(playerOperators)
 
-		g.printShantenCount(player)
+		// g.printShantenCount(player)
 
 		g.Table.UpdateView()
 		b, err := json.Marshal(playerOperators)
@@ -890,7 +889,39 @@ TOP:
 
 		switch *(operator.OperatorType) {
 		case OPERATOR_KYUSHUKYUHAI:
-			//TODO
+			kyushukyuhai := MessageKyushuKyuhai
+			ok := OPERATOR_OK
+			message := &Message{
+				MessageType: &kyushukyuhai,
+			}
+			b, err := json.Marshal(message)
+			if err != nil {
+				panic(err)
+			}
+			g.okWG.Add(2)
+			player.MessageWs.Write(b)
+			opponentPlayer.MessageWs.Write(b)
+
+			operatorForPlayer := &Operator{
+				RoomID:       g.Table.ID,
+				PlayerID:     player.ID,
+				OperatorType: &ok,
+			}
+			b, err = json.Marshal([]*Operator{operatorForPlayer})
+			player.MessageWs.Write(b)
+			opponentPlayer.MessageWs.Write(b)
+
+			operatorForOpponentPlayer := &Operator{
+				RoomID:       g.Table.ID,
+				PlayerID:     operator.PlayerID,
+				OperatorType: &ok,
+			}
+			b, err = json.Marshal([]*Operator{operatorForOpponentPlayer})
+			player.MessageWs.Write(b)
+			opponentPlayer.MessageWs.Write(b)
+
+			g.okWG.Wait()
+			//TODO 次の局に進める
 		case OPERATOR_ANKAN:
 			ankan := OPEN_ANKAN
 			OpenedTile := &OpenedTiles{
@@ -1005,37 +1036,36 @@ TOP:
 			tsumo = false
 			goto TOP
 		case OPERATOR_TSUMO:
-			//TODO
-			g.printShantenCount(player)
+			// g.printShantenCount(player)
+			ok := OPERATOR_OK
 			message := g.generateAgariMessage(player)
-			_ = message
 
+			b, err := json.Marshal(message)
+			if err != nil {
+				panic(err)
+			}
 			g.okWG.Add(2)
+			player.MessageWs.Write(b)
+			opponentPlayer.MessageWs.Write(b)
 
-			//TODO
+			operatorForPlayer := &Operator{
+				RoomID:       g.Table.ID,
+				PlayerID:     player.ID,
+				OperatorType: &ok,
+			}
+			b, err = json.Marshal([]*Operator{operatorForPlayer})
+			player.MessageWs.Write(b)
+			opponentPlayer.MessageWs.Write(b)
 
-			/*
-				(*player.GetNimaRMessageStreamServer()).Send(message)
-				(*opponentPlayer.GetNimaRMessageStreamServer()).Send(message)
-				(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
-					Operators: []*Operator{
-						&Operator{
-							RoomID:       g.Table.GetID(),
-							PlayerID:     player.GetID(),
-							OperatorType: OPERATOR_OK,
-						},
-					},
-				})
-				(*opponentPlayer.GetNimaROperatorsStreamServer()).Send(&Operators{
-					Operators: []*Operator{
-						&Operator{
-							RoomID:       g.Table.GetID(),
-							PlayerID:     opponentPlayer.GetID(),
-							OperatorType: OPERATOR_OK,
-						},
-					},
-				})
-			*/
+			operatorForOpponentPlayer := &Operator{
+				RoomID:       g.Table.ID,
+				PlayerID:     operator.PlayerID,
+				OperatorType: &ok,
+			}
+			b, err = json.Marshal([]*Operator{operatorForOpponentPlayer})
+			player.MessageWs.Write(b)
+			opponentPlayer.MessageWs.Write(b)
+
 			g.okWG.Wait()
 			//TODO 次の局にすすむ
 
@@ -1115,38 +1145,39 @@ TOP:
 			case OPERATOR_SKIP:
 				break
 			case OPERATOR_RON:
+				ok := OPERATOR_OK
 				opponentPlayer.RonTile = player.Kawa[len(player.Kawa)-1]
 				player.Kawa = player.Kawa[:len(player.Kawa)-1]
 
-				g.printShantenCount(opponentPlayer)
+				// g.printShantenCount(opponentPlayer)
 				message := g.generateAgariMessage(opponentPlayer)
-				_ = message
 
+				b, err := json.Marshal(message)
+				if err != nil {
+					panic(err)
+				}
 				g.okWG.Add(2)
+				player.MessageWs.Write(b)
+				opponentPlayer.MessageWs.Write(b)
 
-				//TODO
-				/*
-					(*player.GetNimaRMessageStreamServer()).Send(message)
-					(*opponentPlayer.GetNimaRMessageStreamServer()).Send(message)
-					(*player.GetNimaROperatorsStreamServer()).Send(&Operators{
-						Operators: []*Operator{
-							&Operator{
-								RoomID:       g.Table.GetID(),
-								PlayerID:     player.GetID(),
-								OperatorType: OPERATOR_OK,
-							},
-						},
-					})
-					(*opponentPlayer.GetNimaROperatorsStreamServer()).Send(&Operators{
-						Operators: []*Operator{
-							&Operator{
-								RoomID:       g.Table.GetID(),
-								PlayerID:     opponentPlayer.GetID(),
-								OperatorType: OPERATOR_OK,
-							},
-						},
-					})
-				*/
+				operatorForPlayer := &Operator{
+					RoomID:       g.Table.ID,
+					PlayerID:     player.ID,
+					OperatorType: &ok,
+				}
+				b, err = json.Marshal([]*Operator{operatorForPlayer})
+				player.MessageWs.Write(b)
+				opponentPlayer.MessageWs.Write(b)
+
+				operatorForOpponentPlayer := &Operator{
+					RoomID:       g.Table.ID,
+					PlayerID:     operator.PlayerID,
+					OperatorType: &ok,
+				}
+				b, err = json.Marshal([]*Operator{operatorForOpponentPlayer})
+				player.MessageWs.Write(b)
+				opponentPlayer.MessageWs.Write(b)
+
 				g.okWG.Wait()
 				//TODO 次の局にすすむ
 			case OPERATOR_PON:

@@ -55,6 +55,9 @@ func HandAndOpenedAndAgariTile(player *Player) TileIDs {
 		player.OpenedTile4,
 	} {
 		for _, tile := range openedTiles.Tiles {
+			if tile == nil {
+				continue
+			}
 			tileIDs[tile.ID]++
 		}
 	}
@@ -1140,6 +1143,10 @@ func (t *Toitoi) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenA
 		agarikei.Agarikei.Mentsu4Type,
 	} {
 		switch mentsuType {
+		case Minko:
+			fallthrough
+		case Minkan:
+			fallthrough
 		case Anko:
 			fallthrough
 		case Ankan:
@@ -1455,7 +1462,7 @@ func (r *Ryuiso) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenA
 	tileIDs := HandAndOpenedAndAgariTile(player)
 	var hasHatsu = false
 	for j := 0; j < len(tileIDs); j++ {
-		if ((j >= 1 && j <= 20) || (j >= 31 && j <= 35) || (j == 37) || (j == 21 || j == 25 || j == 27 || j == 29)) || tileIDs[j] != 0 {
+		if ((j >= 1 && j <= 10) || (j >= 20 && j <= 30) || (j >= 31 && j <= 35) || (j == 37) || (j == 11 || j == 15 || j == 17 || j == 19)) && tileIDs[j] != 0 {
 			return false
 		}
 		if j == 36 && tileIDs[36] != 0 {
@@ -2504,13 +2511,6 @@ func GenerateYakusDefault() Yakus {
 }
 
 func (y Yakus) MatchYakus(player *Player, table *Table, agarikei *CountOfShantenAndAgarikei) []Yaku {
-	removeYaku := func(yaku Yaku) {
-		if yaku == nil {
-			return
-		}
-		delete(y, yaku.GetName())
-	}
-
 	var reach Yaku
 	var doubleReach Yaku // リーチと複合しない
 	var honitsu Yaku
@@ -2533,7 +2533,72 @@ func (y Yakus) MatchYakus(player *Player, table *Table, agarikei *CountOfShanten
 	var ryanpeko Yaku // 一盃口と複合しない
 	yakus := []Yaku{}
 	isYakuman := false
+
+	removeYaku := func(yakus []Yaku, yaku Yaku) []Yaku {
+		if yaku == nil {
+			return yakus
+		}
+
+		index := -1
+		for i, y := range yakus {
+			if yaku.GetName() == y.GetName() {
+				index = i
+				break
+			}
+		}
+
+		if index == -1 {
+			return yakus
+		}
+
+		if index == len(yakus) {
+			yakus = append([]Yaku{}, yakus[:index]...)
+		} else {
+			yakus = append(yakus[:index], yakus[index+1:]...)
+		}
+		return yakus
+	}
+
 	for _, yaku := range y {
+		if yaku.IsMatch(player, table, agarikei) {
+			yakus = append(yakus, yaku)
+
+			switch yaku.GetName() {
+			case "四暗刻単騎":
+				fallthrough
+			case "純正九蓮宝燈":
+				fallthrough
+			case "国士無双十三面待ち":
+				fallthrough
+			case "緑一色":
+				fallthrough
+			case "大三元":
+				fallthrough
+			case "小四喜":
+				fallthrough
+			case "字一色":
+				fallthrough
+			case "国士無双":
+				fallthrough
+			case "四暗刻":
+				fallthrough
+			case "清老頭":
+				fallthrough
+			case "四槓子":
+				fallthrough
+			case "大四喜":
+				fallthrough
+			case "九蓮宝燈":
+				fallthrough
+			case "天和":
+				fallthrough
+			case "地和":
+				fallthrough
+			case "人和":
+				isYakuman = true
+			}
+		}
+
 		switch yaku.GetName() {
 		case "立直":
 			reach = yaku
@@ -2575,44 +2640,6 @@ func (y Yakus) MatchYakus(player *Player, table *Table, agarikei *CountOfShanten
 			ipeko = yaku
 		case "二盃口":
 			ryanpeko = yaku
-		}
-		if yaku.IsMatch(player, table, agarikei) {
-			yakus = append(yakus, yaku)
-		}
-
-		switch yaku.GetName() {
-		case "四暗刻単騎":
-			fallthrough
-		case "純正九蓮宝燈":
-			fallthrough
-		case "国士無双十三面待ち":
-			fallthrough
-		case "緑一色":
-			fallthrough
-		case "大三元":
-			fallthrough
-		case "小四喜":
-			fallthrough
-		case "字一色":
-			fallthrough
-		case "国士無双":
-			fallthrough
-		case "四暗刻":
-			fallthrough
-		case "清老頭":
-			fallthrough
-		case "四槓子":
-			fallthrough
-		case "大四喜":
-			fallthrough
-		case "九蓮宝燈":
-			fallthrough
-		case "天和":
-			fallthrough
-		case "地和":
-			fallthrough
-		case "人和":
-			isYakuman = true
 		}
 
 	}
@@ -2699,48 +2726,68 @@ func (y Yakus) MatchYakus(player *Player, table *Table, agarikei *CountOfShanten
 			}
 		}
 		for _, yaku := range removeYakus {
-			removeYaku(yaku)
+			yakus = removeYaku(yakus, yaku)
 		}
 	}
 
 	if doubleReach != nil && doubleReach.IsMatch(player, table, agarikei) {
-		removeYaku(reach)
+		yakus = removeYaku(yakus, reach)
 	}
 	if chinitsu != nil && chinitsu.IsMatch(player, table, agarikei) {
-		removeYaku(honitsu)
+		yakus = removeYaku(yakus, honitsu)
 	}
 	if chinroto != nil && chinroto.IsMatch(player, table, agarikei) {
-		removeYaku(honroto)
-		removeYaku(junchan)
-		removeYaku(chanta)
+		yakus = removeYaku(yakus, honroto)
+		yakus = removeYaku(yakus, junchan)
+		yakus = removeYaku(yakus, chanta)
 	} else if honroto != nil && honroto.IsMatch(player, table, agarikei) {
-		removeYaku(junchan)
-		removeYaku(chanta)
+		yakus = removeYaku(yakus, junchan)
+		yakus = removeYaku(yakus, chanta)
 	} else if junchan != nil && junchan.IsMatch(player, table, agarikei) {
-		removeYaku(chanta)
+		yakus = removeYaku(yakus, chanta)
 	}
 	if junseiChurenpoto != nil && junseiChurenpoto.IsMatch(player, table, agarikei) {
-		removeYaku(churenpoto)
+		yakus = removeYaku(yakus, churenpoto)
 	}
 	if daisushi != nil && daisushi.IsMatch(player, table, agarikei) {
-		removeYaku(shosushi)
+		yakus = removeYaku(yakus, shosushi)
 	}
 	if kokushi13 != nil && kokushi13.IsMatch(player, table, agarikei) {
-		removeYaku(kokushi)
+		yakus = removeYaku(yakus, kokushi)
 	}
 	if suankoTanki != nil && suankoTanki.IsMatch(player, table, agarikei) {
-		removeYaku(suanko)
+		yakus = removeYaku(yakus, suanko)
 	}
 	if sukantsu != nil && sukantsu.IsMatch(player, table, agarikei) {
-		removeYaku(sankantsu)
+		yakus = removeYaku(yakus, sankantsu)
 	}
 	if ipeko != nil && ipeko.IsMatch(player, table, agarikei) {
-		removeYaku(ryanpeko)
+		yakus = removeYaku(yakus, ryanpeko)
 	}
+
 	sort.Slice(yakus, func(i, j int) bool {
 		return yakus[i].GetName() < yakus[j].GetName()
 	})
 	return yakus
+}
+
+type YakuForMessage struct {
+	Han  int
+	Name string
+}
+
+func convertYakuForMessage(yaku Yaku, menzen bool) *YakuForMessage {
+	han := 0
+	name := yaku.GetName()
+	if menzen {
+		han = yaku.NumberOfHan()
+	} else {
+		han = yaku.NumberOfHanWhenNaki()
+	}
+	return &YakuForMessage{
+		Han:  han,
+		Name: name,
+	}
 }
 
 // ˄

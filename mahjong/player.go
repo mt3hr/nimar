@@ -18,6 +18,8 @@ type Player struct {
 
 	ID string
 
+	Point int
+
 	Hand []*Tile
 
 	TsumoriTile *Tile
@@ -42,6 +44,7 @@ type Player struct {
 
 	GameTableWs *websocket.Conn
 	OperatorWs  *websocket.Conn
+	MessageWs   *websocket.Conn
 
 	// ˄
 }
