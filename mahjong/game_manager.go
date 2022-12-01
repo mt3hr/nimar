@@ -85,7 +85,17 @@ func (g *GameManager) StartGame() error {
 		if err != nil {
 			return err
 		}
-		g.tradeTurn()
+		if g.Table.Tsumo.CanPop() {
+			g.tradeTurn()
+		} else {
+			player1Tempai, player1Bappu, player2Tempai, player2Bappu := g.calcNotenBappu(g.Table.Player1, g.Table.Player2)
+
+			g.okWG.Add(2)
+			g.okWG.Wait()
+
+			g.Table.Player1.Point += player1Bappu
+			g.Table.Player2.Point += player2Bappu
+		}
 	}
 	return nil
 	// ˄
@@ -850,6 +860,7 @@ TOP:
 			player.Status.Chiho = false
 		}
 
+		//TODO 河底撈魚と海底摸月が重複することが多々見られる
 		if g.Table.Tsumo.RemainTilesCount() <= 18 {
 			player.Status.Haitei = true
 			opponentPlayer.Status.Hotei = true
@@ -923,6 +934,7 @@ TOP:
 			g.okWG.Wait()
 			//TODO 次の局に進める
 		case OPERATOR_ANKAN:
+			//TODO リーチしているときに暗槓しても面子崩れないかの判定をまだしていない
 			ankan := OPEN_ANKAN
 			OpenedTile := &OpenedTiles{
 				OpenType: &ankan,
@@ -1089,6 +1101,9 @@ TOP:
 			nextTurnCanTsumo = true
 		case OPERATOR_REACH:
 			//TODO
+			player.Point -= 1000
+			g.Table.Status.ReachTablePoint += 1000
+
 			player.Status.Reach = true
 			handAndTsumoriTile := append(player.Hand, player.TsumoriTile)
 			tileIndex := -1
@@ -1109,6 +1124,12 @@ TOP:
 			nextTurnCanTsumo = true
 		default:
 			return false, fmt.Errorf("変なオペレータが渡されました。オペレータタイプ:%d", operator.OperatorType)
+		}
+
+		if NewRenho(0, 0).IsMatch(opponentPlayer, g.Table, nil) {
+			opponentPlayer.Status.Renho = true
+		} else {
+			opponentPlayer.Status.Renho = false
 		}
 
 		//TODO  相手のOperator
@@ -1140,6 +1161,8 @@ TOP:
 			if operator == nil {
 				return false, nil
 			}
+
+			//TODO 立直中、暗槓をスキップ出来ないことがあった
 
 			switch *(operator.OperatorType) {
 			case OPERATOR_SKIP:
@@ -1354,6 +1377,23 @@ func (g *GameManager) removeNullForOperator(operator *Operator) *Operator {
 		op.TargetTiles = append(op.TargetTiles, targetTile)
 	}
 	return op
+}
+
+func (g *GameManager) calcNotenBappu(player1 *Player, player2 *Player) (player1Tempai bool, player1Bappu int, player2Tempai bool, player2Bappu int) {
+	player1Tempai = g.ShantenChecker.CheckCountOfShanten(player1).Shanten == 0
+	player2Tempai = g.ShantenChecker.CheckCountOfShanten(player2).Shanten == 0
+
+	if player1Tempai && player2Tempai || !player1Tempai && !player2Tempai {
+		player1Bappu = 0
+		player2Bappu = 0
+	} else if player1Tempai && !player2Tempai {
+		player1Bappu = 3000
+		player2Bappu = -3000
+	} else if !player1Tempai && player2Tempai {
+		player1Bappu = -3000
+		player2Bappu = 3000
+	}
+	return player1Tempai, player1Bappu, player2Tempai, player2Bappu
 }
 
 // ˄
