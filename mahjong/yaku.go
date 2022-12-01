@@ -2771,11 +2771,6 @@ func (y Yakus) MatchYakus(player *Player, table *Table, agarikei *CountOfShanten
 	return yakus
 }
 
-type YakuForMessage struct {
-	Han  int
-	Name string
-}
-
 func convertYakuForMessage(yaku Yaku, menzen bool) *YakuForMessage {
 	han := 0
 	name := yaku.GetName()

@@ -12,6 +12,8 @@ type Message struct {
 
 	Agari *Agari
 
+	Ryukyoku *Ryukyoku
+
 	// ˅
 
 	// ˄

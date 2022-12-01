@@ -29,7 +29,6 @@ type GameManager struct {
 	receivedOperator *Operator
 
 	receiveOperatorWG *sync.WaitGroup
-	okWG              *sync.WaitGroup
 	waitStartWg       *sync.WaitGroup
 
 	// ˄
@@ -38,6 +37,7 @@ type GameManager struct {
 func (g *GameManager) ExecuteOperator(operator *Operator) error {
 	// ˅
 	defer g.receiveOperatorWG.Done()
+
 	var player *Player
 	var opponentPlayer *Player
 
@@ -81,6 +81,7 @@ func (g *GameManager) StartGame() error {
 
 	var err error
 	for tsumo := true; true; {
+		g.Table.UpdateView()
 		tsumo, err = g.gameLoop(tsumo)
 		if err != nil {
 			return err
@@ -88,13 +89,10 @@ func (g *GameManager) StartGame() error {
 		if g.Table.Tsumo.CanPop() {
 			g.tradeTurn()
 		} else {
-			player1Tempai, player1Bappu, player2Tempai, player2Bappu := g.calcNotenBappu(g.Table.Player1, g.Table.Player2)
-
-			g.okWG.Add(2)
-			g.okWG.Wait()
-
-			g.Table.Player1.Point += player1Bappu
-			g.Table.Player2.Point += player2Bappu
+			g.ryukyoku()
+		}
+		if g.Table.Player1.Point <= 0 || g.Table.Player2.Point <= 0 {
+			//TODO 点数計算して終了
 		}
 	}
 	return nil
@@ -109,11 +107,25 @@ func (g *GameManager) GetShantenChecker() *ShantenChecker {
 
 func (g *GameManager) preparateGame() {
 	// ˅
+	ton := KAZE_TON
+	nan := KAZE_NAN
+	g.Table.Tsumo.Tiles = g.generateTiles()
+	g.shuffleTiles(g.Table.Tsumo.Tiles)
+	g.Table.Status.PlayerWithTurn = g.Table.Status.Oya
+	g.Table.Status.PlayerWithTurn.Status.Kaze = &ton
+	g.Table.Status.PlayerWithNotTurn = g.Table.Status.Ko
+	g.Table.Status.PlayerWithNotTurn.Status.Kaze = &nan
+	g.distributeTiles()
+
 	// ˄
 }
 
-func (g *GameManager) resetGame() {
+func (g *GameManager) resetTable() {
 	// ˅
+	g.Table.Player1.Status = &PlayerStatus{}
+	g.Table.Player2.Status = &PlayerStatus{}
+
+	g.Table.Tsumo.Tiles = nil
 	g.Table.Player1.TsumoriTile = nil
 	g.Table.Player1.Hand = []*Tile{}
 	g.Table.Player1.Kawa = []*Tile{}
@@ -121,6 +133,7 @@ func (g *GameManager) resetGame() {
 	g.Table.Player1.OpenedTile2 = &OpenedTiles{}
 	g.Table.Player1.OpenedTile3 = &OpenedTiles{}
 	g.Table.Player1.OpenedTile4 = &OpenedTiles{}
+	g.Table.Player1.OpenedPe = &OpenedTiles{}
 
 	g.Table.Player2.TsumoriTile = nil
 	g.Table.Player2.Hand = []*Tile{}
@@ -129,26 +142,18 @@ func (g *GameManager) resetGame() {
 	g.Table.Player2.OpenedTile2 = &OpenedTiles{}
 	g.Table.Player2.OpenedTile3 = &OpenedTiles{}
 	g.Table.Player2.OpenedTile4 = &OpenedTiles{}
-	g.Table.Player1.Point = 50000
-	g.Table.Player2.Point = 50000
+	g.Table.Player2.OpenedPe = &OpenedTiles{}
 	// ˄
 }
 
 func (g *GameManager) initializeGame() {
 	// ˅
-	ton := KAZE_TON
-	nan := KAZE_NAN
-	g.resetGame()
+	g.Table.Player1.Point = 50000
+	g.Table.Player2.Point = 50000
+	g.resetTable()
 	g.determinateOya()
-	g.Table.Tsumo.Tiles = g.generateTiles()
-	g.shuffleTiles(g.Table.Tsumo.Tiles)
 	g.Table.Status.ChichaPlayer = g.Table.Status.Oya
-	g.Table.Status.PlayerWithTurn = g.Table.Status.Oya
-	g.Table.Status.PlayerWithTurn.Status.Kaze = &ton
-	g.Table.Status.PlayerWithNotTurn = g.Table.Status.Ko
-	g.Table.Status.PlayerWithNotTurn.Status.Kaze = &nan
-	g.distributeTiles()
-	//TODO
+	g.preparateGame()
 	// ˄
 }
 
@@ -749,7 +754,6 @@ func newGameManager(Table *Table) *GameManager {
 	return &GameManager{
 		Table:             Table,
 		receiveOperatorWG: &sync.WaitGroup{},
-		okWG:              &sync.WaitGroup{},
 		waitStartWg:       &sync.WaitGroup{},
 		ShantenChecker:    NewShantenChecker(),
 		PointCalcrator:    &PointCalcrator{},
@@ -909,7 +913,7 @@ TOP:
 			if err != nil {
 				panic(err)
 			}
-			g.okWG.Add(2)
+			g.receiveOperatorWG.Add(2)
 			player.MessageWs.Write(b)
 			opponentPlayer.MessageWs.Write(b)
 
@@ -931,8 +935,8 @@ TOP:
 			player.MessageWs.Write(b)
 			opponentPlayer.MessageWs.Write(b)
 
-			g.okWG.Wait()
-			//TODO 次の局に進める
+			g.receiveOperatorWG.Wait()
+			g.ryukyoku()
 		case OPERATOR_ANKAN:
 			//TODO リーチしているときに暗槓しても面子崩れないかの判定をまだしていない
 			ankan := OPEN_ANKAN
@@ -1056,7 +1060,7 @@ TOP:
 			if err != nil {
 				panic(err)
 			}
-			g.okWG.Add(2)
+			g.receiveOperatorWG.Add(2)
 			player.MessageWs.Write(b)
 			opponentPlayer.MessageWs.Write(b)
 
@@ -1078,9 +1082,17 @@ TOP:
 			player.MessageWs.Write(b)
 			opponentPlayer.MessageWs.Write(b)
 
-			g.okWG.Wait()
-			//TODO 次の局にすすむ
+			g.receiveOperatorWG.Wait()
 
+			player.Point += message.Agari.Point.Point + g.Table.Status.ReachTablePoint
+			opponentPlayer.Point -= message.Agari.Point.Point
+			g.Table.Status.ReachTablePoint = 0
+
+			if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
+				//TODO 点数計算して終局
+			}
+			g.nextKyoku(player)
+			return true, nil
 		case OPERATOR_DAHAI:
 			handAndTsumoriTile := append(player.Hand, player.TsumoriTile)
 			tileIndex := -1
@@ -1132,7 +1144,7 @@ TOP:
 			opponentPlayer.Status.Renho = false
 		}
 
-		//TODO  相手のOperator
+		// 相手のOperator
 		opponentOperators := []*Operator{}
 		opponentOperators = g.appendRonOperators(player, opponentPlayer, opponentOperators)
 		opponentOperators = g.appendPonOperators(player, opponentPlayer, opponentOperators)
@@ -1179,7 +1191,7 @@ TOP:
 				if err != nil {
 					panic(err)
 				}
-				g.okWG.Add(2)
+				g.receiveOperatorWG.Add(2)
 				player.MessageWs.Write(b)
 				opponentPlayer.MessageWs.Write(b)
 
@@ -1201,8 +1213,18 @@ TOP:
 				player.MessageWs.Write(b)
 				opponentPlayer.MessageWs.Write(b)
 
-				g.okWG.Wait()
-				//TODO 次の局にすすむ
+				g.receiveOperatorWG.Wait()
+
+				opponentPlayer.Point += message.Agari.Point.Point + g.Table.Status.ReachTablePoint
+				player.Point -= message.Agari.Point.Point
+				g.Table.Status.ReachTablePoint = 0
+
+				if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
+					//TODO 点数計算して終局
+				}
+
+				g.nextKyoku(opponentPlayer)
+				return true, nil
 			case OPERATOR_PON:
 				pon := OPEN_PON
 				OpenedTile := &OpenedTiles{
@@ -1337,7 +1359,6 @@ TOP:
 			}
 		}
 	}
-	//TODO
 	return nextTurnCanTsumo, nil
 }
 
@@ -1394,6 +1415,98 @@ func (g *GameManager) calcNotenBappu(player1 *Player, player2 *Player) (player1T
 		player2Bappu = 3000
 	}
 	return player1Tempai, player1Bappu, player2Tempai, player2Bappu
+}
+
+func (g *GameManager) nextKyoku(agariPlayer *Player) {
+	if agariPlayer == nil || agariPlayer.ID == g.Table.Status.Oya.ID {
+		g.Table.Status.NumberOfHonba++
+	} else if g.Table.Status.NumberOfKyoku != 2 {
+		g.Table.Status.NumberOfKyoku++
+	} else {
+		g.Table.Status.NumberOfKyoku = 1
+		switch *g.Table.Status.Kaze {
+		case KAZE_TON:
+			*g.Table.Status.Kaze = KAZE_NAN
+		case KAZE_NAN:
+			*g.Table.Status.Kaze = KAZE_SHA
+		case KAZE_SHA:
+			*g.Table.Status.Kaze = KAZE_PE
+		}
+	}
+
+	if g.ShantenChecker.CheckCountOfShanten(g.Table.Status.Oya).Shanten == 0 {
+		g.Table.Status.NumberOfHonba++
+	} else {
+		if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
+			//TODO 点数計算して終局
+		} else {
+			// テーブルをリセットしてゲーム再スタート
+			g.Table.Status.Oya, g.Table.Status.Ko = g.Table.Status.Ko, g.Table.Status.Oya
+		}
+	}
+	g.resetTable()
+	g.preparateGame()
+	g.Table.Status.Oya, g.Table.Status.Ko = g.Table.Status.Ko, g.Table.Status.Oya
+}
+
+func (g *GameManager) ryukyoku() {
+	ok := OPERATOR_OK
+	ryukyoku := MessageRyukyoku
+	player1Tempai, player1Bappu, player2Tempai, player2Bappu := g.calcNotenBappu(g.Table.Player1, g.Table.Player2)
+
+	message := &Message{
+		MessageType: &ryukyoku,
+		Ryukyoku: &Ryukyoku{
+			Player1Tempai: player1Tempai,
+			Player2Tempai: player2Tempai,
+			Player1Bappu:  player1Bappu,
+			Player2Bappu:  player2Bappu,
+		},
+	}
+	b, err := json.Marshal(message)
+	if err != nil {
+		panic(err)
+
+	}
+
+	g.Table.Player1.MessageWs.Write(b)
+	g.Table.Player2.MessageWs.Write(b)
+
+	operatorForPlayer1 := &Operator{
+		RoomID:       g.Table.ID,
+		PlayerID:     g.Table.Player1.ID,
+		OperatorType: &ok,
+	}
+	b, err = json.Marshal([]*Operator{operatorForPlayer1})
+	g.Table.Player1.MessageWs.Write(b)
+	g.Table.Player2.MessageWs.Write(b)
+
+	operatorForPlayer2 := &Operator{
+		RoomID:       g.Table.ID,
+		PlayerID:     g.Table.Player2.ID,
+		OperatorType: &ok,
+	}
+	b, err = json.Marshal([]*Operator{operatorForPlayer2})
+	g.Table.Player1.MessageWs.Write(b)
+	g.Table.Player2.MessageWs.Write(b)
+
+	g.receiveOperatorWG.Add(2)
+	g.receiveOperatorWG.Wait()
+
+	g.Table.Player1.Point += player1Bappu
+	g.Table.Player2.Point += player2Bappu
+	//TODO 流局時の画面側の実装。ダイアログでOKするだけでいいのでやって
+
+	if g.ShantenChecker.CheckCountOfShanten(g.Table.Status.Oya).Shanten == 0 {
+		g.Table.Status.NumberOfHonba++
+	} else {
+		if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
+			//TODO 点数計算して終局
+		} else {
+			// テーブルをリセットしてゲーム再スタート
+			g.nextKyoku(nil)
+		}
+	}
 }
 
 // ˄

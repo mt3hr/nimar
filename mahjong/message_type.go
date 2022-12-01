@@ -12,7 +12,7 @@ const (
 
 	MessageSukaikan
 
-	MessageRyuukyoku
+	MessageRyukyoku
 
 	// ˅
 

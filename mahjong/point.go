@@ -14,7 +14,8 @@ type Point struct {
 
 	Point int
 
-	MatchYakus           []Yaku
+	MatchYakus []Yaku
+
 	MatchYakusForMessage []*YakuForMessage
 
 	// ˅
