@@ -634,6 +634,15 @@ func (g *GameManager) appendRonOperators(player *Player, opponentPlayer *Player,
 		return operators
 	}
 	for machihaiID := range agarikei.Agarikei.MachiHai {
+		huriten := false
+		for _, kawaTile := range opponentPlayer.Kawa {
+			if kawaTile.ID == machihaiID {
+				huriten = true
+			}
+		}
+		if huriten {
+			continue
+		}
 		if machihaiID == player.Kawa[len(player.Kawa)-1].ID {
 			operators = append(operators, &Operator{
 				RoomID:       g.Table.ID,
