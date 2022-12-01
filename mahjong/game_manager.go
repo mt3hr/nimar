@@ -404,6 +404,7 @@ func (g *GameManager) distributeTiles() {
 			hand = append(hand, tile)
 		}
 		g.Table.Status.Oya.Hand = hand
+		g.Table.UpdateView()
 
 		hand = g.Table.Status.Ko.Hand
 		for j := 0; j < 4; j++ {
@@ -411,17 +412,20 @@ func (g *GameManager) distributeTiles() {
 			hand = append(hand, tile)
 		}
 		g.Table.Status.Ko.Hand = hand
+		g.Table.UpdateView()
 	}
 
 	hand = g.Table.Status.Oya.Hand
 	tile = Tsumo.Pop()
 	hand = append(hand, tile)
 	g.Table.Status.Oya.Hand = hand
+	g.Table.UpdateView()
 
 	hand = g.Table.Status.Ko.Hand
 	tile = Tsumo.Pop()
 	hand = append(hand, tile)
 	g.Table.Status.Ko.Hand = hand
+	g.Table.UpdateView()
 	// ˄
 }
 
