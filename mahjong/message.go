@@ -14,6 +14,8 @@ type Message struct {
 
 	Ryukyoku *Ryukyoku
 
+	MatchResult *MatchResult
+
 	// ˅
 
 	// ˄

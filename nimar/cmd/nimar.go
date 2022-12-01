@@ -3,7 +3,6 @@ package cmd
 import (
 	"embed"
 	"encoding/json"
-	"fmt"
 	"io/fs"
 	"net/http"
 	"sync"
@@ -114,7 +113,8 @@ func NimaR() {
 		w.Write(b)
 		server.updateTableInfos()
 		go func() {
-			fmt.Println(table.GameManager.StartGame())
+			table.GameManager.StartGame()
+			delete(server.tables, id)
 		}()
 	})
 

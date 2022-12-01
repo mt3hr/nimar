@@ -14,6 +14,8 @@ const (
 
 	MessageRyukyoku
 
+	MessageMatchResult
+
 	// ˅
 
 	// ˄

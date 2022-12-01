@@ -31,6 +31,8 @@ type GameManager struct {
 	receiveOperatorWG *sync.WaitGroup
 	waitStartWg       *sync.WaitGroup
 
+	finishedGame bool
+
 	// ˄
 }
 
@@ -80,7 +82,7 @@ func (g *GameManager) StartGame() error {
 	}
 
 	var err error
-	for tsumo := true; true; {
+	for tsumo := true; !g.finishedGame; {
 		g.Table.UpdateView()
 		tsumo, err = g.gameLoop(tsumo)
 		if err != nil {
@@ -91,10 +93,16 @@ func (g *GameManager) StartGame() error {
 		} else {
 			g.ryukyoku()
 		}
-		if g.Table.Player1.Point <= 0 || g.Table.Player2.Point <= 0 {
-			//TODO 点数計算して終了
+		if g.Table.Player1.Point < 0 || g.Table.Player2.Point < 0 {
+			g.finishGame()
 		}
 	}
+	g.Table.Player1.GameTableWs.Close()
+	g.Table.Player1.MessageWs.Close()
+	g.Table.Player1.OperatorWs.Close()
+	g.Table.Player2.GameTableWs.Close()
+	g.Table.Player2.MessageWs.Close()
+	g.Table.Player2.OperatorWs.Close()
 	return nil
 	// ˄
 }
@@ -1082,14 +1090,15 @@ TOP:
 			player.MessageWs.Write(b)
 			opponentPlayer.MessageWs.Write(b)
 
-			g.receiveOperatorWG.Wait()
-
 			player.Point += message.Agari.Point.Point + g.Table.Status.ReachTablePoint
 			opponentPlayer.Point -= message.Agari.Point.Point
 			g.Table.Status.ReachTablePoint = 0
 
+			g.Table.UpdateView()
+			g.receiveOperatorWG.Wait()
+
 			if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
-				//TODO 点数計算して終局
+				g.finishGame()
 			}
 			g.nextKyoku(player)
 			return true, nil
@@ -1112,7 +1121,6 @@ TOP:
 			player.TsumoriTile = nil
 			nextTurnCanTsumo = true
 		case OPERATOR_REACH:
-			//TODO
 			player.Point -= 1000
 			g.Table.Status.ReachTablePoint += 1000
 
@@ -1213,14 +1221,15 @@ TOP:
 				player.MessageWs.Write(b)
 				opponentPlayer.MessageWs.Write(b)
 
-				g.receiveOperatorWG.Wait()
-
 				opponentPlayer.Point += message.Agari.Point.Point + g.Table.Status.ReachTablePoint
 				player.Point -= message.Agari.Point.Point
 				g.Table.Status.ReachTablePoint = 0
 
+				g.Table.UpdateView()
+				g.receiveOperatorWG.Wait()
+
 				if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
-					//TODO 点数計算して終局
+					g.finishGame()
 				}
 
 				g.nextKyoku(opponentPlayer)
@@ -1422,8 +1431,10 @@ func (g *GameManager) nextKyoku(agariPlayer *Player) {
 		g.Table.Status.NumberOfHonba++
 	} else if g.Table.Status.NumberOfKyoku != 2 {
 		g.Table.Status.NumberOfKyoku++
+		g.Table.Status.NumberOfHonba = 0
 	} else {
 		g.Table.Status.NumberOfKyoku = 1
+		g.Table.Status.NumberOfHonba = 0
 		switch *g.Table.Status.Kaze {
 		case KAZE_TON:
 			*g.Table.Status.Kaze = KAZE_NAN
@@ -1434,16 +1445,13 @@ func (g *GameManager) nextKyoku(agariPlayer *Player) {
 		}
 	}
 
-	if g.ShantenChecker.CheckCountOfShanten(g.Table.Status.Oya).Shanten == 0 {
-		g.Table.Status.NumberOfHonba++
+	if (g.Table.Player1.Point >= 50000 || g.Table.Player2.Point >= 50000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku > 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
+		g.finishGame()
 	} else {
-		if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
-			//TODO 点数計算して終局
-		} else {
-			// テーブルをリセットしてゲーム再スタート
-			g.Table.Status.Oya, g.Table.Status.Ko = g.Table.Status.Ko, g.Table.Status.Oya
-		}
+		// テーブルをリセットしてゲーム再スタート
+		g.Table.Status.Oya, g.Table.Status.Ko = g.Table.Status.Ko, g.Table.Status.Oya
 	}
+
 	g.resetTable()
 	g.preparateGame()
 	g.Table.Status.Oya, g.Table.Status.Ko = g.Table.Status.Ko, g.Table.Status.Oya
@@ -1497,16 +1505,39 @@ func (g *GameManager) ryukyoku() {
 	g.Table.Player2.Point += player2Bappu
 	//TODO 流局時の画面側の実装。ダイアログでOKするだけでいいのでやって
 
-	if g.ShantenChecker.CheckCountOfShanten(g.Table.Status.Oya).Shanten == 0 {
-		g.Table.Status.NumberOfHonba++
+	g.nextKyoku(nil)
+}
+func (g *GameManager) finishGame() {
+	var winnerPlayer *Player
+	var loserPlayer *Player
+
+	if g.Table.Player1.Point > g.Table.Player2.Point {
+		winnerPlayer = g.Table.Player1
+		loserPlayer = g.Table.Player2
 	} else {
-		if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
-			//TODO 点数計算して終局
-		} else {
-			// テーブルをリセットしてゲーム再スタート
-			g.nextKyoku(nil)
-		}
+		winnerPlayer = g.Table.Player2
+		loserPlayer = g.Table.Player1
 	}
+
+	messageMatchResult := MessageMatchResult
+
+	message := &Message{
+		MessageType: &messageMatchResult,
+		MatchResult: &MatchResult{
+			WinnerPlayer: winnerPlayer,
+			LoserPlayer:  loserPlayer,
+		},
+	}
+	b, err := json.Marshal(message)
+	if err != nil {
+		panic(err)
+	}
+	g.Table.Player1.MessageWs.Write(b)
+	g.Table.Player2.MessageWs.Write(b)
+	g.finishedGame = true
+	g.receiveOperatorWG.Add(2)
+	g.receiveOperatorWG.Wait()
 }
 
+//TODO ドラ
 // ˄

@@ -83,12 +83,8 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 		shantenAndAgarikei.Shanten = shanten
 
 		if shanten <= 0 {
-			for tileID := range s.checkMachihai(player, nil) {
-				shantenAndAgarikei.Agarikei.MachiHai[tileID] = struct{}{}
-			}
 			if shanten == -1 {
 				*shantenAndAgarikei.Agarikei.Machi = TANKI
-
 			}
 			if shanten == 0 {
 				jantou := -1
@@ -130,58 +126,59 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 				}
 
 				if jantou == -1 {
-					s.machihai[1] = struct{}{}
-					s.machihai[9] = struct{}{}
-					s.machihai[11] = struct{}{}
-					s.machihai[19] = struct{}{}
-					s.machihai[21] = struct{}{}
-					s.machihai[29] = struct{}{}
-					s.machihai[31] = struct{}{}
-					s.machihai[32] = struct{}{}
-					s.machihai[33] = struct{}{}
-					s.machihai[34] = struct{}{}
-					s.machihai[35] = struct{}{}
-					s.machihai[36] = struct{}{}
-					s.machihai[37] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[1] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[9] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[11] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[19] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[21] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[29] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[31] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[32] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[33] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[34] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[35] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[36] = struct{}{}
+					shantenAndAgarikei.Agarikei.MachiHai[37] = struct{}{}
 				} else {
 					if s.tempMenzenTileIDs[1] == 0 {
+						shantenAndAgarikei.Agarikei.MachiHai[1] = struct{}{}
 						s.machihai[1] = struct{}{}
 					}
 					if s.tempMenzenTileIDs[9] == 0 {
-						s.machihai[9] = struct{}{}
+						shantenAndAgarikei.Agarikei.MachiHai[9] = struct{}{}
 					}
 					if s.tempMenzenTileIDs[11] == 0 {
-						s.machihai[11] = struct{}{}
+						shantenAndAgarikei.Agarikei.MachiHai[11] = struct{}{}
 					}
 					if s.tempMenzenTileIDs[19] == 0 {
-						s.machihai[19] = struct{}{}
+						shantenAndAgarikei.Agarikei.MachiHai[19] = struct{}{}
 					}
 					if s.tempMenzenTileIDs[21] == 0 {
-						s.machihai[21] = struct{}{}
+						shantenAndAgarikei.Agarikei.MachiHai[21] = struct{}{}
 					}
 					if s.tempMenzenTileIDs[29] == 0 {
-						s.machihai[29] = struct{}{}
+						shantenAndAgarikei.Agarikei.MachiHai[29] = struct{}{}
 					}
 					if s.tempMenzenTileIDs[31] == 0 {
-						s.machihai[31] = struct{}{}
+						shantenAndAgarikei.Agarikei.MachiHai[31] = struct{}{}
 					}
 					if s.tempMenzenTileIDs[32] == 0 {
-						s.machihai[32] = struct{}{}
+						shantenAndAgarikei.Agarikei.MachiHai[32] = struct{}{}
 					}
 					if s.tempMenzenTileIDs[33] == 0 {
-						s.machihai[33] = struct{}{}
+						shantenAndAgarikei.Agarikei.MachiHai[33] = struct{}{}
 					}
 					if s.tempMenzenTileIDs[34] == 0 {
-						s.machihai[34] = struct{}{}
+						shantenAndAgarikei.Agarikei.MachiHai[34] = struct{}{}
 					}
 					if s.tempMenzenTileIDs[35] == 0 {
-						s.machihai[35] = struct{}{}
+						shantenAndAgarikei.Agarikei.MachiHai[35] = struct{}{}
 					}
 					if s.tempMenzenTileIDs[36] == 0 {
-						s.machihai[36] = struct{}{}
+						shantenAndAgarikei.Agarikei.MachiHai[36] = struct{}{}
 					}
 					if s.tempMenzenTileIDs[37] == 0 {
-						s.machihai[37] = struct{}{}
+						shantenAndAgarikei.Agarikei.MachiHai[37] = struct{}{}
 					}
 				}
 			}
@@ -194,30 +191,26 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 		shantenAndAgarikei.Shanten = shanten
 
 		if shanten <= 0 {
-			for tileID := range s.checkMachihai(player, nil) {
-				shantenAndAgarikei.Agarikei.MachiHai[tileID] = struct{}{}
-			}
 			if shanten == -1 {
 				*shantenAndAgarikei.Agarikei.Machi = TANKI
-
 			}
 			if shanten == 0 {
-				for h := 1; h <= 37; h++ {
-					if s.tempMenzenTileIDs[h] >= 2 {
-						for i := 1; i <= 37; i++ {
+				for h := range s.tempMenzenTileIDs {
+					if s.cutToitsu(h) {
+						for i := range s.tempMenzenTileIDs {
 							if s.cutToitsu(i) {
-								for j := 1; j <= 37; j++ {
+								for j := range s.tempMenzenTileIDs {
 									if s.cutToitsu(j) {
-										for k := 1; k <= 37; k++ {
+										for k := range s.tempMenzenTileIDs {
 											if s.cutToitsu(k) {
-												for l := 1; l <= 37; l++ {
+												for l := range s.tempMenzenTileIDs {
 													if s.cutToitsu(l) {
-														for m := 1; m <= 37; m++ {
+														for m := range s.tempMenzenTileIDs {
 															if s.cutToitsu(m) {
 																// 残りの牌で単騎待ち.
-																for n := 1; n <= 37; n++ {
+																for n := range s.tempMenzenTileIDs {
 																	if s.tempMenzenTileIDs[n] == 1 {
-																		s.machihai[n] = struct{}{}
+																		shantenAndAgarikei.Agarikei.MachiHai[n] = struct{}{}
 																	}
 																}
 																s.addToitsu(m)
@@ -235,7 +228,7 @@ func (s *ShantenChecker) CheckCountOfShanten(player *Player) *CountOfShantenAndA
 								s.addToitsu(i)
 							}
 						}
-						s.tempMenzenTileIDs[h] += 2
+						s.addToitsu(h)
 					}
 				}
 			}
@@ -601,38 +594,38 @@ func (s *ShantenChecker) checkKokushi(player *Player) int {
 func (s *ShantenChecker) checkChitoitsu(player *Player) int {
 	// ˅
 	s.preparation(player)
-	countOfChitoitsu := 0          //対子数
-	countOfShuruiForChitoitsu := 0 //牌の種類
-	shantenChitoitsu := 6          //七対子のシャンテン数
-	i := 0
-	countOfKantsuForChitoitsu := 0
+	countOfToitsu := 0    //対子数
+	countOfShurui := 0    //牌の種類
+	shantenChitoitsu := 6 //七対子のシャンテン数
+	countOfKantsu := 0
 
-	for i = 1; i < len(s.tempMenzenTileIDs); i++ {
+	for i := range s.tempMenzenTileIDs {
 		if s.tempMenzenTileIDs[i] == 0 {
 			continue
 		} //牌が無い時は以降の処理を中断して、ループの最初に戻る
 		if s.tempMenzenTileIDs[i] == 4 {
-			countOfKantsuForChitoitsu++
+			countOfKantsu++
 		}
-		countOfShuruiForChitoitsu++ //4枚チートイツを回避するために牌種をカウントしておく
+		countOfShurui++ //4枚チートイツを回避するために牌種をカウントしておく
 		if s.tempMenzenTileIDs[i] >= 2 {
-			countOfChitoitsu++
+			countOfToitsu++
 		}
 	}
 
-	if countOfShuruiForChitoitsu == 7 && countOfChitoitsu == 7 && countOfKantsuForChitoitsu == 0 {
+	if countOfShurui == 7 && countOfToitsu == 7 {
 		return -1 //アガリ判定
 	}
 
-	if countOfShuruiForChitoitsu >= 7 && countOfChitoitsu == 6 && countOfKantsuForChitoitsu == 0 {
+	if countOfShurui >= 7 && countOfToitsu == 6 && countOfKantsu == 0 {
 		return 0 //テンパイ判定
 	}
 
-	if countOfShuruiForChitoitsu == 6 && countOfChitoitsu == 6 {
+	if countOfShurui == 6 && countOfToitsu == 6 {
 		return 1 //1シャンテン判定
 	}
 
-	shantenChitoitsu = 6 - countOfChitoitsu //チートイツのシャンテン数を求める計算式
+	//shantenChitoitsu = 6 - countOfToitsu //チートイツのシャンテン数を求める計算式
+	shantenChitoitsu = 7 - countOfToitsu //チートイツのシャンテン数を求める計算式
 
 	return shantenChitoitsu
 
