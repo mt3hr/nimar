@@ -1545,10 +1545,10 @@ func (g *GameManager) finishGame() {
 	if err != nil {
 		panic(err)
 	}
+	g.receiveOperatorWG.Add(2)
 	g.Table.Player1.MessageWs.Write(b)
 	g.Table.Player2.MessageWs.Write(b)
 	g.finishedGame = true
-	g.receiveOperatorWG.Add(2)
 	g.receiveOperatorWG.Wait()
 }
 
