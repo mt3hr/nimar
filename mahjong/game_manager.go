@@ -93,9 +93,6 @@ func (g *GameManager) StartGame() error {
 		} else {
 			g.ryukyoku()
 		}
-		if g.Table.Player1.Point < 0 || g.Table.Player2.Point < 0 {
-			g.finishGame()
-		}
 	}
 	g.Table.Player1.GameTableWs.Close()
 	g.Table.Player1.MessageWs.Close()
@@ -103,6 +100,7 @@ func (g *GameManager) StartGame() error {
 	g.Table.Player2.GameTableWs.Close()
 	g.Table.Player2.MessageWs.Close()
 	g.Table.Player2.OperatorWs.Close()
+
 	return nil
 	// ˄
 }
@@ -958,6 +956,7 @@ TOP:
 
 			g.receiveOperatorWG.Wait()
 			g.ryukyoku()
+			return false, nil
 		case OPERATOR_ANKAN:
 			//TODO リーチしているときに暗槓しても面子崩れないかの判定をまだしていない
 			ankan := OPEN_ANKAN
@@ -1499,8 +1498,7 @@ func (g *GameManager) ryukyoku() {
 		OperatorType: &ok,
 	}
 	b, err = json.Marshal([]*Operator{operatorForPlayer1})
-	g.Table.Player1.MessageWs.Write(b)
-	g.Table.Player2.MessageWs.Write(b)
+	// g.Table.Player1.OperatorWs.Write(b)
 
 	operatorForPlayer2 := &Operator{
 		RoomID:       g.Table.ID,
@@ -1508,8 +1506,7 @@ func (g *GameManager) ryukyoku() {
 		OperatorType: &ok,
 	}
 	b, err = json.Marshal([]*Operator{operatorForPlayer2})
-	g.Table.Player1.MessageWs.Write(b)
-	g.Table.Player2.MessageWs.Write(b)
+	// g.Table.Player2.OperatorWs.Write(b)
 
 	g.receiveOperatorWG.Add(2)
 	g.receiveOperatorWG.Wait()
@@ -1521,6 +1518,7 @@ func (g *GameManager) ryukyoku() {
 	g.nextKyoku(nil)
 }
 func (g *GameManager) finishGame() {
+	g.finishedGame = true
 	var winnerPlayer *Player
 	var loserPlayer *Player
 
@@ -1548,7 +1546,6 @@ func (g *GameManager) finishGame() {
 	g.receiveOperatorWG.Add(2)
 	g.Table.Player1.MessageWs.Write(b)
 	g.Table.Player2.MessageWs.Write(b)
-	g.finishedGame = true
 	g.receiveOperatorWG.Wait()
 }
 
