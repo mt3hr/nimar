@@ -18,14 +18,13 @@ type GameManager struct {
 
 	// ˄
 
+	Table *Table
+
 	ShantenChecker *ShantenChecker
 
 	PointCalcrator *PointCalcrator
 
 	// ˅
-
-	Table *Table
-
 	receivedOperator *Operator
 
 	receiveOperatorWG *sync.WaitGroup
@@ -862,6 +861,7 @@ TOP:
 
 		player.Rihai()
 		opponentPlayer.Rihai()
+		opponentPlayer.Rihai()
 		if tsumo {
 			player.TsumoriTile = g.Table.Tsumo.Pop()
 		}
@@ -1003,6 +1003,18 @@ TOP:
 				g.Table.Status.Sukaikan = true
 			}
 			tsumo = false
+
+			flush := &Flush{
+				Message: "カン",
+				Player:  player,
+			}
+			b, err := json.Marshal(flush)
+			if err != nil {
+				panic(err)
+			}
+			g.Table.Player1.FlushWs.Write(b)
+			g.Table.Player2.FlushWs.Write(b)
+
 			goto TOP
 		case OPERATOR_KAKAN:
 			kakan := OPEN_KAKAN
@@ -1048,6 +1060,18 @@ TOP:
 				g.Table.Status.Sukaikan = true
 			}
 			tsumo = false
+
+			flush := &Flush{
+				Message: "カン",
+				Player:  player,
+			}
+			b, err := json.Marshal(flush)
+			if err != nil {
+				panic(err)
+			}
+			g.Table.Player1.FlushWs.Write(b)
+			g.Table.Player2.FlushWs.Write(b)
+
 			goto TOP
 		case OPERATOR_PE:
 			pe := OPEN_PE
@@ -1070,13 +1094,36 @@ TOP:
 
 			player.TsumoriTile = g.Table.Tsumo.PopFromWanpai()
 			tsumo = false
+
+			flush := &Flush{
+				Message: "北",
+				Player:  player,
+			}
+			b, err := json.Marshal(flush)
+			if err != nil {
+				panic(err)
+			}
+			g.Table.Player1.FlushWs.Write(b)
+			g.Table.Player2.FlushWs.Write(b)
+
 			goto TOP
 		case OPERATOR_TSUMO:
 			// g.printShantenCount(player)
 			ok := OPERATOR_OK
 			message := g.generateAgariMessage(player)
 
-			b, err := json.Marshal(message)
+			flush := &Flush{
+				Message: "ツモ",
+				Player:  player,
+			}
+			b, err := json.Marshal(flush)
+			if err != nil {
+				panic(err)
+			}
+			g.Table.Player1.FlushWs.Write(b)
+			g.Table.Player2.FlushWs.Write(b)
+
+			b, err = json.Marshal(message)
 			if err != nil {
 				panic(err)
 			}
@@ -1154,6 +1201,18 @@ TOP:
 			player.Hand = append(handAndTsumoriTile[:tileIndex], handAndTsumoriTile[tileIndex+1:]...)
 			player.TsumoriTile = nil
 			nextTurnCanTsumo = true
+
+			flush := &Flush{
+				Message: "立直",
+				Player:  player,
+			}
+			b, err := json.Marshal(flush)
+			if err != nil {
+				panic(err)
+			}
+			g.Table.Player1.FlushWs.Write(b)
+			g.Table.Player2.FlushWs.Write(b)
+
 		default:
 			return false, fmt.Errorf("変なオペレータが渡されました。オペレータタイプ:%d", operator.OperatorType)
 		}
@@ -1200,6 +1259,18 @@ TOP:
 			case OPERATOR_SKIP:
 				break
 			case OPERATOR_RON:
+
+				flush := &Flush{
+					Message: "ロン",
+					Player:  opponentPlayer,
+				}
+				b, err := json.Marshal(flush)
+				if err != nil {
+					panic(err)
+				}
+				g.Table.Player1.FlushWs.Write(b)
+				g.Table.Player2.FlushWs.Write(b)
+
 				ok := OPERATOR_OK
 				opponentPlayer.RonTile = player.Kawa[len(player.Kawa)-1]
 				player.Kawa = player.Kawa[:len(player.Kawa)-1]
@@ -1207,7 +1278,7 @@ TOP:
 				// g.printShantenCount(opponentPlayer)
 				message := g.generateAgariMessage(opponentPlayer)
 
-				b, err := json.Marshal(message)
+				b, err = json.Marshal(message)
 				if err != nil {
 					panic(err)
 				}
@@ -1290,6 +1361,18 @@ TOP:
 					return false, fmt.Errorf("ポンの完了に失敗しました。すでに4つ牌を開いています？")
 				}
 				nextTurnCanTsumo = false
+
+				flush := &Flush{
+					Message: "ポン",
+					Player:  opponentPlayer,
+				}
+				b, err := json.Marshal(flush)
+				if err != nil {
+					panic(err)
+				}
+				g.Table.Player1.FlushWs.Write(b)
+				g.Table.Player2.FlushWs.Write(b)
+
 			case OPERATOR_CHI:
 				chi := OPEN_CHI
 				OpenedTile := &OpenedTiles{
@@ -1333,6 +1416,18 @@ TOP:
 					return false, fmt.Errorf("チーの完了に失敗しました。すでに4つ牌を開いています？")
 				}
 				nextTurnCanTsumo = false
+
+				flush := &Flush{
+					Message: "チー",
+					Player:  opponentPlayer,
+				}
+				b, err := json.Marshal(flush)
+				if err != nil {
+					panic(err)
+				}
+				g.Table.Player1.FlushWs.Write(b)
+				g.Table.Player2.FlushWs.Write(b)
+
 			case OPERATOR_DAIMINKAN:
 				daiminkan := OPEN_DAIMINKAN
 				OpenedTile := &OpenedTiles{
@@ -1377,6 +1472,17 @@ TOP:
 					g.Table.Status.Sukaikan = true
 				}
 				nextTurnCanTsumo = false
+
+				flush := &Flush{
+					Message: "カン",
+					Player:  opponentPlayer,
+				}
+				b, err := json.Marshal(flush)
+				if err != nil {
+					panic(err)
+				}
+				g.Table.Player1.FlushWs.Write(b)
+				g.Table.Player2.FlushWs.Write(b)
 			}
 		}
 	}
@@ -1549,5 +1655,5 @@ func (g *GameManager) finishGame() {
 	g.receiveOperatorWG.Wait()
 }
 
-//TODO ドラ
+//TODO ドラ,ドラ表示牌
 // ˄

@@ -96,6 +96,17 @@ func NimaR() {
 		wg.Wait()
 	}))
 
+	router.PathPrefix("/nimar/ws_flush").Handler(websocket.Handler(func(ws *websocket.Conn) {
+		ws.Request().ParseForm()
+		tableID := ws.Request().FormValue("tableid")
+		playerID := ws.Request().FormValue("playerid")
+
+		server.tables[tableID].GetPlayerByID(playerID).FlushWs = ws
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		wg.Wait()
+	}))
+
 	router.PathPrefix("/nimar/create_table").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		r.ParseForm()

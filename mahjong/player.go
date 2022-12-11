@@ -45,6 +45,7 @@ type Player struct {
 	GameTableWs *websocket.Conn
 	OperatorWs  *websocket.Conn
 	MessageWs   *websocket.Conn
+	FlushWs     *websocket.Conn
 
 	// ˄
 }
