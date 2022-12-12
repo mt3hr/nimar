@@ -115,12 +115,15 @@ func (g *GameManager) preparateGame() {
 	ton := KAZE_TON
 	nan := KAZE_NAN
 	g.Table.Tsumo.Tiles = g.generateTiles()
+	g.Table.AllTiles = append([]*Tile{}, g.Table.Tsumo.Tiles...)
 	g.shuffleTiles(g.Table.Tsumo.Tiles)
 	g.Table.Status.PlayerWithTurn = g.Table.Status.Oya
 	g.Table.Status.PlayerWithTurn.Status.Kaze = &ton
 	g.Table.Status.PlayerWithNotTurn = g.Table.Status.Ko
 	g.Table.Status.PlayerWithNotTurn.Status.Kaze = &nan
 	g.distributeTiles()
+	g.Table.Tsumo.OpenNextKandora()
+	g.applyDora()
 
 	// ˄
 }
@@ -1000,6 +1003,7 @@ TOP:
 			if !g.Table.Tsumo.OpenNextKandora() {
 				g.Table.Status.Sukaikan = true
 			}
+			g.applyDora()
 			tsumo = false
 
 			flush := &Flush{
@@ -1057,6 +1061,7 @@ TOP:
 			if !g.Table.Tsumo.OpenNextKandora() {
 				g.Table.Status.Sukaikan = true
 			}
+			g.applyDora()
 			tsumo = false
 
 			flush := &Flush{
@@ -1465,6 +1470,7 @@ TOP:
 				if !g.Table.Tsumo.OpenNextKandora() {
 					g.Table.Status.Sukaikan = true
 				}
+				g.applyDora()
 				nextTurnCanTsumo = false
 
 				flush := &Flush{
@@ -1647,6 +1653,118 @@ func (g *GameManager) finishGame() {
 	g.Table.Player1.MessageWs.Write(b)
 	g.Table.Player2.MessageWs.Write(b)
 	g.receiveOperatorWG.Wait()
+}
+
+func (g *GameManager) applyDora() {
+	for _, doraHyoujiHai := range g.Table.Tsumo.GetDoraHyoujiHais() {
+		if doraHyoujiHai.Num == 1 ||
+			doraHyoujiHai.Num == 11 ||
+			doraHyoujiHai.Num == 21 {
+			for _, tile := range g.Table.AllTiles {
+				if doraHyoujiHai.Suit == tile.Suit &&
+					doraHyoujiHai.Num+8 == tile.Num {
+					tile.Dora = true
+				}
+			}
+		}
+		if doraHyoujiHai.Num == 9 ||
+			doraHyoujiHai.Num == 19 ||
+			doraHyoujiHai.Num == 29 {
+			for _, tile := range g.Table.AllTiles {
+				if doraHyoujiHai.Suit == tile.Suit &&
+					doraHyoujiHai.Num-8 == tile.Num {
+					tile.Dora = true
+				}
+			}
+		}
+
+		if doraHyoujiHai.Num > 10 && doraHyoujiHai.Num < 18 ||
+			doraHyoujiHai.Num == 31 ||
+			doraHyoujiHai.Num == 32 ||
+			doraHyoujiHai.Num == 33 ||
+			doraHyoujiHai.Num == 35 ||
+			doraHyoujiHai.Num == 36 {
+			for _, tile := range g.Table.AllTiles {
+				if doraHyoujiHai.Suit == tile.Suit &&
+					doraHyoujiHai.Num+1 == tile.Num {
+					tile.Dora = true
+				}
+			}
+		}
+
+		if doraHyoujiHai.Num == 34 {
+			for _, tile := range g.Table.AllTiles {
+				if doraHyoujiHai.Suit == tile.Suit &&
+					doraHyoujiHai.Num-3 == tile.Num {
+					tile.Dora = true
+				}
+			}
+		}
+
+		if doraHyoujiHai.Num == 37 {
+			for _, tile := range g.Table.AllTiles {
+				if doraHyoujiHai.Suit == tile.Suit &&
+					doraHyoujiHai.Num-2 == tile.Num {
+					tile.Dora = true
+				}
+			}
+		}
+	}
+
+	for _, uraDoraHyoujiHai := range g.Table.Tsumo.GetDoraHyoujiHais() {
+		if uraDoraHyoujiHai.Num == 1 ||
+			uraDoraHyoujiHai.Num == 11 ||
+			uraDoraHyoujiHai.Num == 21 {
+			for _, tile := range g.Table.AllTiles {
+				if uraDoraHyoujiHai.Suit == tile.Suit &&
+					uraDoraHyoujiHai.Num+8 == tile.Num {
+					tile.UraDora = true
+				}
+			}
+		}
+		if uraDoraHyoujiHai.Num == 9 ||
+			uraDoraHyoujiHai.Num == 19 ||
+			uraDoraHyoujiHai.Num == 29 {
+			for _, tile := range g.Table.AllTiles {
+				if uraDoraHyoujiHai.Suit == tile.Suit &&
+					uraDoraHyoujiHai.Num-8 == tile.Num {
+					tile.UraDora = true
+				}
+			}
+		}
+
+		if uraDoraHyoujiHai.Num > 10 && uraDoraHyoujiHai.Num < 18 ||
+			uraDoraHyoujiHai.Num == 31 ||
+			uraDoraHyoujiHai.Num == 32 ||
+			uraDoraHyoujiHai.Num == 33 ||
+			uraDoraHyoujiHai.Num == 35 ||
+			uraDoraHyoujiHai.Num == 36 {
+			for _, tile := range g.Table.AllTiles {
+				if uraDoraHyoujiHai.Suit == tile.Suit &&
+					uraDoraHyoujiHai.Num+1 == tile.Num {
+					tile.UraDora = true
+				}
+			}
+		}
+
+		if uraDoraHyoujiHai.Num == 34 {
+			for _, tile := range g.Table.AllTiles {
+				if uraDoraHyoujiHai.Suit == tile.Suit &&
+					uraDoraHyoujiHai.Num-3 == tile.Num {
+					tile.UraDora = true
+				}
+			}
+		}
+
+		if uraDoraHyoujiHai.Num == 37 {
+			for _, tile := range g.Table.AllTiles {
+				if uraDoraHyoujiHai.Suit == tile.Suit &&
+					uraDoraHyoujiHai.Num-2 == tile.Num {
+					tile.UraDora = true
+				}
+			}
+		}
+	}
 }
 
 //TODO ドラ,ドラ表示牌

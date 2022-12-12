@@ -22,6 +22,9 @@ type Tile struct {
 
 	// ˅
 
+	DoraHyoujiHai bool
+	UraDora       bool
+
 	// ˄
 }
 

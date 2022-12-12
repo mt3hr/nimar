@@ -43,7 +43,12 @@ func (t *Tsumo) Pop() *Tile {
 
 func (t *Tsumo) OpenNextKandora() bool {
 	// ˅
-	//TODO
+	for i := t.RemainTilesCount() - 8; i < t.RemainTilesCount(); i += 2 {
+		if !t.Tiles[i].DoraHyoujiHai {
+			t.Tiles[i].DoraHyoujiHai = true
+			return true
+		}
+	}
 	return false
 	// ˄
 }
@@ -62,5 +67,31 @@ func (t *Tsumo) PopFromWanpai() *Tile {
 }
 
 // ˅
+
+func (t *Tsumo) GetDoraHyoujiHais() []*Tile {
+	doraHyoujiHai := []*Tile{}
+	for _, tile := range t.Tiles {
+		if tile != nil {
+			continue
+		}
+		if tile.DoraHyoujiHai {
+			doraHyoujiHai = append(doraHyoujiHai, tile)
+		}
+	}
+	return doraHyoujiHai
+}
+
+func (t *Tsumo) GetUraDoraHyoujiHais() []*Tile {
+	doraHyoujiHai := []*Tile{}
+	for i, tile := range t.Tiles {
+		if tile != nil {
+			continue
+		}
+		if tile.DoraHyoujiHai {
+			doraHyoujiHai = append(doraHyoujiHai, t.Tiles[i+1])
+		}
+	}
+	return doraHyoujiHai
+}
 
 // ˄
