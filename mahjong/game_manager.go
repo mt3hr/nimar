@@ -942,8 +942,7 @@ TOP:
 				OperatorType: &ok,
 			}
 			b, err = json.Marshal([]*Operator{operatorForPlayer})
-			player.MessageWs.Write(b)
-			opponentPlayer.MessageWs.Write(b)
+			// player.OperatorWs.Write(b)
 
 			operatorForOpponentPlayer := &Operator{
 				RoomID:       g.Table.ID,
@@ -951,8 +950,7 @@ TOP:
 				OperatorType: &ok,
 			}
 			b, err = json.Marshal([]*Operator{operatorForOpponentPlayer})
-			player.MessageWs.Write(b)
-			opponentPlayer.MessageWs.Write(b)
+			// opponentPlayer.OperatorWs.Write(b)
 
 			g.receiveOperatorWG.Wait()
 			g.ryukyoku()
@@ -1137,8 +1135,7 @@ TOP:
 				OperatorType: &ok,
 			}
 			b, err = json.Marshal([]*Operator{operatorForPlayer})
-			player.MessageWs.Write(b)
-			opponentPlayer.MessageWs.Write(b)
+			// player.OperatorWs.Write(b)
 
 			operatorForOpponentPlayer := &Operator{
 				RoomID:       g.Table.ID,
@@ -1146,14 +1143,12 @@ TOP:
 				OperatorType: &ok,
 			}
 			b, err = json.Marshal([]*Operator{operatorForOpponentPlayer})
-			player.MessageWs.Write(b)
-			opponentPlayer.MessageWs.Write(b)
+			// opponentPlayer.OperatorWs.Write(b)
 
 			player.Point += message.Agari.Point.Point + g.Table.Status.ReachTablePoint
 			opponentPlayer.Point -= message.Agari.Point.Point
 			g.Table.Status.ReachTablePoint = 0
 
-			g.Table.UpdateView()
 			g.receiveOperatorWG.Wait()
 
 			if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
@@ -1292,8 +1287,8 @@ TOP:
 					OperatorType: &ok,
 				}
 				b, err = json.Marshal([]*Operator{operatorForPlayer})
-				player.MessageWs.Write(b)
-				opponentPlayer.MessageWs.Write(b)
+				// player.OperatorWs.Write(b)
+				// opponentPlayer.MessageWs.Write(b)
 
 				operatorForOpponentPlayer := &Operator{
 					RoomID:       g.Table.ID,
@@ -1301,14 +1296,13 @@ TOP:
 					OperatorType: &ok,
 				}
 				b, err = json.Marshal([]*Operator{operatorForOpponentPlayer})
-				player.MessageWs.Write(b)
-				opponentPlayer.MessageWs.Write(b)
+				// player.OperatorWs.Write(b)
+				// opponentPlayer.MessageWs.Write(b)
 
 				opponentPlayer.Point += message.Agari.Point.Point + g.Table.Status.ReachTablePoint
 				player.Point -= message.Agari.Point.Point
 				g.Table.Status.ReachTablePoint = 0
 
-				g.Table.UpdateView()
 				g.receiveOperatorWG.Wait()
 
 				if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
