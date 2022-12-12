@@ -46,6 +46,7 @@ func (t *Tsumo) OpenNextKandora() bool {
 	for i := len(t.Tiles) - 10; i < len(t.Tiles); i += 2 {
 		if !t.Tiles[i].DoraHyoujiHai {
 			t.Tiles[i].DoraHyoujiHai = true
+			t.Tiles[i+1].UraDoraHyoujiHai = true
 			return true
 		}
 	}
@@ -83,12 +84,12 @@ func (t *Tsumo) GetDoraHyoujiHais() []*Tile {
 
 func (t *Tsumo) GetUraDoraHyoujiHais() []*Tile {
 	doraHyoujiHai := []*Tile{}
-	for i, tile := range t.Tiles {
+	for _, tile := range t.Tiles {
 		if tile == nil {
 			continue
 		}
-		if tile.DoraHyoujiHai {
-			doraHyoujiHai = append(doraHyoujiHai, t.Tiles[i+1])
+		if tile.UraDoraHyoujiHai {
+			doraHyoujiHai = append(doraHyoujiHai, tile)
 		}
 	}
 	return doraHyoujiHai

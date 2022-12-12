@@ -24,10 +24,15 @@ func (p *PointCalcrator) CalcratePoint(player *Player, agarikei *CountOfShantenA
 	point.MatchYakus = yakus.MatchYakus(player, table, agarikei)
 
 	dora := &Dora{}
+	uradora := &UraDora{}
 	pe := &PeNuki{}
 	if dora.IsMatch(player, table, agarikei) {
 		yakus[dora.GetName()] = dora
 		point.MatchYakus = append(point.MatchYakus, dora)
+	}
+	if uradora.IsMatch(player, table, agarikei) {
+		yakus[uradora.GetName()] = uradora
+		point.MatchYakus = append(point.MatchYakus, uradora)
 	}
 	if pe.IsMatch(player, table, agarikei) {
 		point.MatchYakus = append(point.MatchYakus, pe)

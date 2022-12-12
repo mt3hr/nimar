@@ -26,8 +26,6 @@ type Table struct {
 
 	// ˅
 
-	AllTiles []*Tile
-
 	// ˄
 }
 

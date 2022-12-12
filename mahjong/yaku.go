@@ -291,6 +291,58 @@ type Dora struct {
 	nakihan int
 }
 
+type UraDora struct {
+	han     int
+	nakihan int
+}
+
+func (d *UraDora) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
+	if !player.Status.Reach {
+		return false
+	}
+	d.han = d.doraCount(player)
+	d.nakihan = d.doraCount(player)
+	return d.doraCount(player) != 0
+}
+
+func (d *UraDora) doraCount(player *Player) int {
+	dora := 0
+	for _, tile := range player.Hand {
+		if tile.UraDora {
+			dora++
+		}
+	}
+	for _, tiles := range [][]*Tile{
+		player.OpenedTile1.Tiles,
+		player.OpenedTile2.Tiles,
+		player.OpenedTile3.Tiles,
+		player.OpenedTile4.Tiles,
+		player.OpenedPe.Tiles,
+	} {
+		if tiles == nil {
+			continue
+		}
+		for _, tile := range tiles {
+			if tile.UraDora {
+				dora++
+			}
+		}
+	}
+	return dora
+}
+
+func (d *UraDora) GetName() string {
+	return "裏ドラ"
+}
+
+func (d *UraDora) NumberOfHan() int {
+	return d.han
+}
+
+func (d *UraDora) NumberOfHanWhenNaki() int {
+	return d.nakihan
+}
+
 func (d *Dora) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
 	d.han = d.doraCount(player)
 	d.nakihan = d.doraCount(player)

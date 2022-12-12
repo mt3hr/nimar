@@ -87,7 +87,7 @@ func (g *GameManager) StartGame() error {
 		if err != nil {
 			return err
 		}
-		if g.Table.Tsumo.CanPop() {
+		if g.Table.Tsumo.CanPop() && len(g.Table.Tsumo.GetDoraHyoujiHais()) <= 4 {
 			g.tradeTurn()
 		} else {
 			g.ryukyoku()
@@ -115,7 +115,6 @@ func (g *GameManager) preparateGame() {
 	ton := KAZE_TON
 	nan := KAZE_NAN
 	g.Table.Tsumo.Tiles = g.generateTiles()
-	g.Table.AllTiles = append([]*Tile{}, g.Table.Tsumo.Tiles...)
 	g.shuffleTiles(g.Table.Tsumo.Tiles)
 	g.Table.Status.PlayerWithTurn = g.Table.Status.Oya
 	g.Table.Status.PlayerWithTurn.Status.Kaze = &ton
@@ -445,6 +444,9 @@ func (g *GameManager) appendKyushuKyuhaiOperators(player *Player, operators []*O
 
 func (g *GameManager) appendAnkanOperators(player *Player, operators []*Operator) []*Operator {
 	// ˅
+	if !g.Table.Tsumo.CanPop() && len(g.Table.Tsumo.GetDoraHyoujiHais()) <= 4 {
+		return operators
+	}
 	ankan := OPERATOR_ANKAN
 	tileIDs := HandAndAgariTile(player)
 	for tileID := range tileIDs {
@@ -469,6 +471,9 @@ func (g *GameManager) appendAnkanOperators(player *Player, operators []*Operator
 
 func (g *GameManager) appendKakanOperators(player *Player, operators []*Operator) []*Operator {
 	// ˅
+	if !g.Table.Tsumo.CanPop() && len(g.Table.Tsumo.GetDoraHyoujiHais()) <= 4 {
+		return operators
+	}
 	kakan := OPERATOR_KAKAN
 	for _, OpenedTiles := range []*OpenedTiles{
 		player.OpenedTile1,
@@ -501,6 +506,9 @@ func (g *GameManager) appendKakanOperators(player *Player, operators []*Operator
 
 func (g *GameManager) appendPeOperators(player *Player, operators []*Operator) []*Operator {
 	// ˅
+	if !g.Table.Tsumo.CanPop() {
+		return operators
+	}
 	pe := OPERATOR_PE
 	for _, tile := range append(player.Hand, player.TsumoriTile) {
 		if tile == nil {
@@ -747,6 +755,9 @@ func (g *GameManager) appendChiOperators(player *Player, opponentPlayer *Player,
 	return operators
 }
 func (g *GameManager) appendDaiminkanOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
+	if !g.Table.Tsumo.CanPop() && len(g.Table.Tsumo.GetDoraHyoujiHais()) <= 4 {
+		return operators
+	}
 	if opponentPlayer.Status.Reach {
 		return operators
 	}
@@ -787,13 +798,16 @@ func (m *GameManager) generateAgariMessage(player *Player) *Message {
 	message := &Message{MessageType: &magari}
 	openNull := OPEN_NULL
 	agari := &Agari{
-		ID:          player.ID,
-		Name:        player.Name,
-		OpenedTile1: &OpenedTiles{OpenType: &openNull},
-		OpenedTile2: &OpenedTiles{OpenType: &openNull},
-		OpenedTile3: &OpenedTiles{OpenType: &openNull},
-		OpenedTile4: &OpenedTiles{OpenType: &openNull},
-		Pe:          &OpenedTiles{OpenType: &openNull},
+		ID:                player.ID,
+		Name:              player.Name,
+		OpenedTile1:       &OpenedTiles{OpenType: &openNull},
+		OpenedTile2:       &OpenedTiles{OpenType: &openNull},
+		OpenedTile3:       &OpenedTiles{OpenType: &openNull},
+		OpenedTile4:       &OpenedTiles{OpenType: &openNull},
+		Pe:                &OpenedTiles{OpenType: &openNull},
+		DoraHyoujiHais:    m.Table.Tsumo.GetDoraHyoujiHais(),
+		UraDoraHyoujiHais: m.Table.Tsumo.GetUraDoraHyoujiHais(),
+		Player:            player,
 	}
 	for _, tile := range player.Hand {
 		agari.Hand = append(agari.Hand, tile)
@@ -1003,7 +1017,6 @@ TOP:
 			if !g.Table.Tsumo.OpenNextKandora() {
 				g.Table.Status.Sukaikan = true
 			}
-			g.applyDora()
 			tsumo = false
 
 			flush := &Flush{
@@ -1156,7 +1169,7 @@ TOP:
 
 			g.receiveOperatorWG.Wait()
 
-			if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
+			if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) || g.Table.Player1.Point < 0 || g.Table.Player2.Point < 0 {
 				g.finishGame()
 			}
 			g.nextKyoku(player)
@@ -1310,7 +1323,7 @@ TOP:
 
 				g.receiveOperatorWG.Wait()
 
-				if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
+				if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) || g.Table.Player1.Point < 0 || g.Table.Player2.Point < 0 {
 					g.finishGame()
 				}
 
@@ -1563,7 +1576,7 @@ func (g *GameManager) nextKyoku(agariPlayer *Player) {
 		}
 	}
 
-	if (g.Table.Player1.Point >= 50000 || g.Table.Player2.Point >= 50000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku > 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) {
+	if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) || g.Table.Player1.Point < 0 || g.Table.Player2.Point < 0 {
 		g.finishGame()
 	} else {
 		// テーブルをリセットしてゲーム再スタート
@@ -1619,7 +1632,6 @@ func (g *GameManager) ryukyoku() {
 
 	g.Table.Player1.Point += player1Bappu
 	g.Table.Player2.Point += player2Bappu
-	//TODO 流局時の画面側の実装。ダイアログでOKするだけでいいのでやって
 
 	g.nextKyoku(nil)
 }
@@ -1656,116 +1668,131 @@ func (g *GameManager) finishGame() {
 }
 
 func (g *GameManager) applyDora() {
+	allTiles := []*Tile{}
+	allTiles = append(allTiles, g.Table.Tsumo.Tiles...)
+	allTiles = append(allTiles, g.Table.Player1.Hand...)
+	allTiles = append(allTiles, g.Table.Player1.TsumoriTile)
+	allTiles = append(allTiles, g.Table.Player1.RonTile)
+	allTiles = append(allTiles, g.Table.Player1.Kawa...)
+	allTiles = append(allTiles, g.Table.Player1.OpenedTile1.Tiles...)
+	allTiles = append(allTiles, g.Table.Player1.OpenedTile2.Tiles...)
+	allTiles = append(allTiles, g.Table.Player1.OpenedTile3.Tiles...)
+	allTiles = append(allTiles, g.Table.Player1.OpenedTile4.Tiles...)
+	allTiles = append(allTiles, g.Table.Player1.OpenedPe.Tiles...)
+	allTiles = append(allTiles, g.Table.Player2.Hand...)
+	allTiles = append(allTiles, g.Table.Player2.TsumoriTile)
+	allTiles = append(allTiles, g.Table.Player2.RonTile)
+	allTiles = append(allTiles, g.Table.Player2.Kawa...)
+	allTiles = append(allTiles, g.Table.Player2.OpenedTile1.Tiles...)
+	allTiles = append(allTiles, g.Table.Player2.OpenedTile2.Tiles...)
+	allTiles = append(allTiles, g.Table.Player2.OpenedTile3.Tiles...)
+	allTiles = append(allTiles, g.Table.Player2.OpenedTile4.Tiles...)
+	allTiles = append(allTiles, g.Table.Player2.OpenedPe.Tiles...)
+	for i := range allTiles {
+		if i <= len(allTiles) {
+			if allTiles[i] == nil {
+				allTiles = append(allTiles[:i], allTiles[:i]...)
+			}
+		}
+	}
+
 	for _, doraHyoujiHai := range g.Table.Tsumo.GetDoraHyoujiHais() {
-		if doraHyoujiHai.Num == 1 ||
-			doraHyoujiHai.Num == 11 ||
-			doraHyoujiHai.Num == 21 {
-			for _, tile := range g.Table.AllTiles {
-				if doraHyoujiHai.Suit == tile.Suit &&
-					doraHyoujiHai.Num+8 == tile.Num {
-					tile.Dora = true
+		if doraHyoujiHai.ID == 11 ||
+			doraHyoujiHai.ID == 21 {
+			for i, tile := range allTiles {
+				if doraHyoujiHai.ID+8 == tile.ID {
+					allTiles[i].Dora = true
 				}
 			}
 		}
-		if doraHyoujiHai.Num == 9 ||
-			doraHyoujiHai.Num == 19 ||
-			doraHyoujiHai.Num == 29 {
-			for _, tile := range g.Table.AllTiles {
-				if doraHyoujiHai.Suit == tile.Suit &&
-					doraHyoujiHai.Num-8 == tile.Num {
-					tile.Dora = true
+		if doraHyoujiHai.ID == 19 ||
+			doraHyoujiHai.ID == 29 {
+			for i, tile := range allTiles {
+				if doraHyoujiHai.ID-8 == tile.ID {
+					allTiles[i].Dora = true
 				}
 			}
 		}
 
-		if doraHyoujiHai.Num > 10 && doraHyoujiHai.Num < 18 ||
-			doraHyoujiHai.Num == 31 ||
-			doraHyoujiHai.Num == 32 ||
-			doraHyoujiHai.Num == 33 ||
-			doraHyoujiHai.Num == 35 ||
-			doraHyoujiHai.Num == 36 {
-			for _, tile := range g.Table.AllTiles {
-				if doraHyoujiHai.Suit == tile.Suit &&
-					doraHyoujiHai.Num+1 == tile.Num {
-					tile.Dora = true
+		if doraHyoujiHai.ID > 0 && doraHyoujiHai.ID < 8 ||
+			doraHyoujiHai.ID == 31 ||
+			doraHyoujiHai.ID == 32 ||
+			doraHyoujiHai.ID == 33 ||
+			doraHyoujiHai.ID == 35 ||
+			doraHyoujiHai.ID == 36 {
+			for i, tile := range allTiles {
+				if doraHyoujiHai.ID+1 == tile.ID {
+					allTiles[i].Dora = true
 				}
 			}
 		}
 
-		if doraHyoujiHai.Num == 34 {
-			for _, tile := range g.Table.AllTiles {
-				if doraHyoujiHai.Suit == tile.Suit &&
-					doraHyoujiHai.Num-3 == tile.Num {
-					tile.Dora = true
+		if doraHyoujiHai.ID == 34 {
+			for i, tile := range allTiles {
+				if doraHyoujiHai.ID-3 == tile.ID {
+					allTiles[i].Dora = true
 				}
 			}
 		}
 
-		if doraHyoujiHai.Num == 37 {
-			for _, tile := range g.Table.AllTiles {
-				if doraHyoujiHai.Suit == tile.Suit &&
-					doraHyoujiHai.Num-2 == tile.Num {
-					tile.Dora = true
+		if doraHyoujiHai.ID == 37 {
+			for i, tile := range allTiles {
+				if doraHyoujiHai.ID-2 == tile.ID {
+					allTiles[i].Dora = true
 				}
 			}
 		}
 	}
 
 	for _, uraDoraHyoujiHai := range g.Table.Tsumo.GetDoraHyoujiHais() {
-		if uraDoraHyoujiHai.Num == 1 ||
-			uraDoraHyoujiHai.Num == 11 ||
-			uraDoraHyoujiHai.Num == 21 {
-			for _, tile := range g.Table.AllTiles {
-				if uraDoraHyoujiHai.Suit == tile.Suit &&
-					uraDoraHyoujiHai.Num+8 == tile.Num {
-					tile.UraDora = true
+		if uraDoraHyoujiHai.ID == 1 ||
+			uraDoraHyoujiHai.ID == 11 ||
+			uraDoraHyoujiHai.ID == 21 {
+			for i, tile := range allTiles {
+				if uraDoraHyoujiHai.ID+8 == tile.ID {
+					allTiles[i].Dora = true
 				}
 			}
 		}
-		if uraDoraHyoujiHai.Num == 9 ||
-			uraDoraHyoujiHai.Num == 19 ||
-			uraDoraHyoujiHai.Num == 29 {
-			for _, tile := range g.Table.AllTiles {
-				if uraDoraHyoujiHai.Suit == tile.Suit &&
-					uraDoraHyoujiHai.Num-8 == tile.Num {
-					tile.UraDora = true
-				}
-			}
-		}
-
-		if uraDoraHyoujiHai.Num > 10 && uraDoraHyoujiHai.Num < 18 ||
-			uraDoraHyoujiHai.Num == 31 ||
-			uraDoraHyoujiHai.Num == 32 ||
-			uraDoraHyoujiHai.Num == 33 ||
-			uraDoraHyoujiHai.Num == 35 ||
-			uraDoraHyoujiHai.Num == 36 {
-			for _, tile := range g.Table.AllTiles {
-				if uraDoraHyoujiHai.Suit == tile.Suit &&
-					uraDoraHyoujiHai.Num+1 == tile.Num {
-					tile.UraDora = true
+		if uraDoraHyoujiHai.ID == 9 ||
+			uraDoraHyoujiHai.ID == 19 ||
+			uraDoraHyoujiHai.ID == 29 {
+			for i, tile := range allTiles {
+				if uraDoraHyoujiHai.ID-8 == tile.ID {
+					allTiles[i].Dora = true
 				}
 			}
 		}
 
-		if uraDoraHyoujiHai.Num == 34 {
-			for _, tile := range g.Table.AllTiles {
-				if uraDoraHyoujiHai.Suit == tile.Suit &&
-					uraDoraHyoujiHai.Num-3 == tile.Num {
-					tile.UraDora = true
+		if uraDoraHyoujiHai.ID > 10 && uraDoraHyoujiHai.ID < 18 ||
+			uraDoraHyoujiHai.ID == 31 ||
+			uraDoraHyoujiHai.ID == 32 ||
+			uraDoraHyoujiHai.ID == 33 ||
+			uraDoraHyoujiHai.ID == 35 ||
+			uraDoraHyoujiHai.ID == 36 {
+			for i, tile := range allTiles {
+				if uraDoraHyoujiHai.ID+1 == tile.ID {
+					allTiles[i].Dora = true
 				}
 			}
 		}
 
-		if uraDoraHyoujiHai.Num == 37 {
-			for _, tile := range g.Table.AllTiles {
-				if uraDoraHyoujiHai.Suit == tile.Suit &&
-					uraDoraHyoujiHai.Num-2 == tile.Num {
-					tile.UraDora = true
+		if uraDoraHyoujiHai.ID == 34 {
+			for i, tile := range allTiles {
+				if uraDoraHyoujiHai.ID-3 == tile.ID {
+					allTiles[i].Dora = true
+				}
+			}
+		}
+
+		if uraDoraHyoujiHai.ID == 37 {
+			for i, tile := range allTiles {
+				if uraDoraHyoujiHai.ID-2 == tile.ID {
+					allTiles[i].Dora = true
 				}
 			}
 		}
 	}
 }
 
-//TODO ドラ,ドラ表示牌
 // ˄
