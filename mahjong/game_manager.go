@@ -1689,7 +1689,7 @@ func (g *GameManager) applyDora() {
 	allTiles = append(allTiles, g.Table.Player2.OpenedTile4.Tiles...)
 	allTiles = append(allTiles, g.Table.Player2.OpenedPe.Tiles...)
 	for i := range allTiles {
-		if i <= len(allTiles) {
+		if i < len(allTiles) {
 			if allTiles[i] != nil {
 				allTiles = append(allTiles[:i], allTiles[:i]...)
 			}
