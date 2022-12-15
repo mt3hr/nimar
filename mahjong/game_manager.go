@@ -1688,13 +1688,15 @@ func (g *GameManager) applyDora() {
 	allTiles = append(allTiles, g.Table.Player2.OpenedTile3.Tiles...)
 	allTiles = append(allTiles, g.Table.Player2.OpenedTile4.Tiles...)
 	allTiles = append(allTiles, g.Table.Player2.OpenedPe.Tiles...)
+	allTilesTemp := []*Tile{}
 	for i := range allTiles {
 		if i < len(allTiles) {
 			if allTiles[i] != nil {
-				allTiles = append(allTiles[:i], allTiles[:i]...)
+				allTilesTemp = append(allTilesTemp, allTiles[i])
 			}
 		}
 	}
+	allTiles = allTilesTemp
 
 	for _, doraHyoujiHai := range g.Table.Tsumo.GetDoraHyoujiHais() {
 		if doraHyoujiHai.ID == 11 ||
