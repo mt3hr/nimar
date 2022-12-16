@@ -624,8 +624,8 @@ func (s *ShantenChecker) checkChitoitsu(player *Player) int {
 		return 1 //1シャンテン判定
 	}
 
-	//shantenChitoitsu = 6 - countOfToitsu //チートイツのシャンテン数を求める計算式
-	shantenChitoitsu = 7 - countOfToitsu //チートイツのシャンテン数を求める計算式
+	shantenChitoitsu = 6 - countOfToitsu //チートイツのシャンテン数を求める計算式
+	// shantenChitoitsu = 7 - countOfToitsu //チートイツのシャンテン数を求める計算式
 
 	return shantenChitoitsu
 

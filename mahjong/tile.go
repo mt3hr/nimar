@@ -14,7 +14,7 @@ type Tile struct {
 
 	Num int
 
-	Dora bool
+	Dora int
 
 	Akadora bool
 
@@ -24,7 +24,7 @@ type Tile struct {
 
 	DoraHyoujiHai    bool
 	UraDoraHyoujiHai bool
-	UraDora          bool
+	UraDora          int
 
 	// ˄
 }
