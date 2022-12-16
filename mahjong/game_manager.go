@@ -1757,7 +1757,7 @@ func (g *GameManager) applyDora() {
 			uraDoraHyoujiHai.ID == 21 {
 			for i, tile := range allTiles {
 				if uraDoraHyoujiHai.ID+8 == tile.ID {
-					allTiles[i].Dora++
+					allTiles[i].UraDora++
 				}
 			}
 		}
@@ -1766,7 +1766,7 @@ func (g *GameManager) applyDora() {
 			uraDoraHyoujiHai.ID == 29 {
 			for i, tile := range allTiles {
 				if uraDoraHyoujiHai.ID-8 == tile.ID {
-					allTiles[i].Dora++
+					allTiles[i].UraDora++
 				}
 			}
 		}
@@ -1779,7 +1779,7 @@ func (g *GameManager) applyDora() {
 			uraDoraHyoujiHai.ID == 36 {
 			for i, tile := range allTiles {
 				if uraDoraHyoujiHai.ID+1 == tile.ID {
-					allTiles[i].Dora++
+					allTiles[i].UraDora++
 				}
 			}
 		}
@@ -1787,7 +1787,7 @@ func (g *GameManager) applyDora() {
 		if uraDoraHyoujiHai.ID == 34 {
 			for i, tile := range allTiles {
 				if uraDoraHyoujiHai.ID-3 == tile.ID {
-					allTiles[i].Dora++
+					allTiles[i].UraDora++
 				}
 			}
 		}
@@ -1795,7 +1795,7 @@ func (g *GameManager) applyDora() {
 		if uraDoraHyoujiHai.ID == 37 {
 			for i, tile := range allTiles {
 				if uraDoraHyoujiHai.ID-2 == tile.ID {
-					allTiles[i].Dora++
+					allTiles[i].UraDora++
 				}
 			}
 		}
