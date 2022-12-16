@@ -307,10 +307,8 @@ func (d *UraDora) IsMatch(player *Player, Table *Table, agarikei *CountOfShanten
 
 func (d *UraDora) doraCount(player *Player) int {
 	dora := 0
-	for _, tile := range player.Hand {
-		dora += tile.UraDora
-	}
 	for _, tiles := range [][]*Tile{
+		player.Hand,
 		player.OpenedTile1.Tiles,
 		player.OpenedTile2.Tiles,
 		player.OpenedTile3.Tiles,
@@ -347,13 +345,8 @@ func (d *Dora) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAnd
 
 func (d *Dora) doraCount(player *Player) int {
 	dora := 0
-	for _, tile := range player.Hand {
-		dora += tile.Dora
-		if tile.Akadora {
-			dora++
-		}
-	}
 	for _, tiles := range [][]*Tile{
+		player.Hand,
 		player.OpenedTile1.Tiles,
 		player.OpenedTile2.Tiles,
 		player.OpenedTile3.Tiles,

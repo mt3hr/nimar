@@ -1690,15 +1690,16 @@ func (g *GameManager) applyDora() {
 	allTiles = append(allTiles, g.Table.Player2.OpenedPe.Tiles...)
 	allTilesTemp := []*Tile{}
 	for i := range allTiles {
-		if i < len(allTiles) {
-			if allTiles[i] != nil {
-				allTilesTemp = append(allTilesTemp, allTiles[i])
-			}
+		if i < len(allTiles) && allTiles[i] != nil {
+			allTilesTemp = append(allTilesTemp, allTiles[i])
 		}
 	}
 	allTiles = allTilesTemp
 
 	for i := range allTiles {
+		if allTiles[i] == nil {
+			continue
+		}
 		allTiles[i].Dora = 0
 		allTiles[i].UraDora = 0
 	}
