@@ -134,6 +134,7 @@ func (g *GameManager) resetTable() {
 
 	g.Table.Tsumo.Tiles = nil
 	g.Table.Player1.TsumoriTile = nil
+	g.Table.Player1.RonTile = nil
 	g.Table.Player1.Hand = []*Tile{}
 	g.Table.Player1.Kawa = []*Tile{}
 	g.Table.Player1.OpenedTile1 = &OpenedTiles{}
@@ -143,6 +144,7 @@ func (g *GameManager) resetTable() {
 	g.Table.Player1.OpenedPe = &OpenedTiles{}
 
 	g.Table.Player2.TsumoriTile = nil
+	g.Table.Player2.RonTile = nil
 	g.Table.Player2.Hand = []*Tile{}
 	g.Table.Player2.Kawa = []*Tile{}
 	g.Table.Player2.OpenedTile1 = &OpenedTiles{}
