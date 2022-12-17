@@ -46,7 +46,7 @@ func (t *Tsumo) OpenNextKandora() bool {
 	for i := len(t.Tiles) - 10; i < len(t.Tiles); i += 2 {
 		if !t.Tiles[i].DoraHyoujiHai {
 			t.Tiles[i].DoraHyoujiHai = true
-			t.Tiles[i+1].UraDoraHyoujiHai = true
+			t.Tiles[i-1].UraDoraHyoujiHai = true
 			return true
 		}
 	}
