@@ -532,7 +532,13 @@ func (g *GameManager) appendPeOperators(player *Player, operators []*Operator) [
 func (g *GameManager) appendTsumoAgariOperators(player *Player, operators []*Operator) []*Operator {
 	// ˅
 	Tsumo := OPERATOR_TSUMO
-	if g.GetShantenChecker().CheckCountOfShanten(player).Shanten == -1 {
+
+	agarikei := g.GetShantenChecker().CheckCountOfShanten(player)
+	if agarikei.Shanten == -1 {
+		if len(g.ShantenChecker.GetYakuList().MatchYakus(player, g.Table, agarikei)) == 0 {
+			return operators
+		}
+
 		operators = append(operators, &Operator{
 			RoomID:       g.Table.ID,
 			PlayerID:     player.ID,
@@ -645,6 +651,9 @@ func (g *GameManager) appendRonOperators(player *Player, opponentPlayer *Player,
 	ron := OPERATOR_RON
 	agarikei := g.ShantenChecker.CheckCountOfShanten(opponentPlayer)
 	if agarikei.Shanten != 0 {
+		return operators
+	}
+	if len(g.ShantenChecker.GetYakuList().MatchYakus(opponentPlayer, g.Table, agarikei)) == 0 {
 		return operators
 	}
 	for machihaiID := range agarikei.Agarikei.MachiHai {
