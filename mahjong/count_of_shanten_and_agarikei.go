@@ -14,7 +14,6 @@ type CountOfShantenAndAgarikei struct {
 
 	// ˅
 
-	//TODO モデルからMachihaiを消して
 	// ˄
 }
 

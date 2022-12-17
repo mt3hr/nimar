@@ -1752,7 +1752,7 @@ func (g *GameManager) applyDora() {
 		}
 	}
 
-	for _, uraDoraHyoujiHai := range g.Table.Tsumo.GetDoraHyoujiHais() {
+	for _, uraDoraHyoujiHai := range g.Table.Tsumo.GetUraDoraHyoujiHais() {
 		if uraDoraHyoujiHai.ID == 1 ||
 			uraDoraHyoujiHai.ID == 11 ||
 			uraDoraHyoujiHai.ID == 21 {
