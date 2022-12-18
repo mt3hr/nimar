@@ -1855,6 +1855,7 @@ func (g *GameManager) applyDora() {
 }
 
 // TODO 槍槓
+// TODO 北ロン
 // TODO 流し満貫
 // TODO 三暗刻
 // TODO 四暗刻
