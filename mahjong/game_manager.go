@@ -93,6 +93,7 @@ func (g *GameManager) StartGame() error {
 			g.ryukyoku()
 		}
 	}
+	g.receiveOperatorWG.Wait()
 	g.Table.Player1.GameTableWs.Close()
 	g.Table.Player1.MessageWs.Close()
 	g.Table.Player1.OperatorWs.Close()
@@ -654,9 +655,13 @@ func (g *GameManager) appendRonOperators(player *Player, opponentPlayer *Player,
 	if agarikei.Shanten != 0 {
 		return operators
 	}
+
+	defer func() { opponentPlayer.RonTile = nil }()
+	opponentPlayer.RonTile = player.Kawa[len(player.Kawa)-1]
 	if len(g.ShantenChecker.GetYakuList().MatchYakus(opponentPlayer, g.Table, agarikei)) == 0 {
 		return operators
 	}
+
 	for machihaiID := range agarikei.Agarikei.MachiHai {
 		huriten := false
 		for _, kawaTile := range opponentPlayer.Kawa {
@@ -824,12 +829,8 @@ func (m *GameManager) generateAgariMessage(player *Player) *Message {
 	for _, tile := range player.Hand {
 		agari.Hand = append(agari.Hand, tile)
 	}
-	if player.TsumoriTile != nil {
-		agari.TsumoriTile = player.TsumoriTile
-	}
-	if player.RonTile != nil {
-		agari.RonTile = player.RonTile
-	}
+	agari.TsumoriTile = player.TsumoriTile
+	agari.RonTile = player.RonTile
 	agariOpenedTiles := []*OpenedTiles{
 		agari.OpenedTile1,
 		agari.OpenedTile2,
@@ -1307,7 +1308,6 @@ TOP:
 			case OPERATOR_SKIP:
 				break
 			case OPERATOR_RON:
-
 				flush := &Flush{
 					Message: "ロン",
 					Player:  opponentPlayer,
