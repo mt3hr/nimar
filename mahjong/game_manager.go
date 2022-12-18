@@ -450,7 +450,6 @@ func (g *GameManager) appendAnkanOperators(player *Player, operators []*Operator
 		return operators
 	}
 	ankan := OPERATOR_ANKAN
-	player.Status.Rinshan = true
 	tileIDs := HandAndAgariTile(player)
 	for tileID := range tileIDs {
 		if tileIDs[tileID] == 4 {
@@ -477,7 +476,6 @@ func (g *GameManager) appendKakanOperators(player *Player, operators []*Operator
 	if !g.Table.Tsumo.CanPop() && len(g.Table.Tsumo.GetDoraHyoujiHais()) <= 4 {
 		return operators
 	}
-	player.Status.Rinshan = true
 	kakan := OPERATOR_KAKAN
 	for _, OpenedTiles := range []*OpenedTiles{
 		player.OpenedTile1,
@@ -619,7 +617,6 @@ func (g *GameManager) appendReachOperators(player *Player, operators []*Operator
 
 func (g *GameManager) appendDahaiOperators(player *Player, operators []*Operator) []*Operator {
 	// ˅
-	player.Status.Rinshan = false
 	dahai := OPERATOR_DAHAI
 	if player.TsumoriTile != nil {
 		operators = append(operators, &Operator{
@@ -776,7 +773,6 @@ func (g *GameManager) appendDaiminkanOperators(player *Player, opponentPlayer *P
 	if opponentPlayer.Status.Reach {
 		return operators
 	}
-	opponentPlayer.Status.Rinshan = true
 	daiminkan := OPERATOR_DAIMINKAN
 	haiNum := player.Kawa[len(player.Kawa)-1].ID
 	for tileid, cnt := range HandAndAgariTile(opponentPlayer) {
@@ -893,6 +889,7 @@ TOP:
 		player, opponentPlayer := g.getPlayers()
 
 		player.Status.Haitei = false
+		player.Status.Rinshan = false
 		opponentPlayer.Status.Hotei = false
 
 		player.Rihai()
