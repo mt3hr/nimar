@@ -1364,6 +1364,7 @@ func (i *Ikkitsuukan) NumberOfHanWhenNaki() int {
 
 func (c *Chanta) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
 	for _, mentsu := range []*TileIDs{
+		agarikei.Agarikei.Janto,
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,

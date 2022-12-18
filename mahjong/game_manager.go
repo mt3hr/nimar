@@ -444,15 +444,13 @@ func (g *GameManager) appendKyushuKyuhaiOperators(player *Player, operators []*O
 	// ˄
 }
 
-func (g *GameManager) appendAnkanOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
+func (g *GameManager) appendAnkanOperators(player *Player, operators []*Operator) []*Operator {
 	// ˅
 	if !g.Table.Tsumo.CanPop() && len(g.Table.Tsumo.GetDoraHyoujiHais()) <= 4 {
 		return operators
 	}
 	ankan := OPERATOR_ANKAN
 	player.Status.Rinshan = true
-	opponentPlayer.Status.Ippatsu = false
-	player.Status.Ippatsu = false
 	tileIDs := HandAndAgariTile(player)
 	for tileID := range tileIDs {
 		if tileIDs[tileID] == 4 {
@@ -929,7 +927,7 @@ TOP:
 
 		playerOperators := []*Operator{}
 		playerOperators = g.appendKyushuKyuhaiOperators(player, playerOperators)
-		playerOperators = g.appendAnkanOperators(player, opponentPlayer, playerOperators)
+		playerOperators = g.appendAnkanOperators(player, playerOperators)
 		playerOperators = g.appendKakanOperators(player, playerOperators)
 		playerOperators = g.appendPeOperators(player, playerOperators)
 		playerOperators = g.appendTsumoAgariOperators(player, playerOperators)
@@ -1209,6 +1207,7 @@ TOP:
 			g.nextKyoku(player)
 			return true, nil
 		case OPERATOR_DAHAI:
+			player.Status.Ippatsu = false
 			handAndTsumoriTile := append(player.Hand, player.TsumoriTile)
 			tileIndex := -1
 			for i, tile := range handAndTsumoriTile {
