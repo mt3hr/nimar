@@ -87,6 +87,9 @@ func (g *GameManager) StartGame() error {
 		if err != nil {
 			return err
 		}
+		if g.finishedGame {
+			break
+		}
 		if g.Table.Tsumo.CanPop() && len(g.Table.Tsumo.GetDoraHyoujiHais()) <= 4 {
 			g.tradeTurn()
 		} else {
@@ -1201,6 +1204,7 @@ TOP:
 
 			if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) || g.Table.Player1.Point < 0 || g.Table.Player2.Point < 0 {
 				g.finishGame()
+				return false, nil
 			}
 			g.nextKyoku(player)
 			return true, nil
@@ -1360,6 +1364,7 @@ TOP:
 
 				if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) || g.Table.Player1.Point < 0 || g.Table.Player2.Point < 0 {
 					g.finishGame()
+					return false, nil
 				}
 
 				g.nextKyoku(opponentPlayer)
@@ -1626,6 +1631,7 @@ func (g *GameManager) nextKyoku(agariPlayer *Player) {
 
 	if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) || g.Table.Player1.Point < 0 || g.Table.Player2.Point < 0 {
 		g.finishGame()
+		return
 	} else {
 		// テーブルをリセットしてゲーム再スタート
 		g.Table.Status.Oya, g.Table.Status.Ko = g.Table.Status.Ko, g.Table.Status.Oya
