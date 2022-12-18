@@ -444,12 +444,15 @@ func (g *GameManager) appendKyushuKyuhaiOperators(player *Player, operators []*O
 	// ˄
 }
 
-func (g *GameManager) appendAnkanOperators(player *Player, operators []*Operator) []*Operator {
+func (g *GameManager) appendAnkanOperators(player *Player, opponentPlayer *Player, operators []*Operator) []*Operator {
 	// ˅
 	if !g.Table.Tsumo.CanPop() && len(g.Table.Tsumo.GetDoraHyoujiHais()) <= 4 {
 		return operators
 	}
 	ankan := OPERATOR_ANKAN
+	player.Status.Rinshan = true
+	opponentPlayer.Status.Ippatsu = false
+	player.Status.Ippatsu = false
 	tileIDs := HandAndAgariTile(player)
 	for tileID := range tileIDs {
 		if tileIDs[tileID] == 4 {
@@ -476,6 +479,7 @@ func (g *GameManager) appendKakanOperators(player *Player, operators []*Operator
 	if !g.Table.Tsumo.CanPop() && len(g.Table.Tsumo.GetDoraHyoujiHais()) <= 4 {
 		return operators
 	}
+	player.Status.Rinshan = true
 	kakan := OPERATOR_KAKAN
 	for _, OpenedTiles := range []*OpenedTiles{
 		player.OpenedTile1,
@@ -512,6 +516,7 @@ func (g *GameManager) appendPeOperators(player *Player, operators []*Operator) [
 		return operators
 	}
 	pe := OPERATOR_PE
+
 	for _, tile := range append(player.Hand, player.TsumoriTile) {
 		if tile == nil {
 			continue
@@ -616,6 +621,7 @@ func (g *GameManager) appendReachOperators(player *Player, operators []*Operator
 
 func (g *GameManager) appendDahaiOperators(player *Player, operators []*Operator) []*Operator {
 	// ˅
+	player.Status.Rinshan = false
 	dahai := OPERATOR_DAHAI
 	if player.TsumoriTile != nil {
 		operators = append(operators, &Operator{
@@ -772,6 +778,7 @@ func (g *GameManager) appendDaiminkanOperators(player *Player, opponentPlayer *P
 	if opponentPlayer.Status.Reach {
 		return operators
 	}
+	opponentPlayer.Status.Rinshan = true
 	daiminkan := OPERATOR_DAIMINKAN
 	haiNum := player.Kawa[len(player.Kawa)-1].ID
 	for tileid, cnt := range HandAndAgariTile(opponentPlayer) {
@@ -887,6 +894,9 @@ TOP:
 	{
 		player, opponentPlayer := g.getPlayers()
 
+		player.Status.Haitei = false
+		opponentPlayer.Status.Hotei = false
+
 		player.Rihai()
 		opponentPlayer.Rihai()
 		opponentPlayer.Rihai()
@@ -915,14 +925,11 @@ TOP:
 		if g.Table.Tsumo.RemainTilesCount() <= 18 {
 			player.Status.Haitei = true
 			opponentPlayer.Status.Hotei = true
-		} else {
-			player.Status.Haitei = false
-			opponentPlayer.Status.Hotei = false
 		}
 
 		playerOperators := []*Operator{}
 		playerOperators = g.appendKyushuKyuhaiOperators(player, playerOperators)
-		playerOperators = g.appendAnkanOperators(player, playerOperators)
+		playerOperators = g.appendAnkanOperators(player, opponentPlayer, playerOperators)
 		playerOperators = g.appendKakanOperators(player, playerOperators)
 		playerOperators = g.appendPeOperators(player, playerOperators)
 		playerOperators = g.appendTsumoAgariOperators(player, playerOperators)
@@ -932,6 +939,7 @@ TOP:
 
 		// g.printShantenCount(player)
 
+		opponentPlayer.Rihai()
 		g.Table.UpdateView()
 		b, err := json.Marshal(playerOperators)
 		if err != nil {
@@ -985,6 +993,9 @@ TOP:
 			return false, nil
 		case OPERATOR_ANKAN:
 			//TODO リーチしているときに暗槓しても面子崩れないかの判定をまだしていない
+			opponentPlayer.Status.Ippatsu = false
+			player.Status.Ippatsu = false
+			player.Status.Rinshan = true
 			ankan := OPEN_ANKAN
 			OpenedTile := &OpenedTiles{
 				OpenType: &ankan,
@@ -1043,6 +1054,9 @@ TOP:
 
 			goto TOP
 		case OPERATOR_KAKAN:
+			player.Status.Rinshan = true
+			opponentPlayer.Status.Ippatsu = false
+			player.Status.Ippatsu = false
 			kakan := OPEN_KAKAN
 			for i, mentsu := range [][]*Tile{
 				player.OpenedTile1.Tiles,
@@ -1099,9 +1113,15 @@ TOP:
 			g.Table.Player1.FlushWs.Write(b)
 			g.Table.Player2.FlushWs.Write(b)
 
+			opponentPlayer.Rihai()
+			opponentPlayer.Rihai()
+
 			goto TOP
 		case OPERATOR_PE:
 			pe := OPEN_PE
+			player.Status.Rinshan = true
+			opponentPlayer.Status.Ippatsu = false
+			player.Status.Ippatsu = false
 			OpenedTile := player.OpenedPe
 			OpenedTile.OpenType = &pe
 			player.Hand = append(player.Hand, player.TsumoriTile)
@@ -1132,6 +1152,9 @@ TOP:
 			}
 			g.Table.Player1.FlushWs.Write(b)
 			g.Table.Player2.FlushWs.Write(b)
+
+			opponentPlayer.Rihai()
+			opponentPlayer.Rihai()
 
 			goto TOP
 		case OPERATOR_TSUMO:
@@ -1203,11 +1226,15 @@ TOP:
 			player.Hand = append(handAndTsumoriTile[:tileIndex], handAndTsumoriTile[tileIndex+1:]...)
 			player.TsumoriTile = nil
 			nextTurnCanTsumo = true
+
+			opponentPlayer.Rihai()
+			opponentPlayer.Rihai()
 		case OPERATOR_REACH:
 			player.Point -= 1000
 			g.Table.Status.ReachTablePoint += 1000
 
 			player.Status.Reach = true
+			player.Status.Ippatsu = true
 			handAndTsumoriTile := append(player.Hand, player.TsumoriTile)
 			tileIndex := -1
 			for i, tile := range handAndTsumoriTile {
@@ -1236,6 +1263,9 @@ TOP:
 			}
 			g.Table.Player1.FlushWs.Write(b)
 			g.Table.Player2.FlushWs.Write(b)
+
+			opponentPlayer.Rihai()
+			opponentPlayer.Rihai()
 
 		default:
 			return false, fmt.Errorf("変なオペレータが渡されました。オペレータタイプ:%d", operator.OperatorType)
@@ -1276,8 +1306,6 @@ TOP:
 			if operator == nil {
 				return false, nil
 			}
-
-			//TODO 立直中、暗槓をスキップ出来ないことがあった
 
 			switch *(operator.OperatorType) {
 			case OPERATOR_SKIP:
@@ -1341,6 +1369,7 @@ TOP:
 				g.nextKyoku(opponentPlayer)
 				return true, nil
 			case OPERATOR_PON:
+				opponentPlayer.Status.Ippatsu = false
 				pon := OPEN_PON
 				OpenedTile := &OpenedTiles{
 					OpenType: &pon,
@@ -1396,7 +1425,11 @@ TOP:
 				g.Table.Player1.FlushWs.Write(b)
 				g.Table.Player2.FlushWs.Write(b)
 
+				opponentPlayer.Rihai()
+				opponentPlayer.Rihai()
+
 			case OPERATOR_CHI:
+				opponentPlayer.Status.Ippatsu = false
 				chi := OPEN_CHI
 				OpenedTile := &OpenedTiles{
 					OpenType: &chi,
@@ -1451,7 +1484,12 @@ TOP:
 				g.Table.Player1.FlushWs.Write(b)
 				g.Table.Player2.FlushWs.Write(b)
 
+				opponentPlayer.Rihai()
+				opponentPlayer.Rihai()
+
 			case OPERATOR_DAIMINKAN:
+				opponentPlayer.Status.Rinshan = true
+				opponentPlayer.Status.Ippatsu = false
 				daiminkan := OPEN_DAIMINKAN
 				OpenedTile := &OpenedTiles{
 					OpenType: &daiminkan,
@@ -1507,6 +1545,9 @@ TOP:
 				}
 				g.Table.Player1.FlushWs.Write(b)
 				g.Table.Player2.FlushWs.Write(b)
+
+				opponentPlayer.Rihai()
+				opponentPlayer.Rihai()
 			}
 		}
 	}
@@ -1813,5 +1854,11 @@ func (g *GameManager) applyDora() {
 		}
 	}
 }
+
+// TODO 槍槓
+// TODO 流し満貫
+// TODO 三暗刻
+// TODO 四暗刻
+// TODO 四暗刻単騎
 
 // ˄

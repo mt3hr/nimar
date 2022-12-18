@@ -23,6 +23,34 @@ type Yaku interface {
 
 // ˅
 
+func HandAndRonTile(player *Player) TileIDs {
+	tileIDs := TileIDs{}
+	for _, tile := range player.Hand {
+		if tile == nil {
+			continue
+		}
+		tileIDs[tile.ID]++
+	}
+	if player.RonTile != nil {
+		tileIDs[player.RonTile.ID]++
+	}
+	return tileIDs
+}
+
+func HandAndTsumoriTile(player *Player) TileIDs {
+	tileIDs := TileIDs{}
+	for _, tile := range player.Hand {
+		if tile == nil {
+			continue
+		}
+		tileIDs[tile.ID]++
+	}
+	if player.TsumoriTile != nil {
+		tileIDs[player.TsumoriTile.ID]++
+	}
+	return tileIDs
+}
+
 func HandAndAgariTile(player *Player) TileIDs {
 	tileIDs := TileIDs{}
 	for _, tile := range player.Hand {
@@ -462,7 +490,7 @@ func (i *Ippatsu) NumberOfHanWhenNaki() int {
 }
 
 func (m *MenzenTsumo) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
-	return player.Status.Ippatsu && player.IsMenzen()
+	return player.TsumoriTile != nil && player.IsMenzen()
 }
 
 func (m *MenzenTsumo) GetName() string {
@@ -1427,6 +1455,7 @@ func (h *Honitsu) NumberOfHanWhenNaki() int {
 
 func (j *Junchan) IsMatch(player *Player, Table *Table, agarikei *CountOfShantenAndAgarikei) bool {
 	for _, mentsu := range []*TileIDs{
+		agarikei.Agarikei.Janto,
 		agarikei.Agarikei.Mentsu1,
 		agarikei.Agarikei.Mentsu2,
 		agarikei.Agarikei.Mentsu3,
