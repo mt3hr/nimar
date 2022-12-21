@@ -828,6 +828,7 @@ func (m *GameManager) generateAgariMessage(player *Player) *Message {
 		DoraHyoujiHais:    m.Table.Tsumo.GetDoraHyoujiHais(),
 		UraDoraHyoujiHais: m.Table.Tsumo.GetUraDoraHyoujiHais(),
 		Player:            player,
+		Oya:               player.ID == m.Table.Status.Oya.ID,
 	}
 	for _, tile := range player.Hand {
 		agari.Hand = append(agari.Hand, tile)

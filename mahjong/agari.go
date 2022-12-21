@@ -35,6 +35,7 @@ type Agari struct {
 	DoraHyoujiHais    []*Tile
 	UraDoraHyoujiHais []*Tile
 	Player            *Player
+	Oya               bool
 
 	// ˄
 }
