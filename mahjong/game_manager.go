@@ -133,8 +133,8 @@ func (g *GameManager) preparateGame() {
 
 func (g *GameManager) resetTable() {
 	// ˅
-	g.Table.Player1.Status = &PlayerStatus{}
-	g.Table.Player2.Status = &PlayerStatus{}
+	g.Table.Player1.Status = &PlayerStatus{ReachTiming: -1}
+	g.Table.Player2.Status = &PlayerStatus{ReachTiming: -1}
 
 	g.Table.Tsumo.Tiles = nil
 	g.Table.Player1.TsumoriTile = nil
@@ -1234,6 +1234,8 @@ TOP:
 		case OPERATOR_REACH:
 			player.Point -= 1000
 			g.Table.Status.ReachTablePoint += 1000
+
+			player.Status.ReachTiming = len(player.Kawa)
 
 			player.Status.Reach = true
 			player.Status.Ippatsu = true

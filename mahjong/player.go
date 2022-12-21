@@ -104,7 +104,7 @@ func NewPlayer(playerName string, playerID string) *Player {
 		OpenedTile3: &OpenedTiles{OpenType: &OpenTypeNull},
 		OpenedTile4: &OpenedTiles{OpenType: &OpenTypeNull},
 		OpenedPe:    &OpenedTiles{OpenType: &OpenTypeNull},
-		Status:      &PlayerStatus{},
+		Status:      &PlayerStatus{ReachTiming: -1},
 	}
 }
 
