@@ -17,10 +17,17 @@ type Message struct {
 	MatchResult *MatchResult
 
 	// ˅
+	NagashiMangan *NagashiMangan
 
 	// ˄
 }
 
 // ˅
+type NagashiMangan struct {
+	Player1IsNagashiMangan bool
+	Player2IsNagashiMangan bool
+	Player1Bappu           int
+	Player2Bappu           int
+}
 
 // ˄

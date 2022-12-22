@@ -1073,7 +1073,11 @@ TOP:
 				if cnt == 3 {
 					for j := range player.Hand {
 						if player.Hand[j].Name == operator.TargetTiles[0].Name {
-							player.Hand = append(player.Hand[:j], player.Hand[j+1])
+							if j == len(player.Hand)-1 {
+								player.Hand = append(player.Hand[:j])
+							} else {
+								player.Hand = append(player.Hand[:j], player.Hand[j+1])
+							}
 							break
 						}
 					}
@@ -1113,8 +1117,48 @@ TOP:
 			g.Table.Player1.FlushWs.Write(b)
 			g.Table.Player2.FlushWs.Write(b)
 
+			player.Rihai()
 			opponentPlayer.Rihai()
-			opponentPlayer.Rihai()
+
+			// 槍槓
+			func() {
+				opponentPlayer.RonTile = operator.TargetTiles[0]
+				canChankan := g.ShantenChecker.CheckCountOfShanten(opponentPlayer).Shanten == -1
+				if canChankan {
+					ron := OPERATOR_RON
+					defer func() { opponentPlayer.RonTile = nil }()
+					skip := OPERATOR_SKIP
+					operators := []*Operator{
+						&Operator{
+							RoomID:       g.Table.ID,
+							PlayerID:     opponentPlayer.ID,
+							TargetTiles:  []*Tile{operator.TargetTiles[0]},
+							OperatorType: &ron,
+						},
+						&Operator{
+							RoomID:       g.Table.ID,
+							PlayerID:     opponentPlayer.ID,
+							TargetTiles:  []*Tile{},
+							OperatorType: &skip,
+						},
+					}
+					b, err := json.Marshal(operators)
+					if err != nil {
+						panic(err)
+					}
+					g.receiveOperatorWG.Add(1)
+					opponentPlayer.OperatorWs.Write(b)
+					g.receiveOperatorWG.Wait()
+				}
+				if canChankan {
+					switch *operator.OperatorType {
+					case OPERATOR_RON:
+						player.Kawa = append(player.Kawa, operator.TargetTiles[0])
+						opponentPlayer.Status.Chankan = true
+						g.ron(player, opponentPlayer)
+					}
+				}
+			}()
 
 			goto TOP
 		case OPERATOR_PE:
@@ -1155,6 +1199,45 @@ TOP:
 
 			opponentPlayer.Rihai()
 			opponentPlayer.Rihai()
+
+			// 北ロン
+			func() {
+				opponentPlayer.RonTile = operator.TargetTiles[0]
+				canPeRon := g.ShantenChecker.CheckCountOfShanten(opponentPlayer).Shanten == -1
+				if canPeRon {
+					ron := OPERATOR_RON
+					defer func() { opponentPlayer.RonTile = nil }()
+					skip := OPERATOR_SKIP
+					operators := []*Operator{
+						&Operator{
+							RoomID:       g.Table.ID,
+							PlayerID:     opponentPlayer.ID,
+							TargetTiles:  []*Tile{operator.TargetTiles[0]},
+							OperatorType: &ron,
+						},
+						&Operator{
+							RoomID:       g.Table.ID,
+							PlayerID:     opponentPlayer.ID,
+							TargetTiles:  []*Tile{},
+							OperatorType: &skip,
+						},
+					}
+					b, err := json.Marshal(operators)
+					if err != nil {
+						panic(err)
+					}
+					g.receiveOperatorWG.Add(1)
+					opponentPlayer.OperatorWs.Write(b)
+					g.receiveOperatorWG.Wait()
+				}
+				if canPeRon {
+					switch *operator.OperatorType {
+					case OPERATOR_RON:
+						player.Kawa = append(player.Kawa, operator.TargetTiles[0])
+						g.ron(player, opponentPlayer)
+					}
+				}
+			}()
 
 			goto TOP
 		case OPERATOR_TSUMO:
@@ -1210,6 +1293,7 @@ TOP:
 			g.nextKyoku(player)
 			return true, nil
 		case OPERATOR_DAHAI:
+			player.Status.NakareWhenAround = false
 			player.Status.Ippatsu = false
 			handAndTsumoriTile := append(player.Hand, player.TsumoriTile)
 			tileIndex := -1
@@ -1315,64 +1399,11 @@ TOP:
 			case OPERATOR_SKIP:
 				break
 			case OPERATOR_RON:
-				flush := &Flush{
-					Message: "ロン",
-					Player:  opponentPlayer,
-				}
-				b, err := json.Marshal(flush)
-				if err != nil {
-					panic(err)
-				}
-				g.Table.Player1.FlushWs.Write(b)
-				g.Table.Player2.FlushWs.Write(b)
-
-				ok := OPERATOR_OK
-				opponentPlayer.RonTile = player.Kawa[len(player.Kawa)-1]
-				player.Kawa = player.Kawa[:len(player.Kawa)-1]
-
-				// g.printShantenCount(opponentPlayer)
-				message := g.generateAgariMessage(opponentPlayer)
-
-				b, err = json.Marshal(message)
-				if err != nil {
-					panic(err)
-				}
-				g.receiveOperatorWG.Add(2)
-				player.MessageWs.Write(b)
-				opponentPlayer.MessageWs.Write(b)
-
-				operatorForPlayer := &Operator{
-					RoomID:       g.Table.ID,
-					PlayerID:     player.ID,
-					OperatorType: &ok,
-				}
-				b, err = json.Marshal([]*Operator{operatorForPlayer})
-				// player.OperatorWs.Write(b)
-				// opponentPlayer.MessageWs.Write(b)
-
-				operatorForOpponentPlayer := &Operator{
-					RoomID:       g.Table.ID,
-					PlayerID:     operator.PlayerID,
-					OperatorType: &ok,
-				}
-				b, err = json.Marshal([]*Operator{operatorForOpponentPlayer})
-				// player.OperatorWs.Write(b)
-				// opponentPlayer.MessageWs.Write(b)
-
-				opponentPlayer.Point += message.Agari.Point.Point + g.Table.Status.ReachTablePoint
-				player.Point -= message.Agari.Point.Point
-				g.Table.Status.ReachTablePoint = 0
-
-				g.receiveOperatorWG.Wait()
-
-				if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) || g.Table.Player1.Point < 0 || g.Table.Player2.Point < 0 {
-					g.finishGame()
-					return false, nil
-				}
-
-				g.nextKyoku(opponentPlayer)
+				g.ron(player, opponentPlayer)
 				return true, nil
 			case OPERATOR_PON:
+				player.Status.Nakare = true
+				player.Status.NakareWhenAround = true
 				opponentPlayer.Status.Ippatsu = false
 				pon := OPEN_PON
 				OpenedTile := &OpenedTiles{
@@ -1433,6 +1464,8 @@ TOP:
 				opponentPlayer.Rihai()
 
 			case OPERATOR_CHI:
+				player.Status.Nakare = true
+				player.Status.NakareWhenAround = true
 				opponentPlayer.Status.Ippatsu = false
 				chi := OPEN_CHI
 				OpenedTile := &OpenedTiles{
@@ -1492,6 +1525,8 @@ TOP:
 				opponentPlayer.Rihai()
 
 			case OPERATOR_DAIMINKAN:
+				player.Status.Nakare = true
+				player.Status.NakareWhenAround = true
 				opponentPlayer.Status.Rinshan = true
 				opponentPlayer.Status.Ippatsu = false
 				daiminkan := OPEN_DAIMINKAN
@@ -1646,23 +1681,84 @@ func (g *GameManager) nextKyoku(agariPlayer *Player) {
 }
 
 func (g *GameManager) ryukyoku() {
+	player1IsNagashiMangan := (&Nagashimangan{}).IsMatch(g.Table.Player1, g.Table, nil)
+	player2IsNagashiMangan := (&Nagashimangan{}).IsMatch(g.Table.Player2, g.Table, nil)
+
+	message := &Message{}
 	ok := OPERATOR_OK
-	ryukyoku := MessageRyukyoku
-	player1Tempai, player1Bappu, player2Tempai, player2Bappu := g.calcNotenBappu(g.Table.Player1, g.Table.Player2)
+	b := []byte{}
+	var err error
+	player1Bappu := 0
+	player2Bappu := 0
+	if player1IsNagashiMangan && !player2IsNagashiMangan {
+		nagashimangan := MessageNagashiMangan
 
-	message := &Message{
-		MessageType: &ryukyoku,
-		Ryukyoku: &Ryukyoku{
-			Player1Tempai: player1Tempai,
-			Player2Tempai: player2Tempai,
-			Player1Bappu:  player1Bappu,
-			Player2Bappu:  player2Bappu,
-		},
-	}
-	b, err := json.Marshal(message)
-	if err != nil {
-		panic(err)
+		player1Bappu, player2Bappu = 8000, -8000
+		message = &Message{
+			MessageType: &nagashimangan,
+			NagashiMangan: &NagashiMangan{
+				Player1IsNagashiMangan: true,
+				Player2IsNagashiMangan: false,
+				Player1Bappu:           player1Bappu,
+				Player2Bappu:           player2Bappu,
+			},
+		}
+		b, err = json.Marshal(message)
+		if err != nil {
+			panic(err)
+		}
+	} else if !player1IsNagashiMangan && player2IsNagashiMangan {
+		nagashimangan := MessageNagashiMangan
 
+		player1Bappu, player2Bappu = -8000, 8000
+		message = &Message{
+			MessageType: &nagashimangan,
+			NagashiMangan: &NagashiMangan{
+				Player1IsNagashiMangan: true,
+				Player2IsNagashiMangan: false,
+				Player1Bappu:           player1Bappu,
+				Player2Bappu:           player2Bappu,
+			},
+		}
+		b, err = json.Marshal(message)
+		if err != nil {
+			panic(err)
+		}
+	} else if player1IsNagashiMangan && player2IsNagashiMangan {
+		nagashimangan := MessageNagashiMangan
+
+		player1Bappu, player2Bappu = 0, 0
+		message = &Message{
+			MessageType: &nagashimangan,
+			NagashiMangan: &NagashiMangan{
+				Player1IsNagashiMangan: true,
+				Player2IsNagashiMangan: false,
+				Player1Bappu:           player1Bappu,
+				Player2Bappu:           player2Bappu,
+			},
+		}
+		b, err = json.Marshal(message)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		ryukyoku := MessageRyukyoku
+		var player1Tempai, player2Tempai bool
+		player1Tempai, player1Bappu, player2Tempai, player2Bappu = g.calcNotenBappu(g.Table.Player1, g.Table.Player2)
+
+		message = &Message{
+			MessageType: &ryukyoku,
+			Ryukyoku: &Ryukyoku{
+				Player1Tempai: player1Tempai,
+				Player2Tempai: player2Tempai,
+				Player1Bappu:  player1Bappu,
+				Player2Bappu:  player2Bappu,
+			},
+		}
+		b, err = json.Marshal(message)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	g.Table.Player1.MessageWs.Write(b)
@@ -1860,11 +1956,69 @@ func (g *GameManager) applyDora() {
 	}
 }
 
-// TODO 槍槓
-// TODO 北ロン
-// TODO 流し満貫
+func (g *GameManager) ron(player *Player, opponentPlayer *Player) {
+	flush := &Flush{
+		Message: "ロン",
+		Player:  opponentPlayer,
+	}
+	b, err := json.Marshal(flush)
+	if err != nil {
+		panic(err)
+	}
+	g.Table.Player1.FlushWs.Write(b)
+	g.Table.Player2.FlushWs.Write(b)
+
+	ok := OPERATOR_OK
+	opponentPlayer.RonTile = player.Kawa[len(player.Kawa)-1]
+	player.Kawa = player.Kawa[:len(player.Kawa)-1]
+
+	// g.printShantenCount(opponentPlayer)
+	message := g.generateAgariMessage(opponentPlayer)
+
+	b, err = json.Marshal(message)
+	if err != nil {
+		panic(err)
+	}
+	g.receiveOperatorWG.Add(2)
+	player.MessageWs.Write(b)
+	opponentPlayer.MessageWs.Write(b)
+
+	operatorForPlayer := &Operator{
+		RoomID:       g.Table.ID,
+		PlayerID:     player.ID,
+		OperatorType: &ok,
+	}
+	b, err = json.Marshal([]*Operator{operatorForPlayer})
+	// player.OperatorWs.Write(b)
+	// opponentPlayer.MessageWs.Write(b)
+
+	operatorForOpponentPlayer := &Operator{
+		RoomID:       g.Table.ID,
+		PlayerID:     g.receivedOperator.PlayerID,
+		OperatorType: &ok,
+	}
+	b, err = json.Marshal([]*Operator{operatorForOpponentPlayer})
+	// player.OperatorWs.Write(b)
+	// opponentPlayer.MessageWs.Write(b)
+
+	opponentPlayer.Point += message.Agari.Point.Point + g.Table.Status.ReachTablePoint
+	player.Point -= message.Agari.Point.Point
+	g.Table.Status.ReachTablePoint = 0
+
+	g.receiveOperatorWG.Wait()
+
+	if (g.Table.Player1.Point >= 30000 || g.Table.Player2.Point >= 30000) && ((*g.Table.Status.Kaze == KAZE_NAN && g.Table.Status.NumberOfKyoku >= 2) || *g.Table.Status.Kaze == KAZE_SHA || *g.Table.Status.Kaze == KAZE_PE) || g.Table.Player1.Point < 0 || g.Table.Player2.Point < 0 {
+		g.finishGame()
+	}
+
+	g.nextKyoku(opponentPlayer)
+
+}
+
 // TODO 三暗刻
 // TODO 四暗刻
 // TODO 四暗刻単騎
+// TODO 加槓の見た目
+// TODO 槍槓のダイアログが表示されなかった　多分北ロンも
 
 // ˄
